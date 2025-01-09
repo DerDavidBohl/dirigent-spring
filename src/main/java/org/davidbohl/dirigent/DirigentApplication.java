@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.io.IOException;
+
 
 @SpringBootApplication
 @EnableConfigurationProperties
@@ -14,7 +16,7 @@ public class DirigentApplication {
 
 	static Logger logger = LoggerFactory.getLogger(DirigentApplication.class);
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		ConfigurableApplicationContext context = SpringApplication.run(DirigentApplication.class, args);
 		String composeCommand = context.getEnvironment().getProperty("dirigent.compose.command");
 		if(!isComposeInstalled(composeCommand)) {
