@@ -35,5 +35,5 @@ build/
 /config/
 
 ### Config Files ###
-src/main/resources/application-local.properties
+src/main/resources/application-local.properties.template
 src/main/resources/application.properties
