@@ -33,3 +33,7 @@ build/
 .vscode/
 /deployments/
 /config/
+
+### Config Files ###
+src/main/resources/application-local.properties
+src/main/resources/application.properties
