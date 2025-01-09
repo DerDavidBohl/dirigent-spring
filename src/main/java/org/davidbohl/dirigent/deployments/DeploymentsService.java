@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -77,7 +78,12 @@ public class DeploymentsService {
         try {
         gitService.cloneOrPull(deployment.source(), deploymentDir.getAbsolutePath());
 
-        new ProcessBuilder(composeCommand, "up", "-d", "--remove-orphans")
+            List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
+            commandArgs.add("up");
+            commandArgs.add("-d");
+            commandArgs.add("--remove-orphans");
+
+            new ProcessBuilder(commandArgs)
                 .directory(deploymentDir)
                 .start().waitFor();
 

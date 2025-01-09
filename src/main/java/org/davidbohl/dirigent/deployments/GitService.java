@@ -8,6 +8,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Objects;
 
 @Service
@@ -24,7 +25,7 @@ public class GitService {
 
         File destinationDir = new File(destination);
 
-        if (destinationDir.exists()) {
+        if (destinationDir.exists() && Arrays.asList(Objects.requireNonNull(destinationDir.list())).contains(".git")) {
             logger.debug("Local Repo exists. Pulling latest changes.");
             new ProcessBuilder("git", "fetch", "--all")
                     .directory(destinationDir).start().waitFor();
@@ -47,14 +48,14 @@ public class GitService {
         }
     }
 
-    boolean deleteDirectory(File directoryToBeDeleted) {
+    void deleteDirectory(File directoryToBeDeleted) {
         File[] allContents = directoryToBeDeleted.listFiles();
         if (allContents != null) {
             for (File file : allContents) {
                 deleteDirectory(file);
             }
         }
-        return directoryToBeDeleted.delete();
+        directoryToBeDeleted.delete();
     }
 }
 
