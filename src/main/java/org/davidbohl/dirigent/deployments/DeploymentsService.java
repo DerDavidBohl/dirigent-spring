@@ -10,9 +10,11 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,28 +42,48 @@ public class DeploymentsService {
             DeploynentConfiguration deploymentsConfiguration = deploymentsConfigurationProvider.getConfiguration();
 
             Map<Integer, List<Deployment>> deploymentsByOrder = deploymentsConfiguration.deployments().stream()
-                    .sorted(Comparator.comparingInt(Deployment::order))
                     .collect(Collectors.groupingBy(Deployment::order));
 
-            for (Deployment deployment : deploymentsConfiguration.deployments()) {
-                deploy(deployment);
+            TreeMap<Integer, List<Deployment>> sortedDeployments = new TreeMap<>(deploymentsByOrder);
+
+            for (Integer orderGroupKey : sortedDeployments.keySet()) {
+
+                logger.info("Starting deployments with order {}", orderGroupKey);
+
+                List<Deployment> deployments = sortedDeployments.get(orderGroupKey);
+                ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+
+                for (Deployment deployment : deployments) {
+                    executorService.submit(() -> deploy(deployment));
+                }
+
+                executorService.shutdown();
+                executorService.awaitTermination(Long.MAX_VALUE, java.util.concurrent.TimeUnit.NANOSECONDS);
+
+                logger.info("Deployments with order {} finished", orderGroupKey);
             }
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
     }
 
-    private void deploy(Deployment deployment) throws IOException, InterruptedException {
+    private void deploy(Deployment deployment) {
         logger.info("Deploying {}", deployment.name());
 
         File deploymentDir = new File("deployments/" + deployment.name());
 
+        try {
         gitService.cloneOrPull(deployment.source(), deploymentDir.getAbsolutePath());
 
         new ProcessBuilder(composeCommand, "up", "-d", "--remove-orphans")
                 .directory(deploymentDir)
                 .start().waitFor();
+
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         logger.info("Deployment {} started", deployment.name());
     }
