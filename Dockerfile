@@ -7,6 +7,8 @@ RUN mvn clean package -DskipTests
 
 # Use OpenJDK image to run the application
 FROM openjdk:23-jdk-slim-bullseye
+
+# Install Docker
 RUN apt-get update
 RUN apt-get install -y ca-certificates curl
 RUN install -m 0755 -d /etc/apt/keyrings
@@ -16,8 +18,7 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/doc
 RUN apt-get update
 RUN apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-
-
+# Finish
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
