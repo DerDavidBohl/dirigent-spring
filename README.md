@@ -51,3 +51,11 @@ docker run -d \
 | /app/deployments | Deployments directory for Dirigent |
 | /var/run/docker.sock | Docker socket for Dirigent |
 
+
+## Develop
+
+### Setup for local Tests
+
+1. copy `src/test/resources/application-local.properties.template` to `src/test/resources/application-local.properties`
+2. fill in your test repository url and auth token
+3. Done ;)
