@@ -29,7 +29,8 @@ public class DeploymentsConfigurationProvider implements CacheManagerCustomizer<
     public DeploynentConfiguration getConfiguration() throws IOException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
 
-        gitService.cloneOrPull(gitUrl, "config");
+        if (gitUrl != null)
+            gitService.cloneOrPull(gitUrl, "config");
 
         File configFile = new File("config/deployments.yml");
 
