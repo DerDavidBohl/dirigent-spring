@@ -38,7 +38,7 @@ public class GitService {
             deleteDirectory(destinationDir);
             UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUriString(source);
 
-            if (authToken != null && (uriComponentsBuilder.build().getUserInfo() == null || Objects.requireNonNull(uriComponentsBuilder.build().getUserInfo()).isEmpty())) {
+            if (!authToken.isBlank() && (uriComponentsBuilder.build().getUserInfo() == null || Objects.requireNonNull(uriComponentsBuilder.build().getUserInfo()).isEmpty())) {
                 uriComponentsBuilder = uriComponentsBuilder.userInfo(authToken);
             }
 
