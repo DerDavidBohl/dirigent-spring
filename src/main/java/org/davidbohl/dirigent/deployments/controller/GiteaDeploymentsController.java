@@ -19,7 +19,7 @@ public class GiteaDeploymentsController {
 
     @PostMapping()
     public void webHook(@RequestBody GiteaRequestBody body) {
-        deploymentsService.startSingleDeploymentBySource(body.repository().url());
+        deploymentsService.startSingleDeploymentBySource(body.repository().cloneUrl());
     }
 
 }

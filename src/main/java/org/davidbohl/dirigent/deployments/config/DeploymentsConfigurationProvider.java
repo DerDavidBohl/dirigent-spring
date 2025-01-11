@@ -19,7 +19,7 @@ public class DeploymentsConfigurationProvider implements CacheManagerCustomizer<
 
     private final GitService gitService;
 
-    @Value("${dirigent.deployments.git.url}")
+    @Value("${dirigent.deployments.git.clone_url}")
     private String gitUrl;
 
     public DeploymentsConfigurationProvider(GitService gitService) {
