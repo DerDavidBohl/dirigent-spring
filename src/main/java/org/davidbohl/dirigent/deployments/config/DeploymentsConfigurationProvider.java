@@ -1,7 +1,8 @@
-package org.davidbohl.dirigent.deployments;
+package org.davidbohl.dirigent.deployments.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.davidbohl.dirigent.deployments.service.GitService;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizer;
