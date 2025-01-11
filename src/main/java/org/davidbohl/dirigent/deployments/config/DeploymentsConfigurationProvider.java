@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class DeploymentsConfigurationProvider implements CacheManagerCustomizer<ConcurrentMapCacheManager> {
@@ -45,7 +45,7 @@ public class DeploymentsConfigurationProvider implements CacheManagerCustomizer<
 
     @Override
     public void customize(ConcurrentMapCacheManager cacheManager) {
-        cacheManager.setCacheNames(Arrays.asList("deployments"));
+        cacheManager.setCacheNames(List.of("deployments"));
     }
 }
 
