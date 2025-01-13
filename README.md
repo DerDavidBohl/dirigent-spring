@@ -6,7 +6,6 @@ Tool to manage your docker compose deployments via git.
 
 ### docker-compose
 ```yml
-
 services:
   app:
     image: ghcr.io/derdavidbohl/dirigent-spring:latest
@@ -14,14 +13,14 @@ services:
     restart: unless-stopped
     environment:
       - DIRIGENT_DEPLOYMENTS_GIT_URL=<Your Deployments Repo>
-      - DIRIGENT_GIT_AUTHTOKEN=<Your Auth token with Access to your repos - only if needed>
+      - DIRIGENT_GIT_AUTHTOKEN=<Your Auth token with Access to your repos - only if needed> # optional
+      - DIRIGENT_START_ALL_ON_STARTUP=<Start All Deployments On Startup> # optional Default true
     ports:
       - 8080:8080
     volumes:
       - /path/to/config:/app/config
       - /path/to/deployments:/app/deployments
       - /var/run/docker.sock:/var/run/docker.sock
-
 ```
 
 ### docker CLI
@@ -30,6 +29,7 @@ docker run -d \
   --name=dirigent \
   -e DIRIGENT_DEPLOYMENTS_GIT_URL=<Your Deployments Repo> \
   -e DIRIGENT_GIT_AUTHTOKEN=<Your Auth token with Access to your repos - only if needed> \
+  -e DIRIGENT_STARTALL_ON_STARTUP=<Start All Deployments On Startup - only if needed> \
   -v /path/to/config:/app/config \
   -v /path/to/deployments:/app/deployments \
   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -42,6 +42,7 @@ docker run -d \
 |----------|-------------|---------|
 | DIRIGENT_DEPLOYMENTS_GIT_URL | URL to your deployments git repository | |
 | DIRIGENT_GIT_AUTHTOKEN | Auth token with access to your repos | |
+| DIRIGENT_START_ALL_ON_STARTUP | Start all deployments on startup | true |
 
 ### Volumes
 

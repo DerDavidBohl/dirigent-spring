@@ -1,5 +1,6 @@
 package org.davidbohl.dirigent;
 
+import org.davidbohl.dirigent.deployments.service.DeploymentsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -16,12 +17,18 @@ public class DirigentApplication {
 
 	static Logger logger = LoggerFactory.getLogger(DirigentApplication.class);
 
+
 	public static void main(String[] args) throws IOException, InterruptedException {
 		ConfigurableApplicationContext context = SpringApplication.run(DirigentApplication.class, args);
 		String composeCommand = context.getEnvironment().getProperty("dirigent.compose.command");
 		if(!isComposeInstalled(composeCommand)) {
 			logger.error("Compose is not installed. Please install it and try again. Your compose command is: {}", composeCommand);
 			System.exit(1);
+		}
+
+		if(context.getEnvironment().getProperty("dirigent.start.all.on.startup").equals("true")) {
+			logger.info("Starting all deployments on startup");
+			context.getBeanFactory().getBean(DeploymentsService.class).startAllDeployments();
 		}
 	}
 
