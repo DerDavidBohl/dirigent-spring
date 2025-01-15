@@ -45,6 +45,7 @@ public class DeploymentsService {
     }
 
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
+        logger.info("Stopping not configured deployments");
         File deploymentsDir = new File("deployments");
         File[] files = deploymentsDir.listFiles();
 
@@ -54,6 +55,7 @@ public class DeploymentsService {
         for (File file : files) {
             if (file.isDirectory() && !deployments.stream().anyMatch(d -> d.name().equals(file.getName()))) {
                 try {
+                    logger.info("Stopping deployment {}", file.getName());
                     List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
                     commandArgs.add("down");
                     new ProcessBuilder(commandArgs)
@@ -66,6 +68,7 @@ public class DeploymentsService {
                 }
             }
         }
+        logger.info("Not configured deployments stopped");
     }
     void deleteDirectory(File directoryToBeDeleted) {
         File[] allContents = directoryToBeDeleted.listFiles();
