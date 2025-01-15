@@ -2,6 +2,7 @@ package org.davidbohl.dirigent.deployments.controller;
 
 import org.davidbohl.dirigent.deployments.models.GiteaRequestBody;
 import org.davidbohl.dirigent.deployments.service.DeploymentsService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,12 +14,21 @@ public class GiteaDeploymentsController {
 
     private final DeploymentsService deploymentsService;
 
+    @Value("${dirigent.deployments.git.url}")
+    private String configUrl;
+
     public GiteaDeploymentsController(DeploymentsService deploymentsService) {
         this.deploymentsService = deploymentsService;
     }
 
     @PostMapping()
     public void webHook(@RequestBody GiteaRequestBody body) {
+
+        if(body.repository().cloneUrl().equals(configUrl)) {
+            deploymentsService.startAllDeployments();
+            return;
+        }
+
         deploymentsService.startSingleDeploymentBySource(body.repository().cloneUrl());
     }
 
