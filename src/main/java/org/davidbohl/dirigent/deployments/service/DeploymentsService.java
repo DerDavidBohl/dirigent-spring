@@ -40,6 +40,29 @@ public class DeploymentsService {
         DeploynentConfiguration deploymentsConfiguration = tryGetConfiguration();
 
         deployAll(deploymentsConfiguration.deployments());
+
+        stopNotConfiguredDeployments(deploymentsConfiguration.deployments());
+    }
+
+    private void stopNotConfiguredDeployments(List<Deployment> deployments) {
+        File deploymentsDir = new File("deployments");
+        File[] files = deploymentsDir.listFiles();
+
+        if(files == null)
+            return;
+
+        for (File file : files) {
+            if (file.isDirectory() && !deployments.stream().anyMatch(d -> d.name().equals(file.getName()))) {
+                try {
+                    new ProcessBuilder(composeCommand, "down")
+                            .directory(file.getAbsoluteFile())
+                            .start()
+                            .waitFor();
+                } catch (IOException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     private void deployAll(List<Deployment> deployments) {
