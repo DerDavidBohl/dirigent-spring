@@ -54,15 +54,27 @@ public class DeploymentsService {
         for (File file : files) {
             if (file.isDirectory() && !deployments.stream().anyMatch(d -> d.name().equals(file.getName()))) {
                 try {
-                    new ProcessBuilder(composeCommand, "down")
-                            .directory(file.getAbsoluteFile())
+                    List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
+                    commandArgs.add("down");
+                    new ProcessBuilder(commandArgs)
+                            .directory(file)
                             .start()
                             .waitFor();
+                    deleteDirectory(file);
                 } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
+    }
+    void deleteDirectory(File directoryToBeDeleted) {
+        File[] allContents = directoryToBeDeleted.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        directoryToBeDeleted.delete();
     }
 
     private void deployAll(List<Deployment> deployments) {
