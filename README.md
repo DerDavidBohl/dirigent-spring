@@ -52,6 +52,13 @@ docker run -d \
 | /app/deployments | Deployments directory for Dirigent |
 | /var/run/docker.sock | Docker socket for Dirigent |
 
+## Webhooks
+
+### Gitea
+
+1. Create a new webhook in your repository
+2. Set the URL to `http://<dirigent-host-and-port>/api/v1/gitea`
+3. Done ;)
 
 ## Develop
 
