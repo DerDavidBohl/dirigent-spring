@@ -5,8 +5,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.davidbohl.dirigent.deployments.service.GitService;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizer;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Service
-public class DeploymentsConfigurationProvider implements CacheManagerCustomizer<ConcurrentMapCacheManager> {
+public class DeploymentsConfigurationProvider {
 
     private final GitService gitService;
 
@@ -26,7 +24,6 @@ public class DeploymentsConfigurationProvider implements CacheManagerCustomizer<
         this.gitService = gitService;
     }
 
-    @Cacheable("deployments")
     public DeploynentConfiguration getConfiguration() throws IOException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
 
@@ -41,11 +38,6 @@ public class DeploymentsConfigurationProvider implements CacheManagerCustomizer<
             e.printStackTrace();
             throw e;
         }
-    }
-
-    @Override
-    public void customize(ConcurrentMapCacheManager cacheManager) {
-        cacheManager.setCacheNames(List.of("deployments"));
     }
 }
 
