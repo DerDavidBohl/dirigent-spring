@@ -4,17 +4,21 @@ import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvide
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
 import org.davidbohl.dirigent.deployments.models.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.models.events.DeploymentStartFailedEvent;
 import org.davidbohl.dirigent.deployments.models.events.NamedDeploymentStartRequestedEvent;
 import org.davidbohl.dirigent.deployments.models.events.SourceDeploymentStartRequestedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,18 +27,20 @@ import java.util.stream.Collectors;
 @Service
 public class DeploymentsService {
 
-    private final DeploymentsConfigurationProvider deploymentsConfigurationProvider;
     private final GitService gitService;
+    private final DeploymentsConfigurationProvider deploymentsConfigurationProvider;
     private final Logger logger = LoggerFactory.getLogger(DeploymentsService.class);
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
 
     public DeploymentsService(
-            @Autowired DeploymentsConfigurationProvider deploymentsConfigurationProvider,
-            @Autowired GitService gitService) {
+            DeploymentsConfigurationProvider deploymentsConfigurationProvider,
+            GitService gitService, ApplicationEventPublisher applicationEventPublisher) {
         this.deploymentsConfigurationProvider = deploymentsConfigurationProvider;
         this.gitService = gitService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @EventListener(AllDeploymentsStartRequestedEvent.class)
@@ -164,12 +170,24 @@ public class DeploymentsService {
             commandArgs.add("-d");
             commandArgs.add("--remove-orphans");
 
-            new ProcessBuilder(commandArgs)
+            Process process = new ProcessBuilder(commandArgs)
                     .directory(deploymentDir)
-                    .start().waitFor();
+                    .start();
 
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line + "\n");
+            }
+
+            int exitVal = process.waitFor();
+            if (exitVal != 0) {
+                applicationEventPublisher.publishEvent(new DeploymentStartFailedEvent(this, deployment.name(), output.toString()));
+            }
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            applicationEventPublisher.publishEvent(new DeploymentStartFailedEvent(this, deployment.name(), e.getMessage()));
+            return;
         }
 
         logger.info("Deployment {} started", deployment.name());
