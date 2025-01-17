@@ -1,6 +1,5 @@
 package org.davidbohl.dirigent;
 
-import org.davidbohl.dirigent.deployments.service.DeploymentsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -25,17 +24,12 @@ public class DirigentApplication {
 			logger.error("Compose is not installed. Please install it and try again. Your compose command is: {}", composeCommand);
 			System.exit(1);
 		}
-
-		if(context.getEnvironment().getProperty("dirigent.start.all.on.startup").equals("true")) {
-			logger.info("Starting all deployments on startup");
-			context.getBeanFactory().getBean(DeploymentsService.class).startAllDeployments();
-		}
 	}
 
 
 	private static boolean isComposeInstalled(String composeCommand) {
 		try {
-			Runtime.getRuntime().exec(composeCommand + " --version");
+			Runtime.getRuntime().exec((composeCommand + " --version").split(" "));
 			return true;
 		} catch (Exception e) {
 			// Handle exception if needed

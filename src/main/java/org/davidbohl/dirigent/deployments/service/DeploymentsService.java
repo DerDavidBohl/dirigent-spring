@@ -3,10 +3,14 @@ package org.davidbohl.dirigent.deployments.service;
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
+import org.davidbohl.dirigent.deployments.models.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.models.events.NamedDeploymentStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.models.events.SourceDeploymentStartRequestedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -33,15 +37,41 @@ public class DeploymentsService {
         this.gitService = gitService;
     }
 
-    public void startAllDeployments() {
+    @EventListener(AllDeploymentsStartRequestedEvent.class)
+    public void onAllDeploymentsStartRequested(AllDeploymentsStartRequestedEvent event) {
 
         new File("deployments").mkdirs();
 
         DeploynentConfiguration deploymentsConfiguration = tryGetConfiguration();
-
-        deployAll(deploymentsConfiguration.deployments());
-
+        deployListOfDeployments(deploymentsConfiguration.deployments());
         stopNotConfiguredDeployments(deploymentsConfiguration.deployments());
+
+    }
+
+    @EventListener(NamedDeploymentStartRequestedEvent.class)
+    public void onNamedDeploymentStartRequested(NamedDeploymentStartRequestedEvent event) {
+        new File("deployments").mkdirs();
+        DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
+
+        Optional<Deployment> first = deploynentConfiguration.deployments().stream().filter(d -> Objects.equals(d.name(), event.getName())).findFirst();
+
+        if(first.isEmpty())
+            throw new DeploymentNameNotFoundException(event.getName());
+
+        deploy(first.get());
+    }
+
+    @EventListener(SourceDeploymentStartRequestedEvent.class)
+    public void onSourceDeploymentStartRequested(SourceDeploymentStartRequestedEvent event) {
+        new File("deployments").mkdirs();
+        DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
+
+        List<Deployment> deployments = deploynentConfiguration.deployments()
+                .stream()
+                .filter(d -> Objects.equals(d.source(), event.getDeploymentSource()))
+                .collect(Collectors.toList());
+
+        deployListOfDeployments(deployments);
     }
 
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
@@ -80,7 +110,7 @@ public class DeploymentsService {
         directoryToBeDeleted.delete();
     }
 
-    private void deployAll(List<Deployment> deployments) {
+    private void deployListOfDeployments(List<Deployment> deployments) {
 
         new File("deployments").mkdirs();
 
@@ -110,30 +140,6 @@ public class DeploymentsService {
 
             logger.info("Deployments with order {} finished", orderGroupKey);
         }
-    }
-
-    public void startSingleDeploymentByName(String name) {
-        new File("deployments").mkdirs();
-        DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
-
-        Optional<Deployment> first = deploynentConfiguration.deployments().stream().filter(d -> d.name() == name).findFirst();
-
-        if(first.isEmpty())
-            throw new DeploymentNameNotFoundException(name);
-
-        deploy(first.get());
-    }
-
-    public void startSingleDeploymentBySource(String source) {
-        new File("deployments").mkdirs();
-        DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
-
-        List<Deployment> deployments = deploynentConfiguration.deployments()
-                .stream()
-                .filter(d -> Objects.equals(d.source(), source))
-                .collect(Collectors.toList());
-
-        deployAll(deployments);
     }
 
     private DeploynentConfiguration tryGetConfiguration() {
@@ -168,5 +174,4 @@ public class DeploymentsService {
 
         logger.info("Deployment {} started", deployment.name());
     }
-
 }
