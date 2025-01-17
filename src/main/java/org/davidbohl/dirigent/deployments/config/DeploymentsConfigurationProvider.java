@@ -5,12 +5,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.davidbohl.dirigent.deployments.service.GitService;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 @Service
 public class DeploymentsConfigurationProvider {
