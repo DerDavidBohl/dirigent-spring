@@ -66,7 +66,9 @@ docker run -d \
 
 ### deployments.yml
 
-Example of a `deployments.yml`
+The deployments.yml contains the list of repos you want to deploy. Every deployment needs a name and a source. You can optionally define an order, if one deployment depends on another deployment.  
+  
+Here is an example of a `deployments.yml`:
 
 ```yaml
 deployments:
