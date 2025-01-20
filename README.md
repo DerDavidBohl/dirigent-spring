@@ -74,7 +74,6 @@ Here is an example of a `deployments.yml`:
 deployments:
   - name: test1
     source: https://github.com/url/tomyrepo1.git
-    order: 20
   - name: test2
     source: https://github.com//url/tomyrepo2.git
     order: 10
@@ -88,13 +87,37 @@ deployments:
 | /app/deployments     | Deployments directory for Dirigent |
 | /var/run/docker.sock | Docker socket for Dirigent         |
 
+### Step by Step (Gitea)
+
+#### Setup Deployments Repo
+1. Create a new repository in Gitea
+2. Create a new file `deployments.yml` in the root of your repository with the following content:
+    ```yaml
+    deployments: []
+    ```
+3. Deploy the dirigent app as described above. Set the `DIRIGENT_DEPLOYMENTS_GIT_URL` to the URL of your repository. Dont forget to set the `DIRIGENT_GIT_AUTHTOKEN` if your repository is private.
+4. Optional: Create a new webhook in your repository. Set the URL to `http://<dirigent-host-and-port>/api/v1/gitea`
+
+#### Add Deployments
+1. Create a git repository for your deployment
+2. Add a `docker-compose.yml` to your repository
+3. Add a new entry to the `deployments.yml` in your deployments repository with the name of your deployment and the URL to your deployment repository. Optionally you can set an order, if your deployment depends on another deployment.
+    ```yaml
+    deployments:
+      - name: test1
+        source: https://url/toyourdeploymentrepo.git
+        order: 10 # optional
+    ```
+4. Optional: Add a new webhook in your deployment repository. Set the URL to `http://<dirigent-host-and-port>/api/v1/gitea`
+
+#### Optional good practice:
+Store all your repositories for one host in one gitea organization. This way you only have to set up one webhook at organization level.
+
 ## API
 
 ### Gitea Webhook
 
-1. Create a new webhook in your repository
-2. Set the URL to `http://<dirigent-host-and-port>/api/v1/gitea`
-3. Done ;)
+`POST` to `http://<dirigent-host-and-port>/api/v1/gitea`
 
 ### Deployments
 
