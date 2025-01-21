@@ -3,10 +3,7 @@ package org.davidbohl.dirigent.deployments.service;
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
-import org.davidbohl.dirigent.deployments.models.events.AllDeploymentsStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.models.events.DeploymentStartFailedEvent;
-import org.davidbohl.dirigent.deployments.models.events.NamedDeploymentStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.models.events.SourceDeploymentStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.models.events.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,7 +40,7 @@ public class DeploymentsService {
     }
 
     @EventListener(AllDeploymentsStartRequestedEvent.class)
-    public void onAllDeploymentsStartRequested(AllDeploymentsStartRequestedEvent event) {
+    public void onAllDeploymentsStartRequested() {
 
         new File("deployments").mkdirs();
 
@@ -79,6 +76,47 @@ public class DeploymentsService {
         deployListOfDeployments(deployments);
     }
 
+    private void deploy(Deployment deployment) {
+        logger.info("Deploying {}", deployment.name());
+
+        File deploymentDir = new File("deployments/" + deployment.name());
+
+        try {
+            boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
+
+            if(!updated) {
+                logger.info("No changes in deployment. Skipping {}", deployment.name());
+                return;
+            }
+
+            List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
+            commandArgs.add("up");
+            commandArgs.add("-d");
+            commandArgs.add("--remove-orphans");
+
+            Process process = new ProcessBuilder(commandArgs)
+                    .directory(deploymentDir)
+                    .start();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line + "\n");
+            }
+
+            int exitVal = process.waitFor();
+            if (exitVal != 0) {
+                applicationEventPublisher.publishEvent(new DeploymentStartFailedEvent(this, deployment.name(), output.toString()));
+            }
+        } catch (IOException | InterruptedException e) {
+            applicationEventPublisher.publishEvent(new DeploymentStartFailedEvent(this, deployment.name(), e.getMessage()));
+            return;
+        }
+
+        applicationEventPublisher.publishEvent(new DeploymentStartSucceededEvent(this, deployment.name()));
+    }
+
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
         logger.info("Stopping not configured deployments");
         File deploymentsDir = new File("deployments");
@@ -88,7 +126,7 @@ public class DeploymentsService {
             return;
 
         for (File file : files) {
-            if (file.isDirectory() && !deployments.stream().anyMatch(d -> d.name().equals(file.getName()))) {
+            if (file.isDirectory() && deployments.stream().noneMatch(d -> d.name().equals(file.getName()))) {
                 try {
                     logger.info("Stopping deployment {}", file.getName());
                     List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
@@ -155,46 +193,5 @@ public class DeploymentsService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void deploy(Deployment deployment) {
-        logger.info("Deploying {}", deployment.name());
-
-        File deploymentDir = new File("deployments/" + deployment.name());
-
-        try {
-            boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
-
-            if(!updated) {
-                logger.info("No changes in deployment. Skipping {}", deployment.name());
-                return;
-            }
-
-            List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
-            commandArgs.add("up");
-            commandArgs.add("-d");
-            commandArgs.add("--remove-orphans");
-
-            Process process = new ProcessBuilder(commandArgs)
-                    .directory(deploymentDir)
-                    .start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            StringBuilder output = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line + "\n");
-            }
-
-            int exitVal = process.waitFor();
-            if (exitVal != 0) {
-                applicationEventPublisher.publishEvent(new DeploymentStartFailedEvent(this, deployment.name(), output.toString()));
-            }
-        } catch (IOException | InterruptedException e) {
-            applicationEventPublisher.publishEvent(new DeploymentStartFailedEvent(this, deployment.name(), e.getMessage()));
-            return;
-        }
-
-        logger.info("Deployment {} started", deployment.name());
     }
 }
