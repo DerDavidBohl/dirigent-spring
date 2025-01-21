@@ -105,6 +105,7 @@ public class DeploymentsService {
         }
         logger.info("Not configured deployments stopped");
     }
+
     void deleteDirectory(File directoryToBeDeleted) {
         File[] allContents = directoryToBeDeleted.listFiles();
         if (allContents != null) {
@@ -164,8 +165,10 @@ public class DeploymentsService {
         try {
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
 
-            if(!updated)
+            if(!updated) {
+                logger.info("No changes in deployment. Skipping {}", deployment.name());
                 return;
+            }
 
             List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
             commandArgs.add("up");
