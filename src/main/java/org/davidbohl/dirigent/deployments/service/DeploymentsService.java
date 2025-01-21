@@ -9,7 +9,6 @@ import org.davidbohl.dirigent.deployments.models.events.NamedDeploymentStartRequ
 import org.davidbohl.dirigent.deployments.models.events.SourceDeploymentStartRequestedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -163,7 +162,10 @@ public class DeploymentsService {
         File deploymentDir = new File("deployments/" + deployment.name());
 
         try {
-            gitService.cloneOrPull(deployment.source(), deploymentDir.getAbsolutePath());
+            boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
+
+            if(!updated)
+                return;
 
             List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
             commandArgs.add("up");
