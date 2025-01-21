@@ -2,6 +2,7 @@ package org.davidbohl.dirigent.deployments.service;
 
 import org.davidbohl.dirigent.deployments.models.events.DeploymentStartFailedEvent;
 import org.davidbohl.dirigent.deployments.models.events.DeploymentStartSucceededEvent;
+import org.davidbohl.dirigent.deployments.models.events.NotConfiguredDeploymentStopped;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +34,13 @@ public class NotificationService {
         sendGotifyMessage("Deployment succeeded", "Deployment \"%s\" Succeeded".formatted(event.getDeploymentName()));
 
         logger.info("Deployment '{}' succeeded.", event.getDeploymentName());
+    }
+
+    @EventListener(NotConfiguredDeploymentStopped.class)
+    public void onNotConfiguredDeploymentStopped(NotConfiguredDeploymentStopped event) {
+        sendGotifyMessage("Deployment stopped", "Deployment \"%s\" stopped because it is not configured".formatted(event.getDeploymentName()));
+
+        logger.info("Deployment '{}' stopped because it is not configured.", event.getDeploymentName());
     }
 
     private void sendGotifyMessage(String title, String message) {

@@ -136,6 +136,7 @@ public class DeploymentsService {
                             .start()
                             .waitFor();
                     deleteDirectory(file);
+                    applicationEventPublisher.publishEvent(new NotConfiguredDeploymentStopped(this, file.getName()));
                 } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
