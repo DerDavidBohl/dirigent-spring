@@ -31,6 +31,7 @@ services:
     restart: unless-stopped
     environment:
       - DIRIGENT_DEPLOYMENTS_GIT_URL= # required
+      - DIRIGENT_COMPOSE_COMMAND= # optional
       - DIRIGENT_GIT_AUTHTOKEN= # optional
       - DIRIGENT_START_ALL_ON_STARTUP= # optional
       - DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED= # optional
@@ -52,6 +53,8 @@ docker run -d \
   --name=dirigent \
   -e DIRIGENT_DEPLOYMENTS_GIT_URL= \
   #optional
+  -e DIRIGENT_COMPOSE_COMMAND= \
+  #optional
   -e DIRIGENT_GIT_AUTHTOKEN= \
   #optional
   -e DIRIGENT_STARTALL_ON_STARTUP= \
@@ -71,15 +74,16 @@ docker run -d \
 
 ### Environment Variables
 
-| Variable                              | Description                                                                                           | Default         |
-|---------------------------------------|-------------------------------------------------------------------------------------------------------|-----------------|
-| DIRIGENT_DEPLOYMENTS_GIT_URL          | URL to your deployments git repository                                                                |                 |
-| DIRIGENT_GIT_AUTHTOKEN                | Auth token with access to your repos                                                                  |                 |
-| DIRIGENT_START_ALL_ON_STARTUP         | Start all deployments on startup                                                                      | `true`          |
-| DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED | enable scheduled start of all deployments                                                             | `true`          |
-| DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON    | cron expression for scheduled start of all deployments (second minute hour day(month) month day(week) | `* */5 * * * *` |
-| DIRIGENT_GOTIFY_BASEURL               | Gotify Base URL for Notification, when deployments fail                                               |                 |
-| DIRIGENT_GOTIFY_TOKEN                 | Gotify Token for Notification, when deployments fail                                                  |                 |
+| Variable                              | Description                                                                                           | Default          |
+|---------------------------------------|-------------------------------------------------------------------------------------------------------|------------------|
+| DIRIGENT_DEPLOYMENTS_GIT_URL          | URL to your deployments git repository                                                                |                  |
+| DIRIGENT_COMPOSE_COMMAND              | Command to run your docker-compose files                                                              | `docker compose` |
+| DIRIGENT_GIT_AUTHTOKEN                | Auth token with access to your repos                                                                  |                  |
+| DIRIGENT_START_ALL_ON_STARTUP         | Start all deployments on startup                                                                      | `true`           |
+| DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED | enable scheduled start of all deployments                                                             | `true`           |
+| DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON    | cron expression for scheduled start of all deployments (second minute hour day(month) month day(week) | `* */5 * * * *`  |
+| DIRIGENT_GOTIFY_BASEURL               | Gotify Base URL for Notification, when deployments fail                                               |                  |
+| DIRIGENT_GOTIFY_TOKEN                 | Gotify Token for Notification, when deployments fail                                                  |                  |
 
 ### deployments.yml
 
