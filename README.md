@@ -1,4 +1,4 @@
-# 🎶 Dirigent
+# :notes: Dirigent
 
 Tool to manage your docker compose deployments via git.
 
