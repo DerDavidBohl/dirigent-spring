@@ -1,29 +1,29 @@
-# :notes: Dirigent
+# Dirigent
 
 Tool to manage your docker compose deployments via git.
 
-## 📚 Table of Contents
+## Table of Contents
 
-- [🎶 Dirigent](#-dirigent)
-- [📚 Table of Contents](#-table-of-contents)
-- [⚙️ Setup](#-setup)
-  - [🐳 docker-compose](#-docker-compose)
-  - [🐋 docker CLI](#-docker-cli)
-  - [🌍 Environment Variables](#-environment-variables)
-  - [📄 deployments.yml](#-deploymentsyml)
-  - [📂 Volumes](#-volumes)
-  - [📝 Step by Step (Gitea)](#-step-by-step-gitea)
-- [📡 API](#-api)
-  - [🔔 Gitea Webhook](#-gitea-webhook)
-  - [🚀 Deployments](#-deployments)
+- [Dirigent](#dirigent)
+- [Table of Contents](#table-of-contents)
+- [Setup](#setup)
+  - [docker-compose](#docker-compose)
+  - [docker CLI](#docker-cli)
+  - [Environment Variables](#environment-variables)
+  - [deployments.yml](#deploymentsyml)
+  - [Volumes](#volumes)
+  - [Step by Step (Gitea)](#step-by-step-gitea)
+- [API](#api)
+  - [Gitea Webhook](#gitea-webhook)
+  - [Deployments](#deployments)
     - [Start All Deployments](#start-all-deployments)
     - [Start Deployment by name](#start-deployment-by-name)
-- [🛠️ Develop](#️-develop)
-  - [🧪 Setup for local Tests](#-setup-for-local-tests)
+- [Develop](#develop)
+  - [Setup for local Tests](#setup-for-local-tests)
 
-## ⚙️ Setup
+## Setup
 
-### 🐳 docker-compose
+### docker-compose
 
 ```yml
 services:
@@ -48,7 +48,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
-### 🐋 docker CLI
+### docker CLI
 
 ```bash
 docker run -d \
@@ -74,7 +74,7 @@ docker run -d \
   ghcr.io/derdavidbohl/dirigent-spring:latest
 ```
 
-### 🌍 Environment Variables
+### Environment Variables
 
 | Variable                              | Description                                                                                           | Default          |
 |---------------------------------------|-------------------------------------------------------------------------------------------------------|------------------|
@@ -87,7 +87,7 @@ docker run -d \
 | DIRIGENT_GOTIFY_BASEURL               | Gotify Base URL for Notification, when deployments fail                                               |                  |
 | DIRIGENT_GOTIFY_TOKEN                 | Gotify Token for Notification, when deployments fail                                                  |                  |
 
-### 📄 deployments.yml
+### deployments.yml
 
 The deployments.yml contains the list of repos you want to deploy. Every deployment needs a name and a source. You can optionally define an order, if one deployment depends on another deployment.  
   
@@ -102,7 +102,7 @@ deployments:
     order: 10
 ```
 
-### 📂 Volumes
+### Volumes
 
 | Volume               | Description                        |
 |----------------------|------------------------------------|
@@ -110,7 +110,7 @@ deployments:
 | /app/deployments     | Deployments directory for Dirigent |
 | /var/run/docker.sock | Docker socket for Dirigent         |
 
-### 📝 Step by Step (Gitea)
+### Step by Step (Gitea)
 
 #### Setup Deployments Repo
 1. Create a new repository in Gitea
@@ -138,11 +138,11 @@ Store all your repositories for one host in one gitea organization. This way you
 
 ## 📡 API
 
-### 🔔 Gitea Webhook
+### Gitea Webhook
 
 `POST` to `http://<dirigent-host-and-port>/api/v1/gitea`
 
-### 🚀 Deployments
+### Deployments
 
 #### Start All Deployments:
 
@@ -152,9 +152,9 @@ Store all your repositories for one host in one gitea organization. This way you
 
 `POST` to `/api/v1/deployments/{name}/start`
 
-## 🛠️ Develop
+## Develop
 
-### 🧪 Setup for local Tests
+### Setup for local Tests
 
 1. copy `src/test/resources/application-local.properties.template` to `src/test/resources/application-local.properties`
 2. fill in your test repository url and auth token
