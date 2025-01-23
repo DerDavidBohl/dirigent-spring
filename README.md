@@ -136,7 +136,7 @@ deployments:
 #### Optional good practice:
 Store all your repositories for one host in one gitea organization. This way you only have to set up one webhook at organization level.
 
-## 📡 API
+## API
 
 ### Gitea Webhook
 
