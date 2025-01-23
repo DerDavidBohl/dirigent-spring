@@ -4,20 +4,22 @@ Tool to manage your docker compose deployments via git.
 
 ## 📚 Table of Contents
 
-- [Setup](#setup)
-  - [docker-compose](#docker-compose)
-  - [docker CLI](#docker-cli)
-  - [Environment Variables](#environment-variables)
-  - [deployments.yml](#deploymentsyml)
-  - [Volumes](#volumes)
-  - [Step by Step (Gitea)](#step-by-step-gitea)
-- [API](#api)
-  - [Gitea Webhook](#gitea-webhook)
-  - [Deployments](#deployments)
+- [🎶 Dirigent](#-dirigent)
+- [📚 Table of Contents](#-table-of-contents)
+- [⚙️ Setup](#-setup)
+  - [🐳 docker-compose](#-docker-compose)
+  - [🐋 docker CLI](#-docker-cli)
+  - [🌍 Environment Variables](#-environment-variables)
+  - [📄 deployments.yml](#-deploymentsyml)
+  - [📂 Volumes](#-volumes)
+  - [📝 Step by Step (Gitea)](#-step-by-step-gitea)
+- [📡 API](#-api)
+  - [🔔 Gitea Webhook](#-gitea-webhook)
+  - [🚀 Deployments](#-deployments)
     - [Start All Deployments](#start-all-deployments)
     - [Start Deployment by name](#start-deployment-by-name)
-- [Develop](#develop)
-  - [Setup for local Tests](#setup-for-local-tests)
+- [🛠️ Develop](#️-develop)
+  - [🧪 Setup for local Tests](#-setup-for-local-tests)
 
 ## ⚙️ Setup
 
