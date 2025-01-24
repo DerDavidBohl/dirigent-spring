@@ -40,12 +40,12 @@ public class DeploymentsService {
     }
 
     @EventListener(AllDeploymentsStartRequestedEvent.class)
-    public void onAllDeploymentsStartRequested() {
+    public void onAllDeploymentsStartRequested(AllDeploymentsStartRequestedEvent event) {
 
         new File("deployments").mkdirs();
 
         DeploynentConfiguration deploymentsConfiguration = tryGetConfiguration();
-        deployListOfDeployments(deploymentsConfiguration.deployments());
+        deployListOfDeployments(deploymentsConfiguration.deployments(), event.isForced());
         stopNotConfiguredDeployments(deploymentsConfiguration.deployments());
 
     }
@@ -60,7 +60,7 @@ public class DeploymentsService {
         if(first.isEmpty())
             throw new DeploymentNameNotFoundException(event.getName());
 
-        deploy(first.get());
+        deploy(first.get(), event.isForced());
     }
 
     @EventListener(SourceDeploymentStartRequestedEvent.class)
@@ -73,10 +73,10 @@ public class DeploymentsService {
                 .filter(d -> Objects.equals(d.source(), event.getDeploymentSource()))
                 .collect(Collectors.toList());
 
-        deployListOfDeployments(deployments);
+        deployListOfDeployments(deployments, true);
     }
 
-    private void deploy(Deployment deployment) {
+    private void deploy(Deployment deployment, boolean force) {
         logger.info("Deploying {}", deployment.name());
 
         File deploymentDir = new File("deployments/" + deployment.name());
@@ -84,7 +84,7 @@ public class DeploymentsService {
         try {
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
 
-            if(!updated) {
+            if(!updated && !force) {
                 logger.info("No changes in deployment. Skipping {}", deployment.name());
                 return;
             }
@@ -93,6 +93,9 @@ public class DeploymentsService {
             commandArgs.add("up");
             commandArgs.add("-d");
             commandArgs.add("--remove-orphans");
+
+            if(force)
+                commandArgs.add("--force-recreate");
 
             Process process = new ProcessBuilder(commandArgs)
                     .directory(deploymentDir)
@@ -155,7 +158,7 @@ public class DeploymentsService {
         directoryToBeDeleted.delete();
     }
 
-    private void deployListOfDeployments(List<Deployment> deployments) {
+    private void deployListOfDeployments(List<Deployment> deployments, boolean force) {
 
         new File("deployments").mkdirs();
 
@@ -172,7 +175,7 @@ public class DeploymentsService {
             ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
             for (Deployment deployment : deploymentsOrderUnit) {
-                executorService.submit(() -> deploy(deployment));
+                executorService.submit(() -> deploy(deployment, force));
             }
 
             executorService.shutdown();

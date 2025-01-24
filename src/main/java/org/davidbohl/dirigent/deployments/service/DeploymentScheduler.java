@@ -3,7 +3,6 @@ package org.davidbohl.dirigent.deployments.service;
 import org.davidbohl.dirigent.deployments.models.events.AllDeploymentsStartRequestedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -34,14 +33,14 @@ public class DeploymentScheduler {
     void runScheduledDeployments() {
         if(enabled) {
             logger.info("Starting all deployments scheduled");
-            this.applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this));
+            this.applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, false));
         }
     }
 
     @EventListener(ContextRefreshedEvent.class)
     public void onContextRefreshed() {
         if(startAllDeploymentsOnStartup)
-            applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this));
+            applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, false));
     }
 
 }

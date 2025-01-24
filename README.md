@@ -146,11 +146,11 @@ Store all your repositories for one host in one gitea organization. This way you
 
 #### Start All Deployments:
 
-`POST` to `/api/v1/deployments/all/start`
+`POST` to `/api/v1/deployments/all/start` optional add `force=true` if you want to force deployment and recreation of containers.
 
 #### Start Deployment by name:
 
-`POST` to `/api/v1/deployments/{name}/start`
+`POST` to `/api/v1/deployments/{name}/start` optional add `force=true` if you want to force deployment and recreation of containers.
 
 ## Develop
 

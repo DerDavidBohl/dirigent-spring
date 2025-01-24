@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(path = "/api/v1/deployments")
 public class DeploymentsController {
 
-    private static final Logger logger = LoggerFactory.getLogger(DeploymentsController.class);
     private final ApplicationEventPublisher applicationEventPublisher;
 
     public DeploymentsController(ApplicationEventPublisher applicationEventPublisher) {
@@ -22,13 +21,13 @@ public class DeploymentsController {
     }
 
     @PostMapping("/{name}/start")
-    public void startDeployment(String name) {
-        applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, name));
+    public void startDeployment(@PathVariable String name, @RequestParam(required = false) boolean force) {
+        applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, name, force));
     }
 
     @PostMapping("/all/start")
-    public void startAllDeployments() {
-        applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this));
+    public void startAllDeployments(@RequestParam(required = false) boolean force) {
+        applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, force));
     }
 
     @ExceptionHandler(DeploymentNameNotFoundException.class)
