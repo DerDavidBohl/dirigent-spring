@@ -1,6 +1,9 @@
 name: Build Docker Image
 on:
   push:
+    pull_request:
+      branches:
+        - 'latest'
     branches:
       - 'latest'
     tags:
@@ -48,7 +51,7 @@ jobs:
         uses: docker/build-push-action@67a2d409c0a876cbe6b11854e3e25193efe4e62d
         with:
           context: .
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       
