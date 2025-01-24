@@ -1,7 +1,10 @@
 name: Build Docker Image
 on:
+  pull_request:
+    types:
+      - opened
+      - reopened
   push:
-    pull_request:
     branches:
       - 'latest'
     tags:
