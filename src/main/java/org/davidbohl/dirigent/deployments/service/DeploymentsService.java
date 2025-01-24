@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class DeploymentsService {
 
+    public static final String DEPLOYMENTS_DIR_NAME = "deployments";
     private final GitService gitService;
     private final DeploymentsConfigurationProvider deploymentsConfigurationProvider;
     private final Logger logger = LoggerFactory.getLogger(DeploymentsService.class);
@@ -42,7 +43,7 @@ public class DeploymentsService {
     @EventListener(AllDeploymentsStartRequestedEvent.class)
     public void onAllDeploymentsStartRequested(AllDeploymentsStartRequestedEvent event) {
 
-        new File("deployments").mkdirs();
+        makeDeploymentsDir();
 
         DeploynentConfiguration deploymentsConfiguration = tryGetConfiguration();
         deployListOfDeployments(deploymentsConfiguration.deployments(), event.isForced());
@@ -50,9 +51,13 @@ public class DeploymentsService {
 
     }
 
+    private static void makeDeploymentsDir() {
+        new File(DEPLOYMENTS_DIR_NAME).mkdirs();
+    }
+
     @EventListener(NamedDeploymentStartRequestedEvent.class)
     public void onNamedDeploymentStartRequested(NamedDeploymentStartRequestedEvent event) {
-        new File("deployments").mkdirs();
+        makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
 
         Optional<Deployment> first = deploynentConfiguration.deployments().stream().filter(d -> Objects.equals(d.name(), event.getName())).findFirst();
@@ -65,7 +70,7 @@ public class DeploymentsService {
 
     @EventListener(SourceDeploymentStartRequestedEvent.class)
     public void onSourceDeploymentStartRequested(SourceDeploymentStartRequestedEvent event) {
-        new File("deployments").mkdirs();
+        makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
 
         List<Deployment> deployments = deploynentConfiguration.deployments()
@@ -105,7 +110,7 @@ public class DeploymentsService {
             StringBuilder output = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
-                output.append(line + "\n");
+                output.append(line).append("\n");
             }
 
             int exitVal = process.waitFor();
@@ -160,7 +165,7 @@ public class DeploymentsService {
 
     private void deployListOfDeployments(List<Deployment> deployments, boolean force) {
 
-        new File("deployments").mkdirs();
+        makeDeploymentsDir();
 
         Map<Integer, List<Deployment>> deploymentsByOrder = deployments.stream()
                 .collect(Collectors.groupingBy(Deployment::order));
