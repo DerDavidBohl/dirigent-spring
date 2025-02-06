@@ -1,10 +1,8 @@
-package org.davidbohl.dirigent.deployments.controller;
+package org.davidbohl.dirigent.deployments.api;
 
-import org.davidbohl.dirigent.deployments.models.events.AllDeploymentsStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.models.events.NamedDeploymentStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.service.DeploymentNameNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.davidbohl.dirigent.deployments.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.NamedDeploymentStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.management.DeploymentNameNotFoundException;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;

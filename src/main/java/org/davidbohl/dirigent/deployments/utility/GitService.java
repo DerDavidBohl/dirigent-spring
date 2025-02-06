@@ -1,4 +1,4 @@
-package org.davidbohl.dirigent.deployments.service;
+package org.davidbohl.dirigent.deployments.utility;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

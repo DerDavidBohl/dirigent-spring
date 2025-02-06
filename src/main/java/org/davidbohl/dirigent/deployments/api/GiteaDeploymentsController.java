@@ -1,9 +1,9 @@
-package org.davidbohl.dirigent.deployments.controller;
+package org.davidbohl.dirigent.deployments.api;
 
+import org.davidbohl.dirigent.deployments.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.SourceDeploymentStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.management.DeploymentsService;
 import org.davidbohl.dirigent.deployments.models.GiteaRequestBody;
-import org.davidbohl.dirigent.deployments.models.events.AllDeploymentsStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.models.events.SourceDeploymentStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.service.DeploymentsService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.PostMapping;

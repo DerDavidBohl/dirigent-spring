@@ -1,8 +1,9 @@
-package org.davidbohl.dirigent.deployments.service;
+package org.davidbohl.dirigent.deployments.notification;
 
-import org.davidbohl.dirigent.deployments.models.events.DeploymentStartFailedEvent;
-import org.davidbohl.dirigent.deployments.models.events.DeploymentStartSucceededEvent;
-import org.davidbohl.dirigent.deployments.models.events.NotConfiguredDeploymentStopped;
+import org.davidbohl.dirigent.deployments.events.DeploymentStartFailedEvent;
+import org.davidbohl.dirigent.deployments.events.DeploymentStartSucceededEvent;
+import org.davidbohl.dirigent.deployments.events.NotConfiguredDeploymentStopped;
+import org.davidbohl.dirigent.deployments.management.DeploymentsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

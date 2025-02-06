@@ -1,6 +1,6 @@
-package org.davidbohl.dirigent.deployments.service;
+package org.davidbohl.dirigent.deployments.management;
 
-import org.davidbohl.dirigent.deployments.models.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.AllDeploymentsStartRequestedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

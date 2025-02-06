@@ -1,9 +1,10 @@
-package org.davidbohl.dirigent.deployments.service;
+package org.davidbohl.dirigent.deployments.management;
 
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
+import org.davidbohl.dirigent.deployments.events.*;
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
-import org.davidbohl.dirigent.deployments.models.events.*;
+import org.davidbohl.dirigent.deployments.utility.GitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,8 +53,8 @@ public class DeploymentsService {
     }
 
     private static void makeDeploymentsDir() {
-       if(!new File(DEPLOYMENTS_DIR_NAME).mkdirs())
-           throw new DeploymentsDirCouldNotBeCreatedException();
+        if (!new File(DEPLOYMENTS_DIR_NAME).mkdirs() && !new File(DEPLOYMENTS_DIR_NAME).exists())
+            throw new DeploymentsDirCouldNotBeCreatedException();
     }
 
     @EventListener(NamedDeploymentStartRequestedEvent.class)

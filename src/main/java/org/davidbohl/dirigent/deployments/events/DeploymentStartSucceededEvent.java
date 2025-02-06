@@ -1,4 +1,4 @@
-package org.davidbohl.dirigent.deployments.models.events;
+package org.davidbohl.dirigent.deployments.events;
 
 import org.springframework.context.ApplicationEvent;
 
