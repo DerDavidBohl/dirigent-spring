@@ -52,7 +52,8 @@ public class DeploymentsService {
     }
 
     private static void makeDeploymentsDir() {
-        new File(DEPLOYMENTS_DIR_NAME).mkdirs();
+       if(!new File(DEPLOYMENTS_DIR_NAME).mkdirs())
+           throw new DeploymentsDirCouldNotBeCreatedException();
     }
 
     @EventListener(NamedDeploymentStartRequestedEvent.class)
@@ -160,7 +161,10 @@ public class DeploymentsService {
                 deleteDirectory(file);
             }
         }
-        directoryToBeDeleted.delete();
+        boolean deleted = directoryToBeDeleted.delete();
+
+        if(!deleted)
+            throw new RuntimeException("Could not delete directory " + directoryToBeDeleted);
     }
 
     private void deployListOfDeployments(List<Deployment> deployments, boolean force) {
