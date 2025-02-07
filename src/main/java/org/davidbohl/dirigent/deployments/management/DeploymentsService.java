@@ -126,7 +126,7 @@ public class DeploymentsService {
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
 
             if (!updated && !forceRun) {
-                applicationEventPublisher.publishEvent(new DeploymentStateChangedEvent(this, deployment.name(), DeploymentState.State.STARTED, "Deployment '%s' successfully started".formatted(deployment.name())));
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.STARTED, "Deployment '%s' successfully started".formatted(deployment.name())));
                 logger.info("No changes in deployment. Skipping {}", deployment.name());
                 return;
             }
@@ -152,15 +152,15 @@ public class DeploymentsService {
 
             int exitCode = process.waitFor();
             if ((exitCode != 0)) {
-                applicationEventPublisher.publishEvent(new DeploymentStateChangedEvent(this, deployment.name(), DeploymentState.State.FAILED, errorOutput.toString()));
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, errorOutput.toString()));
                 return;
             }
         } catch (IOException | InterruptedException e) {
-            applicationEventPublisher.publishEvent(new DeploymentStateChangedEvent(this, deployment.name(), DeploymentState.State.FAILED, e.getMessage()));
+            applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, e.getMessage()));
             return;
         }
 
-        applicationEventPublisher.publishEvent(new DeploymentStateChangedEvent(this, deployment.name(), DeploymentState.State.STARTED, "Deployment '%s' successfully started".formatted(deployment.name())));
+        applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.STARTED, "Deployment '%s' successfully started".formatted(deployment.name())));
     }
 
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
@@ -176,7 +176,7 @@ public class DeploymentsService {
                 try {
                     stopDeployment(file.getName());
                     deleteDirectory(file);
-                    applicationEventPublisher.publishEvent(new DeploymentStateChangedEvent(this, file.getName(), DeploymentState.State.REMOVED, "Deployment '%s' removed (Not configured)".formatted(file.getName())));
+                    applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, file.getName(), DeploymentState.State.REMOVED, "Deployment '%s' removed (Not configured)".formatted(file.getName())));
                 } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -193,7 +193,7 @@ public class DeploymentsService {
                 .directory(new File(DEPLOYMENTS_DIR_NAME + "/" + deploymentName))
                 .start()
                 .waitFor();
-        applicationEventPublisher.publishEvent(new DeploymentStateChangedEvent(this, deploymentName, DeploymentState.State.STOPPED, "Deployment '%s' stopped".formatted(deploymentName)));
+        applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName, DeploymentState.State.STOPPED, "Deployment '%s' stopped".formatted(deploymentName)));
     }
 
     void deleteDirectory(File directoryToBeDeleted) {
