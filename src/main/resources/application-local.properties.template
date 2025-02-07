@@ -1,2 +1,3 @@
 dirigent.deployments.git.url=
 dirigent.git.authToken=
+spring.h2.console.enabled=true

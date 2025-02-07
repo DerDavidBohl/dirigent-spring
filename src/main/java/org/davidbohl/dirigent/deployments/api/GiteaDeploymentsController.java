@@ -2,7 +2,6 @@ package org.davidbohl.dirigent.deployments.api;
 
 import org.davidbohl.dirigent.deployments.events.AllDeploymentsStartRequestedEvent;
 import org.davidbohl.dirigent.deployments.events.SourceDeploymentStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.management.DeploymentsService;
 import org.davidbohl.dirigent.deployments.models.GiteaRequestBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,7 +19,7 @@ public class GiteaDeploymentsController {
     @Value("${dirigent.deployments.git.url}")
     private String configUrl;
 
-    public GiteaDeploymentsController(DeploymentsService deploymentsService, ApplicationEventPublisher applicationEventPublisher) {
+    public GiteaDeploymentsController(ApplicationEventPublisher applicationEventPublisher) {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
@@ -28,7 +27,7 @@ public class GiteaDeploymentsController {
     public void webHook(@RequestBody GiteaRequestBody body) {
 
         if(body.repository().cloneUrl().equals(configUrl)) {
-            applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, false));
+            applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, true, true));
             return;
         }
 

@@ -27,7 +27,7 @@ public class GitService {
 
         File destinationDir = new File(destination);
 
-        boolean changed = false;
+        boolean changed;
 
         if (destinationDir.exists() && Arrays.asList(Objects.requireNonNull(destinationDir.list())).contains(".git")) {
             logger.debug("Local Repo exists. Pulling latest changes.");
