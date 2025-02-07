@@ -13,8 +13,8 @@ import java.util.stream.StreamSupport;
 @Service
 public class DeploymentStatePersistingService {
 
-    final DeploymentStateRepository deploymentStateRepository;
-    final ApplicationEventPublisher applicationEventPublisher;
+    private final DeploymentStateRepository deploymentStateRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public DeploymentStatePersistingService(DeploymentStateRepository deploymentStateRepository, ApplicationEventPublisher applicationEventPublisher) {
         this.deploymentStateRepository = deploymentStateRepository;
