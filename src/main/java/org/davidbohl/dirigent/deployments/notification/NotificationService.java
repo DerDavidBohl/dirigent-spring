@@ -19,7 +19,7 @@ public class NotificationService {
 
     @EventListener(DeploymentStateChangedEvent.class)
     public void onDeploymentStateChanged(DeploymentStateChangedEvent event) {
-        String title = "Deployment \"%s\" state changed to %s".formatted(event.getDeploymentName(), event.getState());
+        String title = "%s: \"%s\"".formatted(event.getState(), event.getDeploymentName());
         String context = event.getContext();
         sendGotifyMessage(title, context);
 
