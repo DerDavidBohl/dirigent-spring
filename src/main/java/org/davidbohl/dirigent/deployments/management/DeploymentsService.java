@@ -125,8 +125,12 @@ public class DeploymentsService {
         try {
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
 
+            if (updated) {
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.UPDATED, "Deployment '%s' updated".formatted(deployment.name())));
+            }
+
             if (!updated && !forceRun) {
-                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.STARTED, "Deployment '%s' successfully started".formatted(deployment.name())));
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.RUNNING, "Deployment '%s' successfully started".formatted(deployment.name())));
                 logger.info("No changes in deployment. Skipping {}", deployment.name());
                 return;
             }
@@ -136,8 +140,9 @@ public class DeploymentsService {
             commandArgs.add("-d");
             commandArgs.add("--remove-orphans");
 
-            if (forceRecreate)
+            if (forceRecreate) {
                 commandArgs.add("--force-recreate");
+            }
 
             Process process = new ProcessBuilder(commandArgs)
                     .directory(deploymentDir)
@@ -160,7 +165,7 @@ public class DeploymentsService {
             return;
         }
 
-        applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.STARTED, "Deployment '%s' successfully started".formatted(deployment.name())));
+        applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.RUNNING, "Deployment '%s' successfully started".formatted(deployment.name())));
     }
 
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
