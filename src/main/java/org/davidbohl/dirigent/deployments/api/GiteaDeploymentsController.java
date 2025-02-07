@@ -27,7 +27,7 @@ public class GiteaDeploymentsController {
     public void webHook(@RequestBody GiteaRequestBody body) {
 
         if(body.repository().cloneUrl().equals(configUrl)) {
-            applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, true, true));
+            applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, true, false));
             return;
         }
 
