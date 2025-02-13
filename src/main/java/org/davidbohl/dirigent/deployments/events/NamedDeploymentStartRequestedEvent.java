@@ -1,7 +1,9 @@
-package org.davidbohl.dirigent.deployments.models.events;
+package org.davidbohl.dirigent.deployments.events;
 
+import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
+@Getter
 public class NamedDeploymentStartRequestedEvent extends ApplicationEvent {
 
     private final String name;
@@ -13,11 +15,4 @@ public class NamedDeploymentStartRequestedEvent extends ApplicationEvent {
         this.forced = forced;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public boolean isForced() {
-        return forced;
-    }
 }

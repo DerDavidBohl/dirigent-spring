@@ -1,4 +1,4 @@
-package org.davidbohl.dirigent.deployments.service;
+package org.davidbohl.dirigent.deployments.management;
 
 public class DeploymentNameNotFoundException extends RuntimeException {
     public DeploymentNameNotFoundException(String name) {

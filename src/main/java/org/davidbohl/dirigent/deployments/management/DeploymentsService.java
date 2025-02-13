@@ -1,9 +1,12 @@
-package org.davidbohl.dirigent.deployments.service;
+package org.davidbohl.dirigent.deployments.management;
 
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
+import org.davidbohl.dirigent.deployments.events.*;
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
-import org.davidbohl.dirigent.deployments.models.events.*;
+import org.davidbohl.dirigent.deployments.state.DeploymentState;
+import org.davidbohl.dirigent.deployments.state.DeploymentStatePersistingService;
+import org.davidbohl.dirigent.deployments.utility.GitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,16 +31,18 @@ public class DeploymentsService {
     private final DeploymentsConfigurationProvider deploymentsConfigurationProvider;
     private final Logger logger = LoggerFactory.getLogger(DeploymentsService.class);
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final DeploymentStatePersistingService deploymentStatePersistingService;
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
 
     public DeploymentsService(
             DeploymentsConfigurationProvider deploymentsConfigurationProvider,
-            GitService gitService, ApplicationEventPublisher applicationEventPublisher) {
+            GitService gitService, ApplicationEventPublisher applicationEventPublisher, DeploymentStatePersistingService deploymentStatePersistingService) {
         this.deploymentsConfigurationProvider = deploymentsConfigurationProvider;
         this.gitService = gitService;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.deploymentStatePersistingService = deploymentStatePersistingService;
     }
 
     @EventListener(AllDeploymentsStartRequestedEvent.class)
@@ -46,13 +51,14 @@ public class DeploymentsService {
         makeDeploymentsDir();
 
         DeploynentConfiguration deploymentsConfiguration = tryGetConfiguration();
-        deployListOfDeployments(deploymentsConfiguration.deployments(), event.isForced());
+        deployListOfDeployments(deploymentsConfiguration.deployments(), event.isForceRun(), event.isForceRecreate());
         stopNotConfiguredDeployments(deploymentsConfiguration.deployments());
 
     }
 
     private static void makeDeploymentsDir() {
-        new File(DEPLOYMENTS_DIR_NAME).mkdirs();
+        if (!new File(DEPLOYMENTS_DIR_NAME).mkdirs() && !new File(DEPLOYMENTS_DIR_NAME).exists())
+            throw new DeploymentsDirCouldNotBeCreatedException();
     }
 
     @EventListener(NamedDeploymentStartRequestedEvent.class)
@@ -62,10 +68,10 @@ public class DeploymentsService {
 
         Optional<Deployment> first = deploynentConfiguration.deployments().stream().filter(d -> Objects.equals(d.name(), event.getName())).findFirst();
 
-        if(first.isEmpty())
+        if (first.isEmpty())
             throw new DeploymentNameNotFoundException(event.getName());
 
-        deploy(first.get(), event.isForced());
+        deploy(first.get(), event.isForced(), event.isForced());
     }
 
     @EventListener(SourceDeploymentStartRequestedEvent.class)
@@ -78,10 +84,40 @@ public class DeploymentsService {
                 .filter(d -> Objects.equals(d.source(), event.getDeploymentSource()))
                 .collect(Collectors.toList());
 
-        deployListOfDeployments(deployments, true);
+        deployListOfDeployments(deployments, true, true);
     }
 
-    private void deploy(Deployment deployment, boolean force) {
+    @EventListener(NamedDeploymentStopRequestedEvent.class)
+    public void onNamedDeploymentStopRequested(NamedDeploymentStopRequestedEvent event) throws IOException, InterruptedException {
+        makeDeploymentsDir();
+        stopDeployment(event.getName());
+    }
+
+    @EventListener(RecreateAllDeploymentStatesEvent.class)
+    public void onRecreateAllDeploymentStatesEvent() {
+        makeDeploymentsDir();
+        DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
+
+        List<String> stoppedDeployments = deploymentStatePersistingService.getDeploymentStates().stream()
+                .filter(d -> d.getState() == DeploymentState.State.STOPPED)
+                .map(DeploymentState::getName)
+                .toList();
+        stoppedDeployments.forEach(d -> {
+            try {
+                stopDeployment(d);
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        List<Deployment> deployments = deploynentConfiguration.deployments().stream()
+                .filter(d -> !stoppedDeployments.contains(d.name()))
+                .toList();
+
+        deployListOfDeployments(deployments, true, false);
+    }
+
+    private void deploy(Deployment deployment, boolean forceRun, boolean forceRecreate) {
         logger.info("Deploying {}", deployment.name());
 
         File deploymentDir = new File("deployments/" + deployment.name());
@@ -89,7 +125,12 @@ public class DeploymentsService {
         try {
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
 
-            if(!updated && !force) {
+            if (updated) {
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.UPDATED, "Deployment '%s' updated".formatted(deployment.name())));
+            }
+
+            if (!updated && !forceRun) {
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.RUNNING, "Deployment '%s' successfully started".formatted(deployment.name())));
                 logger.info("No changes in deployment. Skipping {}", deployment.name());
                 return;
             }
@@ -99,30 +140,32 @@ public class DeploymentsService {
             commandArgs.add("-d");
             commandArgs.add("--remove-orphans");
 
-            if(force)
+            if (forceRecreate) {
                 commandArgs.add("--force-recreate");
+            }
 
             Process process = new ProcessBuilder(commandArgs)
                     .directory(deploymentDir)
                     .start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            StringBuilder output = new StringBuilder();
+            StringBuilder errorOutput = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
+                errorOutput.append(line).append("\n");
             }
 
-            int exitVal = process.waitFor();
-            if (exitVal != 0) {
-                applicationEventPublisher.publishEvent(new DeploymentStartFailedEvent(this, deployment.name(), output.toString()));
+            int exitCode = process.waitFor();
+            if ((exitCode != 0)) {
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, errorOutput.toString()));
+                return;
             }
         } catch (IOException | InterruptedException e) {
-            applicationEventPublisher.publishEvent(new DeploymentStartFailedEvent(this, deployment.name(), e.getMessage()));
+            applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, e.getMessage()));
             return;
         }
 
-        applicationEventPublisher.publishEvent(new DeploymentStartSucceededEvent(this, deployment.name()));
+        applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.RUNNING, "Deployment '%s' successfully started".formatted(deployment.name())));
     }
 
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
@@ -130,27 +173,32 @@ public class DeploymentsService {
         File deploymentsDir = new File("deployments");
         File[] files = deploymentsDir.listFiles();
 
-        if(files == null)
+        if (files == null)
             return;
 
         for (File file : files) {
             if (file.isDirectory() && deployments.stream().noneMatch(d -> d.name().equals(file.getName()))) {
                 try {
-                    logger.info("Stopping deployment {}", file.getName());
-                    List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
-                    commandArgs.add("down");
-                    new ProcessBuilder(commandArgs)
-                            .directory(file)
-                            .start()
-                            .waitFor();
+                    stopDeployment(file.getName());
                     deleteDirectory(file);
-                    applicationEventPublisher.publishEvent(new NotConfiguredDeploymentStopped(this, file.getName()));
+                    applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, file.getName(), DeploymentState.State.REMOVED, "Deployment '%s' removed (Not configured)".formatted(file.getName())));
                 } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
         logger.info("Not configured deployments stopped");
+    }
+
+    private void stopDeployment(String deploymentName) throws InterruptedException, IOException {
+        logger.info("Stopping deployment {}", deploymentName);
+        List<String> commandArgs = new ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
+        commandArgs.add("down");
+        new ProcessBuilder(commandArgs)
+                .directory(new File(DEPLOYMENTS_DIR_NAME + "/" + deploymentName))
+                .start()
+                .waitFor();
+        applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName, DeploymentState.State.STOPPED, "Deployment '%s' stopped".formatted(deploymentName)));
     }
 
     void deleteDirectory(File directoryToBeDeleted) {
@@ -160,10 +208,13 @@ public class DeploymentsService {
                 deleteDirectory(file);
             }
         }
-        directoryToBeDeleted.delete();
+        boolean deleted = directoryToBeDeleted.delete();
+
+        if (!deleted)
+            throw new RuntimeException("Could not delete directory " + directoryToBeDeleted);
     }
 
-    private void deployListOfDeployments(List<Deployment> deployments, boolean force) {
+    private void deployListOfDeployments(List<Deployment> deployments, boolean forceRun, boolean forceRecreate) {
 
         makeDeploymentsDir();
 
@@ -180,7 +231,7 @@ public class DeploymentsService {
             ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
             for (Deployment deployment : deploymentsOrderUnit) {
-                executorService.submit(() -> deploy(deployment, force));
+                executorService.submit(() -> deploy(deployment, forceRun, forceRecreate));
             }
 
             executorService.shutdown();

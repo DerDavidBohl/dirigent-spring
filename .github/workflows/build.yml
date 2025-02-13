@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - 'latest'
+      - 'experimental'
     tags:
       - 'v*'
 

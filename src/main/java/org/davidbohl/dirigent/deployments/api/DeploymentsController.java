@@ -1,10 +1,9 @@
-package org.davidbohl.dirigent.deployments.controller;
+package org.davidbohl.dirigent.deployments.api;
 
-import org.davidbohl.dirigent.deployments.models.events.AllDeploymentsStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.models.events.NamedDeploymentStartRequestedEvent;
-import org.davidbohl.dirigent.deployments.service.DeploymentNameNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.davidbohl.dirigent.deployments.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.NamedDeploymentStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.NamedDeploymentStopRequestedEvent;
+import org.davidbohl.dirigent.deployments.management.DeploymentNameNotFoundException;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +24,18 @@ public class DeploymentsController {
         applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, name, force));
     }
 
+    @PostMapping("/{name}/stop")
+    public void stopDeployment(@PathVariable String name) {
+        applicationEventPublisher.publishEvent(new NamedDeploymentStopRequestedEvent(this, name));
+    }
+
     @PostMapping("/all/start")
-    public void startAllDeployments(@RequestParam(required = false) boolean force) {
-        applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, force));
+    public void startAllDeployments(@RequestParam(required = false) boolean force,
+                                    @RequestParam(required = false) boolean forceRun,
+                                    @RequestParam(required = false) boolean forceRecreate) {
+        applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this,
+                force || forceRun,
+                force || forceRecreate));
     }
 
     @ExceptionHandler(DeploymentNameNotFoundException.class)

@@ -4,8 +4,6 @@ Tool to manage your docker compose deployments via git.
 
 ## Table of Contents
 
-- [Dirigent](#dirigent)
-- [Table of Contents](#table-of-contents)
 - [Setup](#setup)
   - [docker-compose](#docker-compose)
   - [docker CLI](#docker-cli)
@@ -16,10 +14,15 @@ Tool to manage your docker compose deployments via git.
 - [API](#api)
   - [Gitea Webhook](#gitea-webhook)
   - [Deployments](#deployments)
-    - [Start All Deployments](#start-all-deployments)
-    - [Start Deployment by name](#start-deployment-by-name)
+    - [Start](#start)
+      - [All Deployments](#all-deployments)
+      - [Deployment by name](#deployment-by-name)
+    - [Stop](#stop)
+      - [Deployment by name](#deployment-by-name-1)
+    - [State](#state)
 - [Develop](#develop)
   - [Setup for local Tests](#setup-for-local-tests)
+
 
 ## Setup
 
@@ -45,6 +48,7 @@ services:
     volumes:
       - /path/to/config:/app/config
       - /path/to/deployments:/app/deployments
+      - /path/to/data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
@@ -70,6 +74,7 @@ docker run -d \
   -e DIRIGENT_GOTIFY_TOKEN= \
   -v /path/to/config:/app/config \
   -v /path/to/deployments:/app/deployments \
+  -v /path/to/data:/app/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   ghcr.io/derdavidbohl/dirigent-spring:latest
 ```
@@ -104,11 +109,12 @@ deployments:
 
 ### Volumes
 
-| Volume               | Description                        |
-|----------------------|------------------------------------|
-| /app/config          | Config directory for Dirigent      |
-| /app/deployments     | Deployments directory for Dirigent |
-| /var/run/docker.sock | Docker socket for Dirigent         |
+| Volume               | Description                            |
+|----------------------|----------------------------------------|
+| /app/config          | Config directory for Dirigent          |
+| /app/deployments     | Deployments directory for Dirigent     |
+| /app/data            | Data directory containing the database |
+| /var/run/docker.sock | Docker socket for Dirigent             |
 
 ### Step by Step (Gitea)
 
@@ -144,13 +150,33 @@ Store all your repositories for one host in one gitea organization. This way you
 
 ### Deployments
 
-#### Start All Deployments:
+#### Start
 
-`POST` to `/api/v1/deployments/all/start` optional add `force=true` if you want to force deployment and recreation of containers.
+**Parameters**
 
-#### Start Deployment by name:
+| Parameter       | Description                                          |
+|-----------------|------------------------------------------------------|
+| `force=true`    | forces Recreation and Run of targeted deployment(s)  |
+| `forceRun=true` | only forces run of targeted deployment(s)            |
+| `forceRecreate` | only forces recreation of the targeted deployment(s) |
 
-`POST` to `/api/v1/deployments/{name}/start` optional add `force=true` if you want to force deployment and recreation of containers.
+##### All Deployments:
+
+`POST` to `/api/v1/deployments/all/start`
+
+##### Deployment by name:
+
+`POST` to `/api/v1/deployments/{name}/start`
+
+#### Stop
+
+##### Deployment by name:
+
+`POST` to `/api/v1/deployments/{name}/stop`
+
+#### State
+
+`GET` to `/api/v1/deployment-states`
 
 ## Develop
 

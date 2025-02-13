@@ -1,4 +1,4 @@
-package org.davidbohl.dirigent.deployments.service;
+package org.davidbohl.dirigent.deployments.utility;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public class GitService {
 
         File destinationDir = new File(destination);
 
-        boolean changed = false;
+        boolean changed;
 
         if (destinationDir.exists() && Arrays.asList(Objects.requireNonNull(destinationDir.list())).contains(".git")) {
             logger.debug("Local Repo exists. Pulling latest changes.");
