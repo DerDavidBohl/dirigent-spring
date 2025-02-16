@@ -1,3 +1,5 @@
+[![Build Docker Image](https://github.com/DerDavidBohl/dirigent-spring/actions/workflows/build.yml/badge.svg)](https://github.com/DerDavidBohl/dirigent-spring/actions/workflows/build.yml)
+
 # Dirigent
 
 Tool to manage your docker compose deployments via git.
