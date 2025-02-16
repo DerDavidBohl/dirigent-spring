@@ -6,7 +6,7 @@ import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
 import org.davidbohl.dirigent.deployments.state.DeploymentState;
 import org.davidbohl.dirigent.deployments.state.DeploymentStatePersistingService;
-import org.davidbohl.dirigent.deployments.utility.GitService;
+import org.davidbohl.dirigent.utility.GitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

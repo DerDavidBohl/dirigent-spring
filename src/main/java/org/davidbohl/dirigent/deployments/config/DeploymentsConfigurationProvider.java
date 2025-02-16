@@ -3,7 +3,7 @@ package org.davidbohl.dirigent.deployments.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
-import org.davidbohl.dirigent.deployments.utility.GitService;
+import org.davidbohl.dirigent.utility.GitService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
