@@ -144,6 +144,7 @@ public class DeploymentsService {
                 commandArgs.add("--force-recreate");
             }
 
+            logger.info("Upping Compose for {}", deployment.name());
             Process process = new ProcessBuilder(commandArgs)
                     .directory(deploymentDir)
                     .start();
