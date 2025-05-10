@@ -1,6 +1,6 @@
 package org.davidbohl.dirigent.deployments.api;
 
-import org.davidbohl.dirigent.deployments.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.RecreateAllDeploymentStatesEvent;
 import org.davidbohl.dirigent.deployments.events.SourceDeploymentStartRequestedEvent;
 import org.davidbohl.dirigent.deployments.models.GiteaRequestBody;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +27,7 @@ public class GiteaDeploymentsController {
     public void webHook(@RequestBody GiteaRequestBody body) {
 
         if(body.repository().cloneUrl().equals(configUrl)) {
-            applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, true, false));
+            applicationEventPublisher.publishEvent(new RecreateAllDeploymentStatesEvent(this));
             return;
         }
 
