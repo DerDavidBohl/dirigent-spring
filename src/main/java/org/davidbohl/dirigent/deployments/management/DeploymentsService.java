@@ -98,6 +98,7 @@ public class DeploymentsService {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
 
+        stopNotConfiguredDeployments(deploynentConfiguration.deployments());
         List<String> stoppedDeployments = deploymentStatePersistingService.getDeploymentStates().stream()
                 .filter(d -> d.getState() == DeploymentState.State.STOPPED)
                 .map(DeploymentState::getName)
