@@ -141,7 +141,7 @@ public class DeploymentsService {
             commandArgs.add("-d");
             commandArgs.add("--remove-orphans");
 
-            if (forceRecreate) {
+            if (forceRecreate || updated) {
                 commandArgs.add("--force-recreate");
             }
 
