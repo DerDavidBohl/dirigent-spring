@@ -1,8 +1,8 @@
 # Use Maven image to build the application
 FROM maven:3.9.9 AS build
 WORKDIR /app
-COPY pom.xml .
-COPY src ./src
+COPY backend/pom.xml .
+COPY backend/src ./src
 RUN mvn clean package -DskipTests
 
 # Use OpenJDK image to run the application
