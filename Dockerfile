@@ -7,9 +7,8 @@ RUN mvn clean package -DskipTests
 
 FROM node:alpine AS frontend-build
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
 COPY frontend .
+RUN npm install
 RUN npm run build
 
 # Use OpenJDK image to run the application
