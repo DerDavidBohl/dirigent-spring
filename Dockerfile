@@ -8,7 +8,7 @@ RUN mvn clean package -DskipTests
 FROM node:alpine AS frontend-build
 WORKDIR /app
 COPY frontend .
-RUN ls -la
+RUN npm cache clean --force
 RUN npm install --verbose
 RUN npm run build
 
