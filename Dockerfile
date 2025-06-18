@@ -10,7 +10,7 @@ WORKDIR /app
 # Install dependencies
 COPY frontend/ ./
 
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the frontend files
 COPY frontend .
