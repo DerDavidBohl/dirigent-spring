@@ -1,0 +1,53 @@
+<h1 class="text-3xl">Your Deployments</h1>
+
+<div>
+  <table [dataSource]="dataSource" class="mat-elevation-z8" mat-table>
+
+    <!--- Note that these columns can be defined in any order.
+          The actual rendered columns are set as a property on the row definition" -->
+
+    <!-- Symbol Column -->
+    <ng-container matColumnDef="actions">
+      <th *matHeaderCellDef mat-header-cell> Actions</th>
+      <td *matCellDef="let element" mat-cell>
+        <button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu" matIconButton>
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button (click)="startDeployment(element)" mat-menu-item>
+            Start
+          </button>
+          <button mat-menu-item>
+            Stop
+          </button>
+        </mat-menu>
+
+      </td>
+    </ng-container>
+
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+      <th *matHeaderCellDef mat-header-cell> Name</th>
+      <td *matCellDef="let element" mat-cell> {{ element.name }}</td>
+    </ng-container>
+
+    <!-- Weight Column -->
+    <ng-container matColumnDef="state">
+      <th *matHeaderCellDef mat-header-cell> State</th>
+      <td *matCellDef="let element" mat-cell>
+        <mat-chip>{{ element.state }}</mat-chip>
+      </td>
+    </ng-container>
+
+    <!-- Symbol Column -->
+    <ng-container matColumnDef="message">
+      <th *matHeaderCellDef mat-header-cell> Message</th>
+      <td *matCellDef="let element" mat-cell> {{ element.message }}</td>
+    </ng-container>
+
+
+    <tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
+    <tr *matRowDef="let row; columns: displayedColumns;" mat-row></tr>
+  </table>
+
+</div>

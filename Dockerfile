@@ -1,9 +1,23 @@
 # Use Maven image to build the application
-FROM maven:3.9.9 AS build
+FROM maven:3.9.9 AS backend-build
 WORKDIR /app
 COPY backend/pom.xml .
 COPY backend/src ./src
 RUN mvn clean package -DskipTests
+
+FROM node:24 AS frontend-build
+WORKDIR /app
+# Install dependencies
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+# Copy the rest of the frontend files
+COPY frontend/ ./
+# Build the frontend application
+RUN npm run build
+
+# Copy the built frontend files to the backend resources
+
 
 # Use OpenJDK image to run the application
 FROM openjdk:23-jdk-slim-bullseye
@@ -20,6 +34,7 @@ RUN apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugi
 
 # Finish
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=backend-build /app/target/*.jar app.jar
+COPY --from=frontend-build /app/dist ./public
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=production"]
