@@ -9,7 +9,7 @@ FROM node:alpine AS frontend-build
 WORKDIR /app
 COPY frontend .
 RUN ls -la
-RUN npm install
+RUN npm install --verbose
 RUN npm run build
 
 # Use OpenJDK image to run the application
