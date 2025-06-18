@@ -9,8 +9,8 @@ FROM node:alpine AS frontend-build
 WORKDIR /app
 COPY frontend .
 RUN rm -rf package-lock.json
-RUN npm cache clean --force
-RUN npm install --verbose
+RUN npm cache clean
+RUN npm install
 RUN npm run build
 
 # Use OpenJDK image to run the application
