@@ -8,8 +8,7 @@
 FROM node:24 AS frontend-build
 WORKDIR /app
 # Install dependencies
-COPY frontend/package.json ./
-COPY frontend/package-lock.json ./
+COPY frontend/ ./
 
 RUN npm ci
 
