@@ -9,16 +9,8 @@ FROM node:alpine AS fontend-build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
-COPY . .
-RUN npm run build
-
-# Copy the rest of the frontend files
 COPY frontend .
-# Build the frontend application
 RUN npm run build
-
-# Copy the built frontend files to the backend resources
-
 
 # Use OpenJDK image to run the application
 FROM openjdk:23-jdk-slim-bullseye
