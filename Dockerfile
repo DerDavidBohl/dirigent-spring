@@ -5,7 +5,7 @@ COPY backend/pom.xml .
 COPY backend/src ./src
 RUN mvn clean package -DskipTests
 
-FROM node:alpine AS build
+FROM node:alpine AS fontend-build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
