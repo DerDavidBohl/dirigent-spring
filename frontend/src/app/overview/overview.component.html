@@ -17,7 +17,7 @@
           <button (click)="startDeployment(element)" mat-menu-item>
             Start
           </button>
-          <button mat-menu-item>
+          <button (click)="stopDeployment(element)" mat-menu-item>
             Stop
           </button>
         </mat-menu>
@@ -35,7 +35,7 @@
     <ng-container matColumnDef="state">
       <th *matHeaderCellDef mat-header-cell> State</th>
       <td *matCellDef="let element" mat-cell>
-        <mat-chip>{{ element.state }}</mat-chip>
+        <mat-chip class="bg-red-500">{{ element.state }}</mat-chip>
       </td>
     </ng-container>
 

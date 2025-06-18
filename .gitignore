@@ -31,8 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
-/deployments/
-/config/
+backend/deployments/
+backend/config/
 
 ### Config Files ###
 backend/src/main/resources/application-local.properties

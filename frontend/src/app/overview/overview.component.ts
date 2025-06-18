@@ -41,7 +41,7 @@ import {interval} from 'rxjs';
 
   ],
   templateUrl: './overview.component.html',
-  styleUrl: './overview.component.css'
+  styleUrl: './overview.component.css',
 })
 export class OverviewComponent {
   dataSource: Array<DeploymentState> = [];
@@ -71,5 +71,11 @@ export class OverviewComponent {
           .subscribe(() => this.apiService.updateDeploymentStates())
       }
     });
+  }
+
+  stopDeployment(element: DeploymentState) {
+
+    this.apiService.stopDeployment(element).subscribe(() => this.apiService.updateDeploymentStates());
+
   }
 }
