@@ -8,7 +8,9 @@
 FROM node:24 AS frontend-build
 WORKDIR /app
 # Install dependencies
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package.json ./
+COPY frontend/package-lock.json ./
+
 RUN npm ci
 
 # Copy the rest of the frontend files
