@@ -37,3 +37,7 @@ backend/config/
 ### Config Files ###
 backend/src/main/resources/application-local.properties
 backend/data/
+/backend/src/main/resources/static/
+/data/
+/deployments/
+/config/

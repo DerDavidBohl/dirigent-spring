@@ -12,7 +12,7 @@ FROM maven:3.9.9 AS backend-build
 WORKDIR /app
 COPY backend/pom.xml .
 COPY backend/src ./src
-COPY --from=frontend-build /app/dist/browser ./src/main/resources/public/ui
+COPY --from=frontend-build /app/dist/browser ./src/main/resources/static
 RUN mvn clean package -DskipTests
 
 # Use OpenJDK image to run the application

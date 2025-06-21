@@ -10,6 +10,6 @@ export const appConfig: ApplicationConfig = {
     {provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: {hasBackdrop: true}},
     provideHttpClient(),
     provideZoneChangeDetection({eventCoalescing: true}),
-    provideRouter(routes, withHashLocation())
+    provideRouter(routes)
   ]
 };
