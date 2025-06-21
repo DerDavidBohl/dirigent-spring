@@ -31,10 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
-/deployments/
-/config/
+backend/deployments/
+backend/config/
 
 ### Config Files ###
-/src/main/resources/application.properties
-/src/main/resources/application-local.properties
+backend/src/main/resources/application-local.properties
+backend/data/
+/backend/src/main/resources/static/
 /data/
+/deployments/
+/config/

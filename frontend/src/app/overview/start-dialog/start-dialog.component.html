@@ -1,0 +1,13 @@
+<h2 mat-dialog-title>Start Deployment</h2>
+<mat-dialog-content>
+  <div>
+    Do you want to start the deployment?
+  </div>
+</mat-dialog-content>
+<mat-dialog-content class="h-20">
+  <mat-checkbox [(ngModel)]="force">Force</mat-checkbox>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button [mat-dialog-close]="{force, result: true}" mat-button>Yes</button>
+  <button (click)="dialogRef.close()" mat-button>No</button>
+</mat-dialog-actions>
