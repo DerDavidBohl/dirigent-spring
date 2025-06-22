@@ -24,6 +24,7 @@ import {interval, Observable, ReplaySubject} from 'rxjs';
 import {AsyncPipe} from '@angular/common';
 import {FormsModule, ValueChangeEvent} from '@angular/forms';
 import {MatSort, MatSortHeader, Sort} from '@angular/material/sort';
+import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 
 @Component({
   selector: 'app-overview',
@@ -49,7 +50,10 @@ import {MatSort, MatSortHeader, Sort} from '@angular/material/sort';
     AsyncPipe,
     FormsModule,
     MatSortHeader,
-    MatSort
+    MatSort,
+    MatLabel,
+    MatInput,
+    MatFormField
   ],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.css',
@@ -58,8 +62,7 @@ export class OverviewComponent implements OnInit {
 
   selectedFilterValues$ = new ReplaySubject<Array<string>>(1);
   sort$ = new ReplaySubject<Sort>(1);
-
-  @ViewChild(MatSort) sort!: MatSort;
+  search$ = new ReplaySubject<string>(1);
 
   dataSource$: Observable<Array<DeploymentState>>;
   tableDataSource$: Observable<Array<DeploymentState>>;
@@ -78,6 +81,9 @@ export class OverviewComponent implements OnInit {
     this.tableDataSource$ = this.selectedFilterValues$.pipe(
       switchMap(selectedFilterValues => this.dataSource$.pipe(
         map(ds => ds.filter(ds => selectedFilterValues.includes(ds.state))),
+      )),
+      switchMap(ds => this.search$.pipe(
+         map(search => ds.filter(ds => ds.name.toLowerCase().includes(search.toLowerCase())))
       )),
       switchMap(ds => this.sort$.pipe(
 
@@ -109,6 +115,7 @@ export class OverviewComponent implements OnInit {
   ngOnInit(): void {
         this.selectedFilterValues$.next(['RUNNING', 'FAILED', 'STOPPED']);
         this.sort$.next({active: 'name', direction: 'asc'});
+        this.search$.next('');
     }
 
   startDeployment(deploymentState: DeploymentState) {
@@ -144,5 +151,13 @@ export class OverviewComponent implements OnInit {
 
   announceSortChange($event: Sort) {
     this.sort$.next($event);
+  }
+
+  search(event: KeyboardEvent) {
+    // @ts-ignore
+    console.log(event.target.value);
+    // @ts-ignore
+    this.search$.next(event.target.value);
+
   }
 }
