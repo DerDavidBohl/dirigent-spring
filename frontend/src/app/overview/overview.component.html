@@ -1,7 +1,11 @@
-<h1 class="text-3xl">Your Deployments</h1>
-
-<div>
-  <table [dataSource]="dataSource" class="mat-elevation-z8" mat-table>
+<div class="space-y-4">
+  <h1 class="text-3xl">Your Deployments</h1>
+  <mat-chip-listbox multiple (change)="updateFilter($event)">
+    @for (filterValue of filterValues$ | async; track filterValue) {
+      <mat-chip-option [style]="'background-color: ' + getBackgroudColorForState(filterValue)" [value]="filterValue" [selected]="filterValue !== 'REMOVED'">{{filterValue}}</mat-chip-option>
+    }
+  </mat-chip-listbox>
+  <table [dataSource]="tableDataSource$" class="mat-elevation-z8" mat-table matSort (matSortChange)="announceSortChange($event)" >
 
     <!--- Note that these columns can be defined in any order.
           The actual rendered columns are set as a property on the row definition" -->
@@ -10,7 +14,7 @@
     <ng-container matColumnDef="actions">
       <th *matHeaderCellDef mat-header-cell> Actions</th>
       <td *matCellDef="let element" mat-cell>
-        <button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu" matIconButton>
+        <button [matMenuTriggerFor]="menu" mat-icon-button>
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
@@ -27,21 +31,21 @@
 
     <!-- Name Column -->
     <ng-container matColumnDef="name">
-      <th *matHeaderCellDef mat-header-cell> Name</th>
+      <th *matHeaderCellDef mat-header-cell mat-sort-header> Name</th>
       <td *matCellDef="let element" mat-cell> {{ element.name }}</td>
     </ng-container>
 
     <!-- Weight Column -->
     <ng-container matColumnDef="state">
-      <th *matHeaderCellDef mat-header-cell> State</th>
+      <th *matHeaderCellDef mat-header-cell mat-sort-header> State</th>
       <td *matCellDef="let element" mat-cell>
-        <mat-chip class="bg-red-500">{{ element.state }}</mat-chip>
+        <mat-chip [style]="'background-color: ' + getBackgroudColorForState(element.state)">{{ element.state }}</mat-chip>
       </td>
     </ng-container>
 
     <!-- Symbol Column -->
     <ng-container matColumnDef="message">
-      <th *matHeaderCellDef mat-header-cell> Message</th>
+      <th *matHeaderCellDef mat-header-cell mat-sort-header> Message</th>
       <td *matCellDef="let element" mat-cell> {{ element.message }}</td>
     </ng-container>
 
