@@ -8,7 +8,7 @@ RUN npm install
 RUN npm run build
 
 # Use Maven image to build the application
-FROM maven:3.9.9 AS backend-build
+FROM maven:3.9.10 AS backend-build
 WORKDIR /app
 COPY backend/pom.xml .
 COPY backend/src ./src
