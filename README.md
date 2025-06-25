@@ -4,6 +4,7 @@
 
 Tool to manage your docker compose deployments via git.
 
+
 ## Table of Contents
 
 - [Setup](#setup)
@@ -25,6 +26,9 @@ Tool to manage your docker compose deployments via git.
 - [Develop](#develop)
   - [Setup for local Tests](#setup-for-local-tests)
 
+## Screenshots
+
+![image](https://github.com/user-attachments/assets/700e7580-13c7-4219-9fd6-8145b97fb93d)
 
 ## Setup
 
