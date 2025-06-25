@@ -64,7 +64,7 @@ export class OverviewComponent implements OnInit {
   sort$ = new ReplaySubject<Sort>(1);
   search$ = new ReplaySubject<string>(1);
 
-  dataSource$: Observable<Array<Deployment>>;
+  deployments$: Observable<Array<Deployment>>;
   tableDataSource$: Observable<Array<Deployment>>;
   filterValues$: Observable<string[]>;
 
@@ -73,13 +73,13 @@ export class OverviewComponent implements OnInit {
   readonly dialog = inject(MatDialog);
 
   constructor(private apiService: ApiService) {
-    this.dataSource$ = this.apiService.deploymentStates$.pipe(
+    this.deployments$ = this.apiService.deploymentStates$.pipe(
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     );
-    this.filterValues$ = this.dataSource$.pipe(map(ds => [...new Set(ds.map(ds => ds.state))]));
+    this.filterValues$ = this.deployments$.pipe(map(ds => [...new Set(ds.map(ds => ds.state))]));
 
     this.tableDataSource$ = this.selectedFilterValues$.pipe(
-      switchMap(selectedFilterValues => this.dataSource$.pipe(
+        switchMap(selectedFilterValues => this.deployments$.pipe(
         map(ds => ds.filter(ds => selectedFilterValues.includes(ds.state))),
       )),
       switchMap(ds => this.search$.pipe(
@@ -159,5 +159,11 @@ export class OverviewComponent implements OnInit {
     // @ts-ignore
     this.search$.next(event.target.value);
 
+  }
+
+  countDeploymentsByState(state: string): Observable<number> {
+    return this.deployments$.pipe(
+        map(deployments => deployments.filter(deployment => deployment.state === state).length)
+    );
   }
 }

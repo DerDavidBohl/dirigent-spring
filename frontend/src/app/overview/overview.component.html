@@ -8,7 +8,10 @@
   </div>
   <mat-chip-listbox multiple (change)="updateFilter($event)">
     @for (filterValue of filterValues$ | async; track filterValue) {
-      <mat-chip-option [style]="'background-color: ' + getBackgroudColorForState(filterValue)" [value]="filterValue" [selected]="filterValue !== 'REMOVED'">{{filterValue}}</mat-chip-option>
+        <mat-chip-option [style]="'background-color: ' + getBackgroudColorForState(filterValue)" [value]="filterValue"
+                         [selected]="filterValue !== 'REMOVED'">{{ filterValue }}
+            ({{ countDeploymentsByState(filterValue) | async }})
+        </mat-chip-option>
     }
   </mat-chip-listbox>
   <table [dataSource]="tableDataSource$" class="mat-elevation-z8" mat-table matSort (matSortChange)="announceSortChange($event)" >
