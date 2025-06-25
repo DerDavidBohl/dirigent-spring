@@ -2,7 +2,7 @@ POST http://localhost:8080/api/v1/deployments/test2/stop
 
 ###
 
-POST http://localhost:8080/api/v1/deployments/all/start?force=true
+POST http://localhost:8080/api/v1/deployments/all/start
 
 ###
 
