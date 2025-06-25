@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Observable, ReplaySubject} from 'rxjs';
-import {DeploymentState} from './deploymentState';
+import {Deployment} from './deploymentState';
 import {HttpClient} from '@angular/common/http';
 
 @Injectable({
@@ -8,12 +8,12 @@ import {HttpClient} from '@angular/common/http';
 })
 export class ApiService {
 
-  private _deploymentStates: ReplaySubject<Array<DeploymentState>> = new ReplaySubject<Array<DeploymentState>>(1);
+  private _deploymentStates: ReplaySubject<Array<Deployment>> = new ReplaySubject<Array<Deployment>>(1);
 
   constructor(private http: HttpClient) {
   }
 
-  get deploymentStates$(): Observable<Array<DeploymentState>> {
+  get deploymentStates$(): Observable<Array<Deployment>> {
     return this._deploymentStates.asObservable();
   }
 
@@ -21,15 +21,15 @@ export class ApiService {
     this.getAllDeploymentStates().subscribe(r => this._deploymentStates.next(r));
   }
 
-  getAllDeploymentStates(): Observable<Array<DeploymentState>> {
-    return this.http.get<Array<DeploymentState>>('api/v1/deployment-states');
+  getAllDeploymentStates(): Observable<Array<Deployment>> {
+    return this.http.get<Array<Deployment>>('api/v1/deployments');
   }
 
-  stopDeployment(deploymentState: DeploymentState): Observable<void> {
+  stopDeployment(deploymentState: Deployment): Observable<void> {
     return this.http.post<void>(`api/v1/deployments/${deploymentState.name}/stop`, {});
   }
 
-  startDeployment(deploymentState: DeploymentState, force: boolean): Observable<void> {
+  startDeployment(deploymentState: Deployment, force: boolean): Observable<void> {
     return this.http.post<void>(`api/v1/deployments/${deploymentState.name}/start?force=${force}`, {});
   }
 }

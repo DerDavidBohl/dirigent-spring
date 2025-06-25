@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, ViewChild} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {
   MatCell,
   MatCellDef,
@@ -9,20 +9,20 @@ import {
   MatHeaderRowDef,
   MatRow,
   MatRowDef,
-  MatTable, MatTableDataSource
+  MatTable
 } from '@angular/material/table';
-import {DeploymentState} from './deploymentState';
+import {Deployment} from './deploymentState';
 import {ApiService} from './api.service';
 import {MatMenu, MatMenuItem, MatMenuTrigger} from '@angular/material/menu';
 import {MatIcon} from '@angular/material/icon';
 import {MatChip, MatChipListbox, MatChipListboxChange, MatChipOption} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {StartDialogComponent} from './start-dialog/start-dialog.component';
-import {distinctUntilChanged, map, switchMap, tap} from 'rxjs/operators';
+import {distinctUntilChanged, map, switchMap} from 'rxjs/operators';
 import {MatIconButton} from '@angular/material/button';
 import {interval, Observable, ReplaySubject} from 'rxjs';
 import {AsyncPipe} from '@angular/common';
-import {FormsModule, ValueChangeEvent} from '@angular/forms';
+import {FormsModule} from '@angular/forms';
 import {MatSort, MatSortHeader, Sort} from '@angular/material/sort';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 
@@ -64,8 +64,8 @@ export class OverviewComponent implements OnInit {
   sort$ = new ReplaySubject<Sort>(1);
   search$ = new ReplaySubject<string>(1);
 
-  dataSource$: Observable<Array<DeploymentState>>;
-  tableDataSource$: Observable<Array<DeploymentState>>;
+  dataSource$: Observable<Array<Deployment>>;
+  tableDataSource$: Observable<Array<Deployment>>;
   filterValues$: Observable<string[]>;
 
   displayedColumns = ['actions', 'name', 'state', 'message'];
@@ -118,7 +118,7 @@ export class OverviewComponent implements OnInit {
         this.search$.next('');
     }
 
-  startDeployment(deploymentState: DeploymentState) {
+  startDeployment(deploymentState: Deployment) {
     const dialogRef = this.dialog.open(StartDialogComponent);
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -129,7 +129,7 @@ export class OverviewComponent implements OnInit {
     });
   }
 
-  stopDeployment(element: DeploymentState) {
+  stopDeployment(element: Deployment) {
 
     this.apiService.stopDeployment(element).subscribe(() => this.apiService.updateDeploymentStates());
 
