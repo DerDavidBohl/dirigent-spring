@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.IOException;
 
 @Service
 public class DeploymentsConfigurationProvider {
@@ -22,19 +21,18 @@ public class DeploymentsConfigurationProvider {
         this.gitService = gitService;
     }
 
-    public DeploynentConfiguration getConfiguration() throws IOException, InterruptedException {
+    public DeploynentConfiguration getConfiguration() {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
 
+        try {
         if (gitUrl != null)
             gitService.updateRepo(gitUrl, "config");
 
         File configFile = new File("config/deployments.yml");
 
-        try {
             return objectMapper.readValue(configFile, DeploynentConfiguration.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw e;
+        } catch (Throwable e) {
+            throw new DeploymentsConfigurationReadFailed(e);
         }
     }
 }
