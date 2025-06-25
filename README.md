@@ -28,7 +28,8 @@ Tool to manage your docker compose deployments via git.
 
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/700e7580-13c7-4219-9fd6-8145b97fb93d)
+![image](https://github.com/user-attachments/assets/2e0ab3e1-d702-4cc2-9c05-055dc41136ff)
+
 
 ## Setup
 
