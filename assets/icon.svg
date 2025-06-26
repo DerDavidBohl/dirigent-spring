@@ -32,18 +32,20 @@
 
     <!-- Git Branch Path -->
     <path
-        d="M150 40v80c0 10-15 15-20 5l-10-20"
+        d="M 97 128 q 155 -125 0 0"
+        fill="none"
+        stroke="#F1502F"
+        stroke-width="4"
+    />
+    <circle cx="175" cy="40" r="6" fill="#F1502F" />
+    <circle cx="100" cy="125" r="6" fill="#F1502F" />
+    <circle cx="175" cy="125" r="6" fill="#F1502F" />
+    <path
+        d="M 175 40 q 0 175 0 0"
         fill="none"
         stroke="#F1502F"
         stroke-width="4"
         stroke-linecap="round"
-    />
-    <circle cx="150" cy="40" r="6" fill="#F1502F" />
-    <circle cx="120" cy="105" r="6" fill="#F1502F" />
+/>
 
-    <!-- Deployment Arrow -->
-    <g fill="#FFFFFF">
-        <polygon points="135,155 150,170 165,155" />
-        <rect x="145" y="130" width="10" height="25" rx="2" />
-    </g>
 </svg>

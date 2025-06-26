@@ -1,0 +1,43 @@
+<svg
+  height="200"
+  viewBox="0 0 200 200"
+  width="200"
+  xmlns="http://www.w3.org/2000/svg"
+>
+
+  <!-- Stylized Docker Containers -->
+  <g fill="#00BFFF">
+    <rect height="20" rx="3" width="20" x="40" y="70"/>
+    <rect height="20" rx="3" width="20" x="65" y="70"/>
+    <rect height="20" rx="3" width="20" x="90" y="70"/>
+    <rect height="20" rx="3" width="20" x="52.5" y="45"/>
+    <rect height="20" rx="3" width="20" x="77.5" y="45"/>
+  </g>
+
+  <!-- Docker Whale Body -->
+  <path
+    d="M35 110c0 20 30 35 60 35s60-15 60-35v-5H35v5z"
+    fill="#00BFFF"
+    opacity="0.8"
+  />
+  <circle cx="55" cy="115" fill="#fff" r="3"/>
+
+  <!-- Git Branch Path -->
+  <path
+    d="M 97 128 q 155 -125 0 0"
+    fill="none"
+    stroke="#F1502F"
+    stroke-width="4"
+  />
+  <circle cx="175" cy="40" fill="#F1502F" r="6"/>
+  <circle cx="100" cy="125" fill="#F1502F" r="6"/>
+  <circle cx="175" cy="125" fill="#F1502F" r="6"/>
+  <path
+    d="M 175 40 q 0 175 0 0"
+    fill="none"
+    stroke="#F1502F"
+    stroke-linecap="round"
+    stroke-width="4"
+  />
+
+</svg>
