@@ -5,6 +5,7 @@ Tool to manage your docker compose deployments via git.
 
 ## Table of Contents
 
+- [Screenshots](#screenshots)
 - [Setup](#setup)
   - [docker-compose](#docker-compose)
   - [docker CLI](#docker-cli)
