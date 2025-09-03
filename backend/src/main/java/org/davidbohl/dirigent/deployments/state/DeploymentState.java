@@ -22,6 +22,6 @@ public class DeploymentState {
     private String message;
 
     public enum State {
-        RUNNING, STOPPED, FAILED, UPDATED, UNKNOWN, REMOVED
+        RUNNING, STOPPED, FAILED, UPDATED, UNKNOWN, REMOVED, STARTING, STOPPING
     }
 }
