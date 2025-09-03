@@ -1,6 +1,6 @@
 <div class="space-y-4">
 
-  <h2 class="text-2xl">Your Deployments</h2>
+  <h2 class="text-2xl">Your Deployments (<strong>{{ (deployments$ | async)?.length}})</strong></h2>
   <div class="md:grid md:grid-cols-5">
     <mat-form-field class="w-full md:col-span-2">
       <mat-label>Search...</mat-label>
