@@ -6,6 +6,7 @@ Tool to manage your docker compose deployments via git.
 ## Table of Contents
 
 - [Screenshots](#screenshots)
+- [Why Dirigent?](#why-dirigent)
 - [Setup](#setup)
   - [docker-compose](#docker-compose)
   - [docker CLI](#docker-cli)
@@ -29,6 +30,29 @@ Tool to manage your docker compose deployments via git.
 
 ![image](https://github.com/user-attachments/assets/2e0ab3e1-d702-4cc2-9c05-055dc41136ff)
 
+## Why Dirigent?
+
+**TL;DR**: Dirigent brings **GitOps simplicity** to Docker Compose.
+
+Dirigent simplifies **GitOps for Docker Compose deployments** by automating the management of your containers through Git. Here’s why you should use it:
+
+### ✅ **Git-Centric Deployments**
+- **Version-controlled infrastructure**: Track changes to your Docker Compose setups via Git, ensuring reproducibility and auditability.
+- **Automated sync**: Push changes to your Git repo, and Dirigent handles deployment — no manual `docker compose` commands needed.
+
+### 🔄 **Seamless Git Integration**
+- **Webhook-driven updates**: Trigger deployments automatically when your repo changes
+- **Centralized management**: Define all deployments in a single `deployments.yml` file for easy orchestration.
+
+### 🚀 **Self-Hosting Made Simple**
+- **Designed for homelabs & private clouds**: Perfect for developers who self-host with Docker and want Git-based control.
+- **No Kubernetes complexity**: Lightweight alternative to full-blown GitOps tools like ArgoCD or Flux—just Docker Compose + Git.
+
+### 🔧 **Extensible & Developer-Friendly**
+- **REST API**: Integrate with existing tools (CI/CD, monitoring).
+- **Gotify notifications**: Get alerts when deployments fail.
+
+Ideal for Self-hosters managing multiple services (e.g., Nextcloud, Gitea, Vaultwarden).
 
 ## Setup
 
