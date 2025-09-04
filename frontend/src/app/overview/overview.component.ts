@@ -78,6 +78,8 @@ export class OverviewComponent implements OnInit {
 
     this.systemInformation$ = apiService.getSystemInformation();
 
+    this.systemInformation$.subscribe(i => document.title = `Dirigent@${i.instanceName}`)
+
     this.deployments$ = this.apiService.deploymentStates$.pipe(
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     );
