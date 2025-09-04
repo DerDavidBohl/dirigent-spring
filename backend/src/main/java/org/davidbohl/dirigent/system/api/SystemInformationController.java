@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "/api/v1/system-information")
 public class SystemInformationController {
 
-    @Value("${dirigent.instanceName:'Unknown Instance'}")
+    @Value("${dirigent.instanceName:Unknown Instance}")
     private String instanceName;
 
 
