@@ -49,6 +49,7 @@ services:
       - DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON= # optional
       - DIRIGENT_GOTIFY_BASEURL= # optional
       - DIRIGENT_GOTIFY_TOKEN= # optional
+      - DIRIGENT_INSTANCENAME= # optional but recommended
     ports:
       - 8080:8080
     volumes:
@@ -78,6 +79,8 @@ docker run -d \
   -e DIRIGENT_GOTIFY_BASEURL= \
   #optional
   -e DIRIGENT_GOTIFY_TOKEN= \
+  #optional but recommended
+  -e DIRIGENT_INSTANCENAME= \
   -v /path/to/config:/app/config \
   -v /path/to/deployments:/app/deployments \
   -v /path/to/data:/app/data \
@@ -97,6 +100,7 @@ docker run -d \
 | DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON    | cron expression for scheduled start of all deployments (second minute hour day(month) month day(week) | `* */5 * * * *`  |
 | DIRIGENT_GOTIFY_BASEURL               | Gotify Base URL for Notification, when deployments fail                                               |                  |
 | DIRIGENT_GOTIFY_TOKEN                 | Gotify Token for Notification, when deployments fail                                                  |                  |
+| DIRIGENT_INSTANCENAME                 | Name of your Instance (will be shown in Web UI)                                                   |                  |
 
 ### deployments.yml
 
