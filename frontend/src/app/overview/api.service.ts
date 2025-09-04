@@ -2,6 +2,7 @@ import {Injectable} from '@angular/core';
 import {Observable, ReplaySubject} from 'rxjs';
 import {Deployment} from './deploymentState';
 import {HttpClient} from '@angular/common/http';
+import { SystemInformation } from './system-information';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +24,10 @@ export class ApiService {
 
   getAllDeploymentStates(): Observable<Array<Deployment>> {
     return this.http.get<Array<Deployment>>('api/v1/deployments');
+  }
+
+  getSystemInformation(): Observable<SystemInformation> {
+    return this.http.get<SystemInformation>('api/v1/system-information');
   }
 
   stopDeployment(deploymentState: Deployment): Observable<void> {

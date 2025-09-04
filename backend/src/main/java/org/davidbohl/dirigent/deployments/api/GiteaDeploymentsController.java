@@ -16,7 +16,7 @@ public class GiteaDeploymentsController {
 
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    @Value("${dirigent.deployments.git.url}")
+    @Value("${dirigent.deployments.git.url:}")
     private String configUrl;
 
     public GiteaDeploymentsController(ApplicationEventPublisher applicationEventPublisher) {

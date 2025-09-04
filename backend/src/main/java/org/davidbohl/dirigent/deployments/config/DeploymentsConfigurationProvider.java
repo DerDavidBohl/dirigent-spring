@@ -14,7 +14,7 @@ public class DeploymentsConfigurationProvider {
 
     private final GitService gitService;
 
-    @Value("${dirigent.deployments.git.url}")
+    @Value("${dirigent.deployments.git.url:}")
     private String gitUrl;
 
     public DeploymentsConfigurationProvider(GitService gitService) {

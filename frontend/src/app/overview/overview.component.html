@@ -1,6 +1,9 @@
 <div class="space-y-4">
 
-  <h2 class="text-2xl">Your Deployments (<strong>{{ (deployments$ | async)?.length}}</strong>)</h2>
+  <h2 class="text-2xl">Deployments&#64;{{ (systemInformation$ | async)?.instanceName }} (<strong>{{ (deployments$ | async)?.length}}</strong>)</h2>
+  <div>
+    <a [href]="(systemInformation$ | async)?.gitUrl" target="_blank">View Source</a>
+  </div>
   <div class="md:grid md:grid-cols-5">
     <mat-form-field class="w-full md:col-span-2">
       <mat-label>Search...</mat-label>
@@ -66,3 +69,4 @@
   </table>
 
 </div>
+

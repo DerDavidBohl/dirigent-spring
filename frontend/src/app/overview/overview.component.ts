@@ -25,6 +25,7 @@ import {AsyncPipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatSort, MatSortHeader, Sort} from '@angular/material/sort';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
+import { SystemInformation } from './system-information';
 
 @Component({
   selector: 'app-overview',
@@ -67,12 +68,16 @@ export class OverviewComponent implements OnInit {
   deployments$: Observable<Array<Deployment>>;
   tableDataSource$: Observable<Array<Deployment>>;
   filterValues$: Observable<string[]>;
+  systemInformation$: Observable<SystemInformation>;
 
   displayedColumns = ['actions', 'name', 'state', 'message'];
 
   readonly dialog = inject(MatDialog);
 
   constructor(private apiService: ApiService) {
+
+    this.systemInformation$ = apiService.getSystemInformation();
+
     this.deployments$ = this.apiService.deploymentStates$.pipe(
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     );
