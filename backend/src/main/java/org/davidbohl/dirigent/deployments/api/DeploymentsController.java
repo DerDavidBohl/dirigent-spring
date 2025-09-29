@@ -43,12 +43,8 @@ public class DeploymentsController {
     }
 
     @PostMapping("/all/start")
-    public void startAllDeployments(@RequestParam(required = false) boolean force,
-                                    @RequestParam(required = false) boolean forceRun,
-                                    @RequestParam(required = false) boolean forceRecreate) {
-        applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this,
-                force || forceRun,
-                force || forceRecreate));
+    public void startAllDeployments(@RequestParam(required = false) boolean forceRecreate) {
+        applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, forceRecreate));
     }
 
     @GetMapping()

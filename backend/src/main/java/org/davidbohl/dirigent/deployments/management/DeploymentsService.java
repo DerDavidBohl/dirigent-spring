@@ -51,7 +51,7 @@ public class DeploymentsService {
         makeDeploymentsDir();
 
         DeploynentConfiguration deploymentsConfiguration = tryGetConfiguration();
-        deployListOfDeployments(deploymentsConfiguration.deployments(), event.isForceRun(), event.isForceRecreate());
+        deployListOfDeployments(deploymentsConfiguration.deployments(), event.isForceRecreate());
         stopNotConfiguredDeployments(deploymentsConfiguration.deployments());
 
     }
@@ -71,7 +71,7 @@ public class DeploymentsService {
         if (first.isEmpty())
             throw new DeploymentNameNotFoundException(event.getName());
 
-        deploy(first.get(), event.isForced(), event.isForced());
+        deploy(first.get(), event.isForceRecreate());
     }
 
     @EventListener(SourceDeploymentStartRequestedEvent.class)
@@ -84,7 +84,7 @@ public class DeploymentsService {
                 .filter(d -> Objects.equals(d.source(), event.getDeploymentSource()))
                 .collect(Collectors.toList());
 
-        deployListOfDeployments(deployments, true, true);
+        deployListOfDeployments(deployments, true);
     }
 
     @EventListener(NamedDeploymentStopRequestedEvent.class)
@@ -115,22 +115,21 @@ public class DeploymentsService {
                 .filter(d -> !stoppedDeployments.contains(d.name()))
                 .toList();
 
-        deployListOfDeployments(deployments, true, false);
+        deployListOfDeployments(deployments, false);
     }
 
-    private void deploy(Deployment deployment, boolean forceRun, boolean forceRecreate) {
+    private void deploy(Deployment deployment, boolean forceRecreate) {
         logger.info("Deploying {}", deployment.name());
 
         File deploymentDir = new File("deployments/" + deployment.name());
 
         try {
+
+            applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.STARTING, "Deployment '%s' updated".formatted(deployment.name())));
+
+
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
-
-            if (updated) {
-                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.UPDATED, "Deployment '%s' updated".formatted(deployment.name())));
-            }
-
-            if (!updated && !forceRun) {
+            if (!updated && !forceRecreate) {
                 applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.RUNNING, "Deployment '%s' successfully started".formatted(deployment.name())));
                 logger.info("No changes in deployment. Skipping {}", deployment.name());
                 return;
@@ -194,6 +193,7 @@ public class DeploymentsService {
 
     private void stopDeployment(String deploymentName) throws InterruptedException, IOException {
         logger.info("Stopping deployment {}", deploymentName);
+        applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName, DeploymentState.State.STOPPING, "Stopping deployment '%s'".formatted(deploymentName)));
         List<String> commandArgs = new ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
         commandArgs.add("down");
         new ProcessBuilder(commandArgs)
@@ -216,7 +216,7 @@ public class DeploymentsService {
             throw new RuntimeException("Could not delete directory " + directoryToBeDeleted);
     }
 
-    private void deployListOfDeployments(List<Deployment> deployments, boolean forceRun, boolean forceRecreate) {
+    private void deployListOfDeployments(List<Deployment> deployments, boolean forceRecreate) {
 
         makeDeploymentsDir();
 
@@ -233,7 +233,7 @@ public class DeploymentsService {
             ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
             for (Deployment deployment : deploymentsOrderUnit) {
-                executorService.submit(() -> deploy(deployment, forceRun, forceRecreate));
+                executorService.submit(() -> deploy(deployment, forceRecreate));
             }
 
             executorService.shutdown();

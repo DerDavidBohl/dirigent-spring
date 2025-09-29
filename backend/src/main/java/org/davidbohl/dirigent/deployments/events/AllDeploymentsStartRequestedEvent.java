@@ -6,12 +6,10 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class AllDeploymentsStartRequestedEvent extends ApplicationEvent {
 
-    private final boolean forceRun;
     private final boolean forceRecreate;
 
-    public AllDeploymentsStartRequestedEvent(Object source, boolean forceRun, boolean forceRecreate) {
+    public AllDeploymentsStartRequestedEvent(Object source, boolean forceRecreate) {
         super(source);
-        this.forceRun = forceRun;
         this.forceRecreate = forceRecreate;
     }
 }
