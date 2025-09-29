@@ -33,8 +33,8 @@ public class DeploymentsController {
     }
 
     @PostMapping("/{name}/start")
-    public void startDeployment(@PathVariable String name, @RequestParam(required = false) boolean force) {
-        applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, name, force));
+    public void startDeployment(@PathVariable String name, @RequestParam(required = false) boolean forceRecreate) {
+        applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, name, forceRecreate));
     }
 
     @PostMapping("/{name}/stop")

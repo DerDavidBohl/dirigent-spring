@@ -202,7 +202,18 @@ public class DeploymentsService {
 
     private void stopDeployment(String deploymentName) throws InterruptedException, IOException {
         logger.info("Stopping deployment {}", deploymentName);
-        applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName, DeploymentState.State.STOPPING, "Stopping deployment '%s'".formatted(deploymentName)));
+
+
+        Optional<DeploymentState> optionalState= deploymentStatePersistingService.getDeploymentStates().stream()
+                                                                .filter(state -> state.getName().equals(deploymentName))
+                                                                .findFirst();
+
+        boolean stopWouldChangeState = optionalState.isEmpty() || optionalState.get().getState() != DeploymentState.State.STOPPED;
+        
+        if(stopWouldChangeState) {
+            applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName, DeploymentState.State.STOPPING, "Stopping deployment '%s'".formatted(deploymentName)));
+        }
+        
         List<String> commandArgs = new ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
         commandArgs.add("down");
         new ProcessBuilder(commandArgs)
