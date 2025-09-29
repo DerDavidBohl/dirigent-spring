@@ -120,7 +120,7 @@ export class OverviewComponent implements OnInit {
   }
 
   ngOnInit(): void {
-        this.selectedFilterValues$.next(['RUNNING', 'FAILED', 'STOPPED']);
+        this.selectedFilterValues$.next(['RUNNING', 'STOPPED', 'FAILED', 'UPDATED', 'UNKNOWN', 'STARTING', 'STOPPING']);
         this.sort$.next({active: 'name', direction: 'asc'});
         this.search$.next('');
     }

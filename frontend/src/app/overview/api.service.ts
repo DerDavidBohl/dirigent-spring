@@ -35,6 +35,6 @@ export class ApiService {
   }
 
   startDeployment(deploymentState: Deployment, force: boolean): Observable<void> {
-    return this.http.post<void>(`api/v1/deployments/${deploymentState.name}/start?force=${force}`, {});
+    return this.http.post<void>(`api/v1/deployments/${deploymentState.name}/start?forceRecreate=${force}`, {});
   }
 }
