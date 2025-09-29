@@ -135,7 +135,7 @@ public class DeploymentsService {
 
             if (!updated && !forceRecreate && !deployWouldChangeState) {
                 applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.RUNNING, "Deployment '%s' successfully started".formatted(deployment.name())));
-                logger.info("No changes in deployment. Skipping {}", deployment.name());
+                logger.info("No update, forced recreation or changed states in deployment. Skipping {}", deployment.name());
                 return;
             }
 
