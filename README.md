@@ -190,9 +190,7 @@ Store all your repositories for one host in one gitea organization. This way you
 
 | Parameter       | Description                                          |
 |-----------------|------------------------------------------------------|
-| `force=true`    | forces Recreation and Run of targeted deployment(s)  |
-| `forceRun=true` | only forces run of targeted deployment(s)            |
-| `forceRecreate` | only forces recreation of the targeted deployment(s) |
+| `forceRecreate=trueu` | forces recreation of the targeted deployment(s) |
 
 ##### All Deployments:
 
