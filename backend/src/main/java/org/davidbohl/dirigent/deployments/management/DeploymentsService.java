@@ -122,18 +122,27 @@ public class DeploymentsService {
         logger.info("Deploying {}", deployment.name());
 
         File deploymentDir = new File("deployments/" + deployment.name());
-
+        
         try {
 
-            applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.STARTING, "Deployment '%s' updated".formatted(deployment.name())));
-
-
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
-            if (!updated && !forceRecreate) {
+            Optional<DeploymentState> optionalState= deploymentStatePersistingService.getDeploymentStates().stream()
+                                                                    .filter(state -> state.getName().equals(deployment.name()))
+                                                                    .findFirst();
+
+            boolean deployWouldChangeState = optionalState.isEmpty() || optionalState.get().getState() != DeploymentState.State.RUNNING;
+
+
+            if (!updated && !forceRecreate && !deployWouldChangeState) {
                 applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.RUNNING, "Deployment '%s' successfully started".formatted(deployment.name())));
                 logger.info("No changes in deployment. Skipping {}", deployment.name());
                 return;
             }
+
+            if (updated) {
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.UPDATED, "Deployment '%s' updated".formatted(deployment.name())));
+            } 
+            applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.STARTING, "Starting Deployment '%s'".formatted(deployment.name())));
 
             List<String> commandArgs = new java.util.ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
             commandArgs.add("up");
