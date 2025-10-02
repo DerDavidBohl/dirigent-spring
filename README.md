@@ -66,6 +66,7 @@ services:
     restart: unless-stopped
     environment:
       - DIRIGENT_DEPLOYMENTS_GIT_URL= # required
+      - DIRIGENT_SECRETS_ENCRYPTION_KEY= # Has to be 16 Chars. Can be generated with `openssl rand -base64 12`
       - DIRIGENT_COMPOSE_COMMAND= # optional
       - DIRIGENT_GIT_AUTHTOKEN= # optional
       - DIRIGENT_START_ALL_ON_STARTUP= # optional
@@ -89,6 +90,7 @@ services:
 docker run -d \
   --name=dirigent \
   -e DIRIGENT_DEPLOYMENTS_GIT_URL= \
+  -e DIRIGENT_SECRETS_ENCRYPTION_KEY= \ # Has to be 16 Chars. Can be generated with `openssl rand -base64 12`
   #optional
   -e DIRIGENT_COMPOSE_COMMAND= \
   #optional
@@ -105,6 +107,7 @@ docker run -d \
   -e DIRIGENT_GOTIFY_TOKEN= \
   #optional but recommended
   -e DIRIGENT_INSTANCENAME= \
+
   -v /path/to/config:/app/config \
   -v /path/to/deployments:/app/deployments \
   -v /path/to/data:/app/data \
@@ -117,6 +120,7 @@ docker run -d \
 | Variable                              | Description                                                                                           | Default          |
 |---------------------------------------|-------------------------------------------------------------------------------------------------------|------------------|
 | DIRIGENT_DEPLOYMENTS_GIT_URL          | URL to your deployments git repository                                                                |                  |
+| DIRIGENT_SECRETS_ENCRYPTION_KEY       | Encryption Key to save encrypted secrets. Has to be 16 Chars. Can be generated with `openssl rand -base64 12`                                                   |                  |
 | DIRIGENT_COMPOSE_COMMAND              | Command to run your docker-compose files                                                              | `docker compose` |
 | DIRIGENT_GIT_AUTHTOKEN                | Auth token with access to your repos                                                                  |                  |
 | DIRIGENT_START_ALL_ON_STARTUP         | Start all deployments on startup                                                                      | `true`           |
@@ -190,7 +194,7 @@ Store all your repositories for one host in one gitea organization. This way you
 
 | Parameter       | Description                                          |
 |-----------------|------------------------------------------------------|
-| `forceRecreate=trueu` | forces recreation of the targeted deployment(s) |
+| `forceRecreate=true` | forces recreation of the targeted deployment(s) |
 
 ##### All Deployments:
 

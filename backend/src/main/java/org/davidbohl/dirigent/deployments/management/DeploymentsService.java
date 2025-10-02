@@ -6,6 +6,7 @@ import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
 import org.davidbohl.dirigent.deployments.state.DeploymentState;
 import org.davidbohl.dirigent.deployments.state.DeploymentStatePersistingService;
+import org.davidbohl.dirigent.sercrets.SecretService;
 import org.davidbohl.dirigent.utility.GitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,17 +33,22 @@ public class DeploymentsService {
     private final Logger logger = LoggerFactory.getLogger(DeploymentsService.class);
     private final ApplicationEventPublisher applicationEventPublisher;
     private final DeploymentStatePersistingService deploymentStatePersistingService;
+    private final SecretService secretService;
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
 
     public DeploymentsService(
             DeploymentsConfigurationProvider deploymentsConfigurationProvider,
-            GitService gitService, ApplicationEventPublisher applicationEventPublisher, DeploymentStatePersistingService deploymentStatePersistingService) {
+            GitService gitService, 
+            ApplicationEventPublisher applicationEventPublisher, 
+            DeploymentStatePersistingService deploymentStatePersistingService, 
+            SecretService secretService) {
         this.deploymentsConfigurationProvider = deploymentsConfigurationProvider;
         this.gitService = gitService;
         this.applicationEventPublisher = applicationEventPublisher;
         this.deploymentStatePersistingService = deploymentStatePersistingService;
+        this.secretService = secretService;
     }
 
     @EventListener(AllDeploymentsStartRequestedEvent.class)
@@ -154,8 +160,12 @@ public class DeploymentsService {
             }
 
             logger.info("Upping Compose for {}", deployment.name());
-            Process process = new ProcessBuilder(commandArgs)
-                    .directory(deploymentDir)
+            ProcessBuilder builder = new ProcessBuilder(commandArgs)
+                    .directory(deploymentDir);
+
+            builder.environment().putAll(secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name()));
+
+            Process process = builder
                     .start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
@@ -223,7 +233,7 @@ public class DeploymentsService {
         applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName, DeploymentState.State.STOPPED, "Deployment '%s' stopped".formatted(deploymentName)));
     }
 
-    void deleteDirectory(File directoryToBeDeleted) {
+    private void deleteDirectory(File directoryToBeDeleted) {
         File[] allContents = directoryToBeDeleted.listFiles();
         if (allContents != null) {
             for (File file : allContents) {
