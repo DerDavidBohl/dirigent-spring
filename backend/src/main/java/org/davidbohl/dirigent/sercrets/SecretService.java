@@ -38,6 +38,9 @@ public class SecretService {
 
             Secret secret = secretRepository.findById(key).orElseGet(() -> new Secret(key, environmentVariable, value, deployments));
 
+            secret.setDeployments(deployments);
+            secret.setEnvironmentVariable(environmentVariable);
+
             if(value != null )
                 secret.setEncryptedValue(encrypt(value));
 

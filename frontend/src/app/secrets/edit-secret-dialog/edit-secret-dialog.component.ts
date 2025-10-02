@@ -70,6 +70,8 @@ export class EditSecretDialogComponent {
 
   addDeployment($event: MatChipInputEvent) {
 
+    if($event.value.trim().length === 0) return;
+
     $event.chipInput.clear();
 
     if (this.secret.deployments.includes($event.value)) return;
