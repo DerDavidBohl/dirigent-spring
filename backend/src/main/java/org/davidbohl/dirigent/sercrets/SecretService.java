@@ -66,6 +66,10 @@ public class SecretService {
             ).toList();
     }
 
+    public void deleteSecret(String key) {
+        secretRepository.deleteById(key);
+    }
+
     private String encrypt(String value) throws Exception {
         SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), ALGORITHM);
         Cipher cipher = Cipher.getInstance(ALGORITHM);

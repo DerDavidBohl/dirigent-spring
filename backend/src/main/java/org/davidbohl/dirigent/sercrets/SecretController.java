@@ -2,6 +2,7 @@ package org.davidbohl.dirigent.sercrets;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,6 +27,11 @@ public class SecretController {
     @PutMapping("{key}")
     public void saveSecret(@RequestBody SecretDto secret, @PathVariable String key) {
         this.secretService.saveSecret(key, secret.environmentVariable(), secret.value(), secret.deployments());
+    }
+
+    @DeleteMapping("{key}")
+    public void deleteSecret(@PathVariable String key) {
+        this.secretService.deleteSecret(key);
     }
 
     @GetMapping
