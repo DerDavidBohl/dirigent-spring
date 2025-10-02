@@ -59,6 +59,8 @@ export class ApiService {
   }
 
   deleteSecret(secret: Secret): Observable<void> {
-    return this.http.delete<void>(`api/v1/secrets/${secret.key}`);
+    return this.http.delete<void>(`api/v1/secrets/${secret.key}`).pipe(
+      tap(() => this.reloadSecrets())
+    );
   }
 }
