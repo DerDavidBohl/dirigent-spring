@@ -11,8 +11,11 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
+
 
 @Service
+@Slf4j
 public class SecretService {
 
     private static final String ALGORITHM = "AES";
@@ -30,10 +33,11 @@ public class SecretService {
         this.secretRepository = secretRepository;
     }
 
-    public void saveSecret(String environmentVariable, String value, List<String> deployments) {
+    public void saveSecret(String key, String environmentVariable, String value, List<String> deployments) {
         try {
+
             String encrypted = encrypt(value);
-            Secret secret = new Secret(null, environmentVariable, encrypted, deployments);
+            Secret secret = new Secret(key, environmentVariable, encrypted, deployments);
             secretRepository.save(secret);
         } catch (Exception e) {
             throw new RuntimeException("Saving Secret failed", e);
@@ -41,11 +45,16 @@ public class SecretService {
     }
 
     public Map<String, String> getAllSecretsAsEnvironmentVariableMapByDeployment(String deployment) { 
-        List<Secret> secrets = secretRepository.findByDeploymentsContaining(deployment);
+        List<Secret> secrets = secretRepository.findAllByDeploymentsContaining(deployment);
         Map<String, String> result = new HashMap<>();
 
         for (Secret secret : secrets) {
-            result.put(secret.getEnvironmentVariable(), getSecret(secret.getEncryptedValue()));
+            try {
+                result.put(secret.getEnvironmentVariable(), decrypt(secret.getEncryptedValue()));
+            } catch(Exception ex) {
+                log.error("Failed to decrypt secret <" + secret.getKey() + "> for Env Var <" + secret.getEnvironmentVariable() + "> and Deployment <" + deployment + ">.");
+                throw new RuntimeException(ex);
+            }
         }
 
         return result;
@@ -53,17 +62,8 @@ public class SecretService {
 
     public List<SecretDto> getAllSecretsWithoutValues() {
         return secretRepository.findAll().stream().map(
-                s -> new SecretDto(s.getEnvironmentVariable(), null, s.getDeployments())
+                s -> new SecretDto(s.getKey(), s.getEnvironmentVariable(), null, s.getDeployments())
             ).toList();
-    }
-
-    private String getSecret(String key) {
-        try {
-            Secret secret = secretRepository.findByKey(key).orElseThrow();
-            return decrypt(secret.getEncryptedValue());
-        } catch (Exception e) {
-            throw new RuntimeException("Reading Secret failed", e);
-        }
     }
 
     private String encrypt(String value) throws Exception {
