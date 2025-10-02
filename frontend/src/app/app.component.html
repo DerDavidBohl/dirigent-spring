@@ -3,5 +3,8 @@
     <img alt="Icon" class="inline h-15" src="icon-background.svg"/>
     Dirigent
   </h1>
-  <router-outlet></router-outlet>
+  <mat-tab-group>
+    <mat-tab label="Deployments"><app-deployments></app-deployments></mat-tab>
+    <mat-tab label="Secrets"><app-secrets></app-secrets></mat-tab>
+  </mat-tab-group>
 </main>

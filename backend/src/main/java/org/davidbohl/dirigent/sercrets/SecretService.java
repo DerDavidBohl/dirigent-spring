@@ -36,8 +36,11 @@ public class SecretService {
     public void saveSecret(String key, String environmentVariable, String value, List<String> deployments) {
         try {
 
-            String encrypted = encrypt(value);
-            Secret secret = new Secret(key, environmentVariable, encrypted, deployments);
+            Secret secret = secretRepository.findById(key).orElseGet(() -> new Secret(key, environmentVariable, value, deployments));
+
+            if(value != null )
+                secret.setEncryptedValue(encrypt(value));
+
             secretRepository.save(secret);
         } catch (Exception e) {
             throw new RuntimeException("Saving Secret failed", e);
@@ -52,7 +55,7 @@ public class SecretService {
             try {
                 result.put(secret.getEnvironmentVariable(), decrypt(secret.getEncryptedValue()));
             } catch(Exception ex) {
-                log.error("Failed to decrypt secret <" + secret.getKey() + "> for Env Var <" + secret.getEnvironmentVariable() + "> and Deployment <" + deployment + ">.");
+                log.error("Failed to decrypt secret <{}> for Env Var <{}> and Deployment <{}>.", secret.getKey(), secret.getEnvironmentVariable(), deployment);
                 throw new RuntimeException(ex);
             }
         }
@@ -78,6 +81,10 @@ public class SecretService {
     }
 
     private String decrypt(String encrypted) throws Exception {
+
+        if(encrypted == null)
+            return null;
+
         SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), ALGORITHM);
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, keySpec);
