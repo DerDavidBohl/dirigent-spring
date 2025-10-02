@@ -4,7 +4,7 @@ import {Secret} from '../../api/secret';
 import {FormsModule} from '@angular/forms';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatButton} from '@angular/material/button';
-import {MatChipGrid, MatChipInput, MatChipInputEvent, MatChipRow} from '@angular/material/chips';
+import {MatChipGrid, MatChipInput, MatChipInputEvent, MatChipRemove, MatChipRow} from '@angular/material/chips';
 import {ENTER, SPACE} from '@angular/cdk/keycodes';
 import {MatIcon} from '@angular/material/icon';
 import {ApiService} from '../../api/api.service';
@@ -22,7 +22,8 @@ import {ApiService} from '../../api/api.service';
     MatChipGrid,
     MatChipRow,
     MatIcon,
-    MatChipInput
+    MatChipInput,
+    MatChipRemove
   ],
   templateUrl: './edit-secret-dialog.component.html',
   styleUrl: './edit-secret-dialog.component.css',
