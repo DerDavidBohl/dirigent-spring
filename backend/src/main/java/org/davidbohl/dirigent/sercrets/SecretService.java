@@ -1,14 +1,13 @@
 package org.davidbohl.dirigent.sercrets;
 
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.davidbohl.dirigent.deployments.events.MultipleNamedDeploymentsStartRequestedEvent;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +21,10 @@ public class SecretService {
 
     private final String encryptionKey;
     private final SecretRepository secretRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public SecretService(@Value("${dirigent.secrets.encryption.key}") String encryptionKey, SecretRepository secretRepository) {
+    public SecretService(@Value("${dirigent.secrets.encryption.key}") String encryptionKey, SecretRepository secretRepository, ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
 
         if (encryptionKey == null || encryptionKey.length() != 16) {
             throw new IllegalArgumentException("SECRET_ENCRYPTION_KEY muss 16 Zeichen lang sein!<" + encryptionKey + ">");
@@ -45,6 +46,9 @@ public class SecretService {
                 secret.setEncryptedValue(encrypt(value));
 
             secretRepository.save(secret);
+
+            applicationEventPublisher.publishEvent(new MultipleNamedDeploymentsStartRequestedEvent(this, secret.getDeployments(), true));
+
         } catch (Exception e) {
             throw new RuntimeException("Saving Secret failed", e);
         }
@@ -73,7 +77,13 @@ public class SecretService {
     }
 
     public void deleteSecret(String key) {
+        Optional<Secret> byId = this.secretRepository.findById(key);
+
+        if(byId.isEmpty()) return;
+
+        Secret secret = byId.get();
         secretRepository.deleteById(key);
+        applicationEventPublisher.publishEvent(new MultipleNamedDeploymentsStartRequestedEvent(this, secret.getDeployments(), true));
     }
 
     private String encrypt(String value) throws Exception {
