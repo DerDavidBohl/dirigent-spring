@@ -72,10 +72,12 @@ public class DeploymentsService {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
 
+
         List<DeploymentState> deploymentStates = deploymentStatePersistingService.getDeploymentStates();
         List<DeploymentState> relevantDeploymentStates = deploymentStates.stream()
-                .filter(ds -> event.getNames().contains(ds.getName()) &&
-                        (ds.getState() != DeploymentState.State.STOPPED && ds.getState() != DeploymentState.State.REMOVED)).toList();
+                .filter(ds -> event.getNames().stream().anyMatch(n -> n.equals(ds.getName()) &&
+                        (ds.getState() != DeploymentState.State.STOPPED && ds.getState() != DeploymentState.State.REMOVED)))
+                .toList();
 
         List<Deployment> deployments = deploynentConfiguration.deployments().stream().filter(
                 d -> relevantDeploymentStates.stream().anyMatch(ds -> Objects.equals(ds.getName(), d.name()))
