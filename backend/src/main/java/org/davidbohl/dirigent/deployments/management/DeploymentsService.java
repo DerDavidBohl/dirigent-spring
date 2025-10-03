@@ -72,7 +72,8 @@ public class DeploymentsService {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
 
-        List<DeploymentState> relevantDeploymentStates = deploymentStatePersistingService.getDeploymentStates().stream()
+        List<DeploymentState> deploymentStates = deploymentStatePersistingService.getDeploymentStates();
+        List<DeploymentState> relevantDeploymentStates = deploymentStates.stream()
                 .filter(ds -> event.getNames().contains(ds.getName()) &&
                         (ds.getState() != DeploymentState.State.STOPPED && ds.getState() != DeploymentState.State.REMOVED)).toList();
 
