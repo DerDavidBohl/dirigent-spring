@@ -6,6 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -36,8 +37,15 @@ public class DeploymentStatePersistingService {
     }
 
     public List<DeploymentState> getDeploymentStates() {
-        return StreamSupport.stream(deploymentStateRepository.findAll().spliterator(), false)
-                .toList();
+        Iterable<DeploymentState> all = deploymentStateRepository.findAll();
+
+        List<DeploymentState> result = new ArrayList<>();
+
+        for (DeploymentState deploymentState : all) {
+            result.add(deploymentState);
+        }
+
+        return result;
     }
 
 }
