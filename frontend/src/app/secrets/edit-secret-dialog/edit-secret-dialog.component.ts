@@ -8,6 +8,15 @@ import {MatChipGrid, MatChipInput, MatChipInputEvent, MatChipRemove, MatChipRow}
 import {ENTER, SPACE} from '@angular/cdk/keycodes';
 import {MatIcon} from '@angular/material/icon';
 import {ApiService} from '../../api/api.service';
+import {Observable, ReplaySubject} from 'rxjs';
+import {map, switchMap} from 'rxjs/operators';
+import {
+  MatAutocomplete,
+  MatAutocompleteSelectedEvent,
+  MatAutocompleteTrigger,
+  MatOption
+} from '@angular/material/autocomplete';
+import {AsyncPipe} from '@angular/common';
 
 @Component({
   selector: 'app-edit-secret-dialog',
@@ -23,7 +32,11 @@ import {ApiService} from '../../api/api.service';
     MatChipRow,
     MatIcon,
     MatChipInput,
-    MatChipRemove
+    MatChipRemove,
+    MatAutocompleteTrigger,
+    MatAutocomplete,
+    AsyncPipe,
+    MatOption
   ],
   templateUrl: './edit-secret-dialog.component.html',
   styleUrl: './edit-secret-dialog.component.css',
@@ -37,10 +50,24 @@ export class EditSecretDialogComponent {
   secret: Secret;
   originalSecret: Secret;
   sureDelete: boolean = false;
+  $deploymentNames: Observable<Array<string>>;
+  $deploymentNamesFilter: ReplaySubject<string> = new ReplaySubject<string>(1);
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: Secret, private apiService: ApiService) {
     this.secret = structuredClone(data);
     this.originalSecret = structuredClone(data);
+
+    this.$deploymentNames = apiService.deploymentStates$.pipe(
+      switchMap(ds => this.$deploymentNamesFilter.pipe(map(filter => ds.filter(ds => ds.name.toLowerCase().includes(filter.toLowerCase()))))),
+      map(ds =>
+        ds.filter(ds => !this.secret.deployments.includes(ds.name))
+          .map(ds => ds.name)
+          .sort((a, b) => a.localeCompare(b))
+      )
+
+    );
+
+    this.$deploymentNamesFilter.next('');
   }
 
   changed(): boolean {
@@ -68,14 +95,28 @@ export class EditSecretDialogComponent {
     this.secret.deployments = this.secret.deployments.filter(d => d !== deployment);
   }
 
-  addDeployment($event: MatChipInputEvent) {
+  addDeploymentFromInput($event: MatChipInputEvent) {
 
-    if($event.value.trim().length === 0) return;
-
+    const value = $event.value;
     $event.chipInput.clear();
+    this.addDeployment(value);
+  }
 
-    if (this.secret.deployments.includes($event.value)) return;
+  private addDeployment(value: string) {
+    if (value.trim().length === 0) return;
 
-    this.secret.deployments.push($event.value);
+
+    if (this.secret.deployments.includes(value)) return;
+
+    this.secret.deployments.push(value);
+  }
+
+  addDeploymentFromAutoComplete($event: MatAutocompleteSelectedEvent) {
+    this.addDeployment($event.option.viewValue);
+    $event.option.deselect();
+  }
+
+  filterDeployments($event: Event) {
+    this.$deploymentNamesFilter.next(($event.target as HTMLInputElement).value);
   }
 }
