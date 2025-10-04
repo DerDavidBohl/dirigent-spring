@@ -214,6 +214,10 @@ Store all your repositories for one host in one gitea organization. This way you
 
 `GET` to `/api/v1/deployment-states`
 
+### Secrets
+
+TODO ;)
+
 ## Develop
 
 ### Setup for local Tests
