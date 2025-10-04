@@ -1,16 +1,14 @@
 package org.davidbohl.dirigent.sercrets;
 
-import java.util.*;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
+import lombok.extern.slf4j.Slf4j;
 import org.davidbohl.dirigent.deployments.events.MultipleNamedDeploymentsStartRequestedEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.slf4j.Slf4j;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.*;
 
 
 @Service
@@ -27,7 +25,7 @@ public class SecretService {
         this.applicationEventPublisher = applicationEventPublisher;
 
         if (encryptionKey == null || encryptionKey.length() != 16) {
-            throw new IllegalArgumentException("SECRET_ENCRYPTION_KEY muss 16 Zeichen lang sein!<" + encryptionKey + ">");
+            throw new IllegalArgumentException("SECRET_ENCRYPTION_KEY must have a length of 16 characters!<" + encryptionKey + ">");
         }
 
         this.encryptionKey = encryptionKey;
