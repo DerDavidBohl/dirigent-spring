@@ -52,7 +52,7 @@ Dirigent simplifies **GitOps for Docker Compose deployments** by automating the 
 - **REST API**: Integrate with existing tools (CI/CD, monitoring).
 - **Gotify notifications**: Get alerts when deployments fail.
 
-### Encrypted Secrets
+### 🔒 Encrypted Secrets
 - You can store encrypted Secrets that are injected as Environment Variable on execution
 
 Ideal for Self-hosters managing multiple services (e.g., Nextcloud, Gitea, Vaultwarden).
