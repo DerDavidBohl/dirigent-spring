@@ -56,7 +56,7 @@ jobs:
         run: |
           git add ./backend/pom.xml ./frontend/package.json ./frontend/package-lock.json
           git commit -S -m "Bump version to ${{ github.event.inputs.version }}"
-          git tag -s v${{ github.event.inputs.version }}
+          git tag -s v${{ github.event.inputs.version }} -m "Release v${{ github.event.inputs.version }}"
           git push https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF_NAME}
           # Tag pushen
           git push https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git v${{ github.event.inputs.version }}
