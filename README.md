@@ -64,7 +64,7 @@ Ideal for Self-hosters managing multiple services (e.g., Nextcloud, Gitea, Vault
 ```yml
 services:
   app:
-    image: ghcr.io/derdavidbohl/dirigent-spring:latest
+    image: ghcr.io/derdavidbohl/dirigent-spring:1
     container_name: dirigent-app
     restart: unless-stopped
     environment:
@@ -115,7 +115,7 @@ docker run -d \
   -v /path/to/deployments:/app/deployments \
   -v /path/to/data:/app/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  ghcr.io/derdavidbohl/dirigent-spring:latest
+  ghcr.io/derdavidbohl/dirigent-spring:1
 ```
 
 ### Environment Variables
