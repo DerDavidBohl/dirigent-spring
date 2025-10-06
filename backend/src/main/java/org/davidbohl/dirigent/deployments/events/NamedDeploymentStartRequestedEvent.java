@@ -7,12 +7,12 @@ import org.springframework.context.ApplicationEvent;
 public class NamedDeploymentStartRequestedEvent extends ApplicationEvent {
 
     private final String name;
-    private final boolean forced;
+    private final boolean forceRecreate;
 
-    public NamedDeploymentStartRequestedEvent(Object source, String name, boolean forced) {
+    public NamedDeploymentStartRequestedEvent(Object source, String name, boolean forceRecreate) {
         super(source);
         this.name = name;
-        this.forced = forced;
+        this.forceRecreate = forceRecreate;
     }
 
 }

@@ -11,8 +11,8 @@ import {
   MatRowDef,
   MatTable
 } from '@angular/material/table';
-import {Deployment} from './deploymentState';
-import {ApiService} from './api.service';
+import {Deployment} from '../api/deployment';
+import {ApiService} from '../api/api.service';
 import {MatMenu, MatMenuItem, MatMenuTrigger} from '@angular/material/menu';
 import {MatIcon} from '@angular/material/icon';
 import {MatChip, MatChipListbox, MatChipListboxChange, MatChipOption} from '@angular/material/chips';
@@ -25,10 +25,10 @@ import {AsyncPipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatSort, MatSortHeader, Sort} from '@angular/material/sort';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
-import { SystemInformation } from './system-information';
+import { SystemInformation } from '../api/system-information';
 
 @Component({
-  selector: 'app-overview',
+  selector: 'app-deployments',
   imports: [
     MatTable,
     MatColumnDef,
@@ -56,10 +56,10 @@ import { SystemInformation } from './system-information';
     MatInput,
     MatFormField
   ],
-  templateUrl: './overview.component.html',
-  styleUrl: './overview.component.css',
+  templateUrl: './deployments.component.html',
+  styleUrl: './deployments.component.css',
 })
-export class OverviewComponent implements OnInit {
+export class DeploymentsComponent implements OnInit {
 
   selectedFilterValues$ = new ReplaySubject<Array<string>>(1);
   sort$ = new ReplaySubject<Sort>(1);
@@ -120,7 +120,7 @@ export class OverviewComponent implements OnInit {
   }
 
   ngOnInit(): void {
-        this.selectedFilterValues$.next(['RUNNING', 'FAILED', 'STOPPED']);
+        this.selectedFilterValues$.next(['RUNNING', 'STOPPED', 'FAILED', 'UPDATED', 'UNKNOWN', 'STARTING', 'STOPPING']);
         this.sort$.next({active: 'name', direction: 'asc'});
         this.search$.next('');
     }

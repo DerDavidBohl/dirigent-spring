@@ -12,6 +12,7 @@ import lombok.Setter;
 @Setter
 @Entity
 public class DeploymentState {
+
     @Id
     private String name;
 
