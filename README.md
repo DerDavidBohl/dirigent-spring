@@ -219,7 +219,28 @@ Store all your repositories for one host in one gitea organization. This way you
 
 ### Secrets
 
-TODO ;)
+#### Model
+
+```json
+{
+  "key": "string",
+  "value": "string",
+  "environmentVariable": "string",
+  "deployments": ["string"]
+}
+```
+
+#### Get Secrets
+
+`GET` to `/api/v1/secrets`
+
+#### Save Secret
+
+`PUT` to `/api/v1/secrets/{key}`
+
+#### Delete Secret
+
+`DELETE` to `/api/v1/secrets/{iey}`
 
 ## Develop
 
