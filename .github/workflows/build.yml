@@ -8,8 +8,7 @@ on:
       - synchronize
   push:
     branches:
-      - 'latest'
-      - 'experimental'
+      - '*'
     tags:
       - 'v*'
 
