@@ -52,14 +52,14 @@ export class ApiService {
     this.getSecrets().subscribe((r) => this._secrets.next(r));
   }
 
-  putSecret(secret: Secret): Observable<void> {
-    return this.http.put<void>(`api/v1/secrets/${secret.key}`, secret).pipe(
+  putSecret(secret: Secret, restartDeployments: boolean): Observable<void> {
+    return this.http.put<void>(`api/v1/secrets/${secret.key}?restartDeployments=${restartDeployments}`, secret).pipe(
       tap(() => this.reloadSecrets())
     );
   }
 
-  deleteSecret(secret: Secret): Observable<void> {
-    return this.http.delete<void>(`api/v1/secrets/${secret.key}`).pipe(
+  deleteSecret(secret: Secret, restartDeployments: boolean): Observable<void> {
+    return this.http.delete<void>(`api/v1/secrets/${secret.key}?restartDeployments=${restartDeployments}`).pipe(
       tap(() => this.reloadSecrets())
     );
   }

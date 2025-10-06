@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +26,13 @@ public class SecretController {
     }
 
     @PutMapping("{key}")
-    public void saveSecret(@RequestBody SecretDto secret, @PathVariable String key) {
-        this.secretService.saveSecret(key, secret.environmentVariable(), secret.value(), secret.deployments());
+    public void saveSecret(@RequestBody SecretDto secret, @PathVariable String key, @RequestParam(required = false, defaultValue = "false") boolean restartDeployments) {
+        this.secretService.saveSecret(key, secret.environmentVariable(), secret.value(), secret.deployments(), restartDeployments);
     }
 
     @DeleteMapping("{key}")
-    public void deleteSecret(@PathVariable String key) {
-        this.secretService.deleteSecret(key);
+    public void deleteSecret(@PathVariable String key, @RequestParam(required = false, defaultValue = "false") boolean restartDeployments) {
+        this.secretService.deleteSecret(key, restartDeployments);
     }
 
     @GetMapping

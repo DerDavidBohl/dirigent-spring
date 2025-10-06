@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.*;
+import java.util.stream.Stream;
 
 
 @Service
@@ -32,10 +33,12 @@ public class SecretService {
         this.secretRepository = secretRepository;
     }
 
-    public void saveSecret(String key, String environmentVariable, String value, List<String> deployments) {
+    public void saveSecret(String key, String environmentVariable, String value, List<String> deployments, boolean restartDeployments) {
         try {
 
             Secret secret = secretRepository.findById(key).orElseGet(() -> new Secret(key, environmentVariable, value, deployments));
+
+            List<String> oldDeployments = new ArrayList<>(secret.getDeployments());
 
             secret.setDeployments(deployments);
             secret.setEnvironmentVariable(environmentVariable);
@@ -45,7 +48,15 @@ public class SecretService {
 
             secretRepository.save(secret);
 
-            applicationEventPublisher.publishEvent(new MultipleNamedDeploymentsStartRequestedEvent(this, secret.getDeployments(), true));
+            log.info("Saved Secret <{}>", key);
+
+            if(restartDeployments) {
+
+                List<String> deploymentsToRestart = new HashSet<String>(
+                    Stream.concat(oldDeployments.stream(), deployments.stream()).toList()).stream().toList();
+
+                applicationEventPublisher.publishEvent(new MultipleNamedDeploymentsStartRequestedEvent(this, deploymentsToRestart, true));
+            }
 
         } catch (Exception e) {
             throw new RuntimeException("Saving Secret failed", e);
@@ -74,14 +85,18 @@ public class SecretService {
             ).toList();
     }
 
-    public void deleteSecret(String key) {
+    public void deleteSecret(String key, boolean restartDeployments) {
         Optional<Secret> byId = this.secretRepository.findById(key);
 
         if(byId.isEmpty()) return;
 
         Secret secret = byId.get();
         secretRepository.deleteById(key);
-        applicationEventPublisher.publishEvent(new MultipleNamedDeploymentsStartRequestedEvent(this, secret.getDeployments(), true));
+
+        log.debug("Deleted Secret <{}>", key);
+
+        if(restartDeployments)
+            applicationEventPublisher.publishEvent(new MultipleNamedDeploymentsStartRequestedEvent(this, secret.getDeployments(), true));
     }
 
     private String encrypt(String value) throws Exception {

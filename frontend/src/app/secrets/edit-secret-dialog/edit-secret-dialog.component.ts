@@ -17,6 +17,7 @@ import {
   MatOption
 } from '@angular/material/autocomplete';
 import {AsyncPipe} from '@angular/common';
+import { MatCheckbox } from "@angular/material/checkbox";
 
 @Component({
   selector: 'app-edit-secret-dialog',
@@ -36,8 +37,9 @@ import {AsyncPipe} from '@angular/common';
     MatAutocompleteTrigger,
     MatAutocomplete,
     AsyncPipe,
-    MatOption
-  ],
+    MatOption,
+    MatCheckbox
+],
   templateUrl: './edit-secret-dialog.component.html',
   styleUrl: './edit-secret-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -50,6 +52,7 @@ export class EditSecretDialogComponent {
   secret: Secret;
   originalSecret: Secret;
   sureDelete: boolean = false;
+  restartDeployments: boolean = false;
   $deploymentNames: Observable<Array<string>>;
   $deploymentNamesFilter: ReplaySubject<string> = new ReplaySubject<string>(1);
 
@@ -80,11 +83,11 @@ export class EditSecretDialogComponent {
       this.sureDelete = true;
       return;
     }
-    this.apiService.deleteSecret(this.secret).subscribe(() => this.dialogRef.close());
+    this.apiService.deleteSecret(this.secret, this.restartDeployments).subscribe(() => this.dialogRef.close());
   }
 
   save() {
-    this.apiService.putSecret(this.secret).subscribe(() => this.dialogRef.close());
+    this.apiService.putSecret(this.secret, this.restartDeployments).subscribe(() => this.dialogRef.close());
   }
 
   cancel() {
