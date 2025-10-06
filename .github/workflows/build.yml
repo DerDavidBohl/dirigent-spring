@@ -64,8 +64,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # ref für semver/Tag aus TAG_REF, sonst Standard
           ref: ${{ env.TAG_REF }}
+          event: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event_name == 'repository_dispatch' && github.event.client_payload.tag != '' && 'tag' || '' }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
