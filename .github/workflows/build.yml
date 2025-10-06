@@ -1,5 +1,7 @@
 name: Build Docker Image
 on:
+  repository_dispatch:
+    types: [tag-created]
   workflow_dispatch:
   pull_request:
     types:
@@ -9,8 +11,6 @@ on:
   push:
     branches:
       - '*'
-    tags:
-      - 'v*'
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
