@@ -54,7 +54,7 @@ jobs:
           # Tag pushen
           git push https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git v${{ github.event.inputs.version }}
         env:
-          GITHUB_GPG_KEY: ${{ env.GITHUB_GPG_KEY }}
+          GITHUB_GPG_KEY: ${{ env.GITHUB_GPG_KEY || 'default' }}
           GH_PAT: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
