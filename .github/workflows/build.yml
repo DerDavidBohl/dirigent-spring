@@ -9,6 +9,8 @@ on:
       - reopened
       - synchronize
   push:
+    tags:
+      - 'v*'
     branches:
       - '*'
 
