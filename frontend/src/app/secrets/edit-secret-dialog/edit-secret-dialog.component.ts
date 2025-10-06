@@ -99,7 +99,6 @@ export class EditSecretDialogComponent {
   }
 
   addDeploymentFromInput($event: MatChipInputEvent) {
-
     const value = $event.value;
     $event.chipInput.clear();
     this.addDeployment(value);
