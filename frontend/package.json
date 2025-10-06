@@ -1,6 +1,6 @@
 {
   "name": "dirigent-frontend",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
