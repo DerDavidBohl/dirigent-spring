@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>org.davidbohl</groupId>
 	<artifactId>dirigent</artifactId>
-	<version>1.0.4</version>
+	<version>1.0.5</version>
 	<name>dirigent</name>
 	<description>Helper for Docker Composes</description>
 	<url/>
