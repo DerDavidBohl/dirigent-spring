@@ -28,19 +28,22 @@ jobs:
           java-version: '25'
 
       - name: Update pom.xml version
+        working-directory: ./backend
         run: mvn versions:set -DnewVersion=${{ github.event.inputs.version }}
 
       - name: Update package.json version
+        working-directory: ./frontend
         run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
 
       - name: Install npm dependencies
+        working-directory: ./frontend
         run: npm install
 
       - name: Commit and push changes
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add pom.xml package.json package-lock.json
+          git add ./backend/pom.xml ./frontend/package.json ./frontend/package-lock.json
           git commit -m "Bump version to ${{ github.event.inputs.version }}"
           git push
 
