@@ -41,12 +41,19 @@ jobs:
         working-directory: ./frontend
         run: npm install
 
+      - name: Import GPG key
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          git config --global user.signingkey "$GPG_KEY_ID"
+          git config --global commit.gpgsign true
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+
       - name: Commit and push changes
         run: |
-          git config --global user.signingkey $GITHUB_GPG_KEY
-          git config --global commit.gpgsign true
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
           git add ./backend/pom.xml ./frontend/package.json ./frontend/package-lock.json
           git commit -S -m "Bump version to ${{ github.event.inputs.version }}"
           git tag -s v${{ github.event.inputs.version }}
