@@ -49,25 +49,30 @@ export class EditSecretDialogComponent {
   protected readonly ENTER = ENTER;
   protected readonly SPACE = SPACE;
   readonly dialogRef = inject(MatDialogRef<EditSecretDialogComponent>);
+  
   secret: Secret;
   originalSecret: Secret;
   sureDelete: boolean = false;
   restartDeployments: boolean = false;
+  deploymentsInputValue: string = '';
+  
   $deploymentNames: Observable<Array<string>>;
   $deploymentNamesFilter: ReplaySubject<string> = new ReplaySubject<string>(1);
+
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: Secret, private apiService: ApiService) {
     this.secret = structuredClone(data);
     this.originalSecret = structuredClone(data);
 
     this.$deploymentNames = apiService.deploymentStates$.pipe(
-      switchMap(ds => this.$deploymentNamesFilter.pipe(map(filter => ds.filter(ds => ds.name.toLowerCase().includes(filter.toLowerCase()))))),
+      switchMap(ds => this.$deploymentNamesFilter.pipe(
+        map(filter => [{name: filter}, ...ds.filter(ds => ds.name.toLowerCase().includes(filter.toLowerCase()))].filter(d => !!d.name))
+      )),
       map(ds =>
         ds.filter(ds => !this.secret.deployments.includes(ds.name))
           .map(ds => ds.name)
           .sort((a, b) => a.localeCompare(b))
       )
-
     );
 
     this.$deploymentNamesFilter.next('');
@@ -98,10 +103,13 @@ export class EditSecretDialogComponent {
     this.secret.deployments = this.secret.deployments.filter(d => d !== deployment);
   }
 
-  addDeploymentFromInput($event: MatChipInputEvent) {
-    const value = $event.value;
-    $event.chipInput.clear();
-    this.addDeployment(value);
+  addDeploymentFromInput($event: Event) {
+
+    if(!this.deploymentsInputValue)
+      return;
+
+    this.deploymentsInputValue = '';
+    this.addDeployment(this.deploymentsInputValue);
   }
 
   private addDeployment(value: string) {
@@ -111,6 +119,7 @@ export class EditSecretDialogComponent {
     if (this.secret.deployments.includes(value)) return;
 
     this.secret.deployments.push(value);
+    this.$deploymentNamesFilter.next('');
   }
 
   addDeploymentFromAutoComplete($event: MatAutocompleteSelectedEvent) {
