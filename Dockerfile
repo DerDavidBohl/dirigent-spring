@@ -16,7 +16,7 @@ COPY --from=frontend-build /app/dist/browser ./src/main/resources/static
 RUN mvn clean package -DskipTests
 
 # Use OpenJDK image to run the application
-FROM openjdk:23-jdk-slim-bullseye
+FROM eclipse-temurin:21
 
 # Install Docker
 RUN apt-get update && apt-get install -y ca-certificates curl
