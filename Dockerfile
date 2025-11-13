@@ -18,8 +18,8 @@ RUN mvn clean package -DskipTests
 # Use OpenJDK image to run the application
 FROM eclipse-temurin:21-alpine
 
-# Install Docker
-RUN apk add docker docker-compose
+# Install Docker and git
+RUN apk add docker docker-compose git
 
 # Finish
 WORKDIR /app
