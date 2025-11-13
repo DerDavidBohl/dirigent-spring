@@ -52,8 +52,20 @@ public class GitService {
             }
 
 
-            new ProcessBuilder("git", "clone", uriComponentsBuilder.toUriString(), destination)
-                    .start().waitFor();
+            Process process = new ProcessBuilder("git", "clone", uriComponentsBuilder.toUriString(), destination)
+                    .start();
+            int exitCode = process.waitFor();
+
+            if (exitCode != 0) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                String line;
+                StringBuilder stringBuilder = new StringBuilder();
+                while ((line = reader.readLine()) != null) {
+                    stringBuilder.append(line).append(System.lineSeparator());
+                }
+                throw new IOException("Git clone failed with exit code " + exitCode + ": " + stringBuilder);
+            }
+
         }
 
         return changed;
