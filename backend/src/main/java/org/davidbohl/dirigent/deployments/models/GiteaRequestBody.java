@@ -1,4 +1,4 @@
 package org.davidbohl.dirigent.deployments.models;
 
-public record GiteaRequestBody(GiteaRepository repository) {
+public record GiteaRequestBody(String ref, GiteaRepository repository) {
 }
