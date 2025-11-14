@@ -21,38 +21,52 @@ public class GitService {
     @Value("${dirigent.git.authToken}")
     private String authToken;
 
-    public boolean updateRepo(String source, String destination) throws IOException, InterruptedException {
+    public boolean updateRepo(String repoUrl, String targetDir, String rev) throws IOException, InterruptedException {
 
-        logger.info("Cloning or pulling git repository '{}' to dir '{}'", source, destination);
+        logger.info("Cloning or pulling git repository '{}' to dir '{}'", repoUrl, targetDir);
 
-        File destinationDir = new File(destination);
+        File destinationDir = new File(targetDir);
 
         boolean changed;
 
-        if (destinationDir.exists() && Arrays.asList(Objects.requireNonNull(destinationDir.list())).contains(".git")) {
+
+        String remoteGitUri = enrichUriWithAuthTokenIfConfigured(repoUrl);
+
+        boolean repoTargetDirExistsAndIsGitRepo = false;
+        if (destinationDir.exists()) {
+            String[] dirList = destinationDir.list();
+            if (dirList != null) {
+                repoTargetDirExistsAndIsGitRepo = Arrays.asList(dirList).contains(".git");
+            }
+        }
+
+        boolean repoHasCorrectRemote = false;
+        if (repoTargetDirExistsAndIsGitRepo) {
+            repoHasCorrectRemote = getCurrentGitRemoteUrl(destinationDir).equals(remoteGitUri);
+        }
+
+        boolean onlyPullNeeded = repoTargetDirExistsAndIsGitRepo && repoHasCorrectRemote;
+        if (onlyPullNeeded) {
             logger.debug("Local Repo exists. Pulling latest changes.");
 
             String currentHeadRev = getHeadRev(destinationDir);
+
+            new ProcessBuilder("git", "reset", "--hard", "HEAD")
+                    .directory(destinationDir).start().waitFor();
             new ProcessBuilder("git", "fetch", "--all")
                     .directory(destinationDir).start().waitFor();
-            new ProcessBuilder("git", "reset", "--hard", "HEAD")
+            new ProcessBuilder("git", "checkout", rev)
                     .directory(destinationDir).start().waitFor();
             new ProcessBuilder("git", "pull")
                     .directory(destinationDir).start().waitFor();
+
             String newHeadRev = getHeadRev(destinationDir);
             changed = !currentHeadRev.equals(newHeadRev);
         } else {
             changed = true;
             logger.debug("Local Repo does not exist. Cloning repository.");
-            deleteDirectory(destinationDir);
-            UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUriString(source);
-
-            if (!authToken.isBlank() && (uriComponentsBuilder.build().getUserInfo() == null || Objects.requireNonNull(uriComponentsBuilder.build().getUserInfo()).isEmpty())) {
-                uriComponentsBuilder = uriComponentsBuilder.userInfo(authToken);
-            }
-
-
-            Process process = new ProcessBuilder("git", "clone", uriComponentsBuilder.toUriString(), destination)
+            ensureFileOrDirectoryIsDeletedRecursive(destinationDir);
+            Process process = new ProcessBuilder("git", "clone", remoteGitUri, targetDir)
                     .start();
             int exitCode = process.waitFor();
 
@@ -71,9 +85,29 @@ public class GitService {
         return changed;
     }
 
+    private String enrichUriWithAuthTokenIfConfigured(String repoUri) {
+        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUriString(repoUri);
+
+        if (!authToken.isBlank() && (uriComponentsBuilder.build().getUserInfo() == null || Objects.requireNonNull(uriComponentsBuilder.build().getUserInfo()).isEmpty())) {
+            uriComponentsBuilder = uriComponentsBuilder.userInfo(authToken);
+        }
+
+        return uriComponentsBuilder.toUriString();
+    }
+
+    private static String getCurrentGitRemoteUrl(File destinationDir) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("git", "config", "--get", "remote.origin.url")
+                .directory(destinationDir).start();
+        return getStdOutFromProcess(process).trim();
+    }
+
     private static String getHeadRev(File destinationDir) throws IOException, InterruptedException {
         Process process = new ProcessBuilder("git", "rev-parse", "HEAD")
                 .directory(destinationDir).start();
+        return getStdOutFromProcess(process);
+    }
+
+    private static String getStdOutFromProcess(Process process) throws IOException, InterruptedException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String line;
         StringBuilder stringBuilder = new StringBuilder();
@@ -85,14 +119,14 @@ public class GitService {
         return currentRev;
     }
 
-    void deleteDirectory(File directoryToBeDeleted) {
-        File[] allContents = directoryToBeDeleted.listFiles();
+    private static void ensureFileOrDirectoryIsDeletedRecursive(File directoryOrFileToBeDeleted) {
+        File[] allContents = directoryOrFileToBeDeleted.listFiles();
         if (allContents != null) {
             for (File file : allContents) {
-                deleteDirectory(file);
+                ensureFileOrDirectoryIsDeletedRecursive(file);
             }
         }
-        directoryToBeDeleted.delete();
+        directoryOrFileToBeDeleted.delete(); // TODO: handle failure
     }
 }
 

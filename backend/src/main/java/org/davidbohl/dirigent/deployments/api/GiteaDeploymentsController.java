@@ -31,7 +31,14 @@ public class GiteaDeploymentsController {
             return;
         }
 
-        applicationEventPublisher.publishEvent(new SourceDeploymentStartRequestedEvent(this, body.repository().cloneUrl()));
+        String cleanRef = body.ref();
+
+        if(cleanRef.contains("/")) {
+            String[] refParts = body.ref().split("/");
+            cleanRef = refParts[refParts.length - 1];
+        }
+
+        applicationEventPublisher.publishEvent(new SourceDeploymentStartRequestedEvent(this, body.repository().cloneUrl(), cleanRef));
     }
 
 }
