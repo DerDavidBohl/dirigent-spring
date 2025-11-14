@@ -116,7 +116,7 @@ public class DeploymentsService {
                 )
                 .collect(Collectors.toList());
 
-        deployListOfDeployments(deployments, true);
+        deployListOfDeployments(deployments, false);
     }
 
     @EventListener(NamedDeploymentStopRequestedEvent.class)
