@@ -30,6 +30,7 @@ public class DirigentApplication {
 			Runtime.getRuntime().exec((composeCommand + " --version").split(" "));
 			return true;
 		} catch (Exception e) {
+            logger.error("Compose is not installed. Please install it and try again.", e);
 			// Handle exception if needed
 		}
 		return false;
