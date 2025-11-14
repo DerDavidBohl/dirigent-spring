@@ -110,7 +110,10 @@ public class DeploymentsService {
 
         List<Deployment> deployments = deploynentConfiguration.deployments()
                 .stream()
-                .filter(d -> Objects.equals(d.source(), event.getDeploymentSource()))
+                .filter(d ->
+                        Objects.equals(d.source(), event.getDeploymentSource()) &&
+                        (d.ref() == null || Objects.equals(d.ref(), event.getRef()))
+                )
                 .collect(Collectors.toList());
 
         deployListOfDeployments(deployments, true);
@@ -154,7 +157,8 @@ public class DeploymentsService {
 
         try {
 
-            boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
+            String rev = deployment.ref() != null ? deployment.ref() : "HEAD";
+            boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath(), rev);
             Optional<DeploymentState> optionalState = deploymentStatePersistingService.getDeploymentStates().stream()
                     .filter(state -> state.getName().equals(deployment.name()))
                     .findFirst();
