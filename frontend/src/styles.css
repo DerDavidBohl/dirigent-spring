@@ -71,7 +71,7 @@ html.dark .mdc-tab-indicator__content--underline {
   margin-top: 12px;
 }
 
-/* Generic surfaces (cards, table container usw.) */
+/* Generic surfaces (cards, table container ...) */
 
 .mat-mdc-card,
 .mat-mdc-table {
@@ -99,8 +99,6 @@ html.dark .mat-mdc-dialog-container .mdc-dialog__surface {
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
 }
 
-/* Inputs – Reset alles, keine Balken links/rechts */
-
 .mat-mdc-form-field,
 .mat-mdc-text-field-wrapper,
 .mat-mdc-form-field-flex,
@@ -112,8 +110,6 @@ html.dark .mat-mdc-dialog-container .mdc-dialog__surface {
   box-shadow: none;
   outline: none;
 }
-
-/* Light mode Input-Container */
 
 html:not(.dark) .mat-mdc-form-field {
   background-color: #f5f5f5;
@@ -127,8 +123,6 @@ html:not(.dark) .mat-mdc-form-field-subscript-wrapper {
   border-radius: 0 0 8px 8px;
 }
 
-/* Dark mode Input-Container: minimal heller als Umgebung */
-
 html.dark .mat-mdc-form-field {
   background-color: #262626;
   border-radius: 8px;
@@ -140,8 +134,6 @@ html.dark .mat-mdc-form-field-subscript-wrapper {
   background-color: #262626;
   border-radius: 0 0 8px 8px;
 }
-
-/* Input-Innenleben */
 
 .mat-mdc-form-field-flex > .mat-mdc-form-field-infix {
   padding-left: 0;
@@ -236,8 +228,6 @@ body,
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Tailwind slate backgrounds neutralisieren im Darkmode */
-
 html.dark .bg-slate-900,
 html.dark .bg-slate-800,
 html.dark .bg-slate-700,
@@ -267,4 +257,19 @@ html.dark .mdc-form-field > label {
 
 .mat-mdc-dialog-container .mdc-dialog__surface .mat-mdc-form-field {
   margin-bottom: 14px;
+}
+
+/* Improve readability of disabled buttons in dark mode */
+html.dark .mat-mdc-button-disabled,
+html.dark .mat-mdc-button-disabled .mdc-button__label,
+html.dark .mdc-button--disabled,
+html.dark .mdc-button--disabled .mdc-button__label {
+  color: #bfbfbf !important;
+  opacity: 0.7 !important;
+}
+
+/* Improve disabled icon buttons */
+html.dark .mat-mdc-icon-button.mat-mdc-button-disabled .mat-icon {
+  color: #bfbfbf !important;
+  opacity: 0.7 !important;
 }
