@@ -26,7 +26,7 @@ public class DeploymentsConfigurationProvider {
 
         try {
         if (gitUrl != null)
-            gitService.updateRepo(gitUrl, "config");
+            gitService.updateRepo(gitUrl, "config", "HEAD");
 
         File configFile = new File("config/deployments.yml");
 

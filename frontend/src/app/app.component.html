@@ -1,10 +1,23 @@
+<header class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800">
+  <div class="flex items-center gap-3">
+    <img alt="Icon" class="h-10" src="icon-background.svg"/>
+    <span class="text-2xl font-semibold tracking-tight">Dirigent</span>
+  </div>
+
+  <button mat-icon-button (click)="toggleTheme()">
+    <mat-icon>
+      {{ themeService.theme === 'dark' ? 'light_mode' : 'dark_mode' }}
+    </mat-icon>
+  </button>
+</header>
+
 <main class="p-5">
-  <h1 class="text-4xl mb-5">
-    <img alt="Icon" class="inline h-15" src="icon-background.svg"/>
-    Dirigent
-  </h1>
   <mat-tab-group>
-    <mat-tab label="Deployments"><app-deployments></app-deployments></mat-tab>
-    <mat-tab label="Secrets"><app-secrets></app-secrets></mat-tab>
+    <mat-tab label="Deployments">
+      <app-deployments></app-deployments>
+    </mat-tab>
+    <mat-tab label="Secrets">
+      <app-secrets></app-secrets>
+    </mat-tab>
   </mat-tab-group>
 </main>
