@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -203,6 +204,8 @@ public class DeploymentsService {
             }
 
             int exitCode = process.waitFor();
+            reader.close();
+            
             if ((exitCode != 0)) {
                 applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, errorOutput.toString()));
                 return;
@@ -282,26 +285,27 @@ public class DeploymentsService {
 
         TreeMap<Integer, List<Deployment>> sortedDeployments = new TreeMap<>(deploymentsByOrder);
 
-        for (Integer orderGroupKey : sortedDeployments.keySet()) {
+        try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            for (Integer orderGroupKey : sortedDeployments.keySet()) {
 
-            logger.info("Starting deployments with order {}", orderGroupKey);
+                logger.info("Starting deployments with order {}", orderGroupKey);
 
-            List<Deployment> deploymentsOrderUnit = sortedDeployments.get(orderGroupKey);
-            ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+                List<Deployment> deploymentsOrderUnit = sortedDeployments.get(orderGroupKey);
 
-            for (Deployment deployment : deploymentsOrderUnit) {
-                executorService.submit(() -> deploy(deployment, forceRecreate));
+                List<CompletableFuture<Void>> futures = new ArrayList<>();
+                for (Deployment deployment : deploymentsOrderUnit) {
+                    futures.add(CompletableFuture.runAsync(() -> deploy(deployment, forceRecreate), executorService));
+                }
+
+                try {
+                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                } catch (Throwable ex) {
+                    throw new RuntimeException(ex);
+                }
+
+
+                logger.info("Deployments with order {} finished", orderGroupKey);
             }
-
-            executorService.shutdown();
-            try {
-                executorService.awaitTermination(Long.MAX_VALUE, java.util.concurrent.TimeUnit.NANOSECONDS);
-            } catch (Throwable ex) {
-                throw new RuntimeException(ex);
-            }
-
-
-            logger.info("Deployments with order {} finished", orderGroupKey);
         }
     }
 
