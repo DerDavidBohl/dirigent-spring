@@ -81,7 +81,7 @@ public class ContainerRegistryClient {
 
         HttpEntity<Void> req = new HttpEntity<>(h);
 
-        URI uri = URI.create(host + name + "/manifests/" + tag);
+        String uri =host + name + "/manifests/" + tag;
 
         String body = rest.exchange(
                 uri,
