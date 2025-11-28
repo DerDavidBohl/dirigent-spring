@@ -8,6 +8,7 @@ import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvide
 import org.davidbohl.dirigent.deployments.events.ImageUpdateAvailableEvent;
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +44,7 @@ public class DeploymentUpdateService {
         }
     }
 
+    @Async
     public void checkIfImageUpdatesExistForDeployment(Deployment deployment) {
 
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
@@ -96,7 +98,7 @@ public class DeploymentUpdateService {
 
         String[] parts = imageString.split("/");
 
-        if (parts[0].contains(".") || parts[0].matches(".*:\\d+")) {
+        if (parts.length > 1 && (parts[0].contains(".") || parts[0].matches(".*:\\d+"))) {
             host = parts[0];
         }
 
