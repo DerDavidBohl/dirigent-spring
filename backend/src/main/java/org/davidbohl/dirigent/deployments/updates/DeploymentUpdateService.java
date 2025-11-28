@@ -31,8 +31,11 @@ public class DeploymentUpdateService {
     private final DeploymentsConfigurationProvider configurationProvider;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    @Scheduled(fixedRateString = "${dirigent.update.rate}", timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRateString = "${dirigent.update.rate:30}", timeUnit = TimeUnit.SECONDS)
     public void checkAllDeploymentForUpdates() {
+
+        log.info("Checking For Updates");
+
         List<Deployment> deployments = configurationProvider.getConfiguration().deployments();
 
         for (Deployment deployment : deployments) {
