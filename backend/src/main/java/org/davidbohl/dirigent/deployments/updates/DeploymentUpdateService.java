@@ -85,7 +85,7 @@ public class DeploymentUpdateService {
             DockerImage image = parseDockerImage(container.getImage());
 
             try {
-                String registryDigest = this.containerRegistryClient.getRegistryDigest(image.host(), image.image(), image.tag());
+                String registryDigest = this.containerRegistryClient.getRegistryDigest(image.registryEndpoint(), image.image(), image.tag());
 
                 // InspectImageResponse imageData = dockerClient.inspectImageCmd(container.getImageId()).exec();
 
