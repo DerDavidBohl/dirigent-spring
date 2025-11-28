@@ -2,6 +2,7 @@ package org.davidbohl.dirigent.deployments.notification;
 
 import lombok.extern.slf4j.Slf4j;
 import org.davidbohl.dirigent.deployments.events.DeploymentStateChangedEvent;
+import org.davidbohl.dirigent.deployments.events.ImageUpdateAvailableEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,14 @@ public class NotificationService {
         sendGotifyMessage(title, context);
 
         log.info("Deployment '{}' state changed to {}. Context: {}", event.getDeploymentName(), event.getState(), context);
+    }
+
+    @EventListener(ImageUpdateAvailableEvent.class)
+    public void onImageUpdateAvailable(ImageUpdateAvailableEvent event) {
+        String title = "Image Update available: " + event.getImage();
+        String message = "New version of image " + event.getImage() + " in deployment " + event.getDeploymentName() + " in service " + event.getServiceName() + " found.";
+
+        sendGotifyMessage(title, message);
     }
 
     private void sendGotifyMessage(String title, String message) {

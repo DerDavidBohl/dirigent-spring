@@ -41,3 +41,4 @@ backend/data/
 /data/
 /deployments/
 /config/
+frontend/proxy.conf.json
