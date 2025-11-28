@@ -34,6 +34,9 @@ public class ContainerRegistryClient {
         
         if(!registryEndpoint.startsWith("https://") && !registryEndpoint.startsWith("http://"))
             registryEndpoint = "https://" + registryEndpoint;
+
+        if(!registryEndpoint.endsWith("/v2"))
+            registryEndpoint = registryEndpoint + "/v2";
         
         String token = getToken(registryEndpoint, name);
         try {
@@ -48,7 +51,7 @@ public class ContainerRegistryClient {
 
         try {
 
-            rest.exchange(registryEndpoint + "/v2/", HttpMethod.GET, null, String.class);
+            rest.exchange(registryEndpoint + "/", HttpMethod.GET, null, String.class);
 
         } catch (HttpClientErrorException rce) {
 
@@ -83,7 +86,7 @@ public class ContainerRegistryClient {
 
         HttpEntity<Void> req = new HttpEntity<>(h);
 
-        String uri =registryEndpoint + "/v2/" + name + "/manifests/" + tag;
+        String uri =registryEndpoint + "/" + name + "/manifests/" + tag;
 
         String body = rest.exchange(
                 uri,
