@@ -2,11 +2,13 @@ package org.davidbohl.dirigent.deployments.updates;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
 import org.davidbohl.dirigent.deployments.events.ImageUpdateAvailableEvent;
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.github.dockerjava.api.DockerClient;
@@ -29,6 +31,7 @@ public class DeploymentUpdateService {
     private final DeploymentsConfigurationProvider configurationProvider;
     private final ApplicationEventPublisher applicationEventPublisher;
 
+    @Scheduled(fixedRateString = "${dirigent.update.rate}", timeUnit = TimeUnit.SECONDS)
     public void checkAllDeploymentForUpdates() {
         List<Deployment> deployments = configurationProvider.getConfiguration().deployments();
 
@@ -75,7 +78,8 @@ public class DeploymentUpdateService {
                 applicationEventPublisher.publishEvent(new ImageUpdateAvailableEvent(this, deployment.name(), container.getImage(), container.getLabels().getOrDefault("com.docker.compose.service", "unknown")));
 
             } catch (CouldNotGetManifestDigestFromRegistryFailedException e) {
-                e.printStackTrace();
+                log.warn("could not get digest from registry for image {}", image);
+                log.warn("Could Not Get Manifest Digest From Registry", e);
             }
 
         }
