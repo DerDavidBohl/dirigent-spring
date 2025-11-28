@@ -21,17 +21,23 @@ import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@AllArgsConstructor
 public class DeploymentUpdateService {
 
     private final ContainerRegistryClient containerRegistryClient;
     private final DeploymentsConfigurationProvider configurationProvider;
     private final ApplicationEventPublisher applicationEventPublisher;
+
+    public DeploymentUpdateService(ContainerRegistryClient containerRegistryClient,
+            DeploymentsConfigurationProvider configurationProvider,
+            ApplicationEventPublisher applicationEventPublisher) {
+        this.containerRegistryClient = containerRegistryClient;
+        this.configurationProvider = configurationProvider;
+        this.applicationEventPublisher = applicationEventPublisher;
+    }
 
     @Value("${dirigent.update.enabled:false}")
     boolean updateEnabled;
