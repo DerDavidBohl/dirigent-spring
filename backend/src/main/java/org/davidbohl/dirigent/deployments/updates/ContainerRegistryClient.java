@@ -35,7 +35,7 @@ public class ContainerRegistryClient {
         if(!registryEndpoint.startsWith("https://") && !registryEndpoint.startsWith("http://"))
             registryEndpoint = "https://" + registryEndpoint;
 
-        if(!registryEndpoint.endsWith("/v2"))
+        if(!registryEndpoint.endsWith("/v2") && !registryEndpoint.endsWith("/v2/"))
             registryEndpoint = registryEndpoint + "/v2";
         
         String token = getToken(registryEndpoint, name);
