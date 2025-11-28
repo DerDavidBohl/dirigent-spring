@@ -28,7 +28,7 @@ private ContainerRegistryClient client;
     
     @Test
     void checkDockerImage() throws CouldNotGetManifestDigestFromRegistryFailedException {
-        client.getRegistryDigest("registry-1.docker.io", "mcp/slack", "latest");
+        client.getRegistryDigest("https://registry-1.docker.io", "mcp/slack", "latest");
     }
 
     @Test

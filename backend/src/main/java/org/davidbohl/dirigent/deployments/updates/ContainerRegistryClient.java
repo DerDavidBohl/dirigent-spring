@@ -31,6 +31,10 @@ public class ContainerRegistryClient {
     private final ObjectMapper mapper = new ObjectMapper();
 
     public String getRegistryDigest(String registryEndpoint, String name, String tag) throws CouldNotGetManifestDigestFromRegistryFailedException {
+        
+        if(!registryEndpoint.startsWith("https://") && !registryEndpoint.startsWith("http://"))
+            registryEndpoint = "https://" + registryEndpoint;
+        
         String token = getToken(registryEndpoint, name);
         try {
             return getManifestDigest(registryEndpoint, name, tag, token);
@@ -79,7 +83,7 @@ public class ContainerRegistryClient {
 
         HttpEntity<Void> req = new HttpEntity<>(h);
 
-        String uri =registryEndpoint + name + "/manifests/" + tag;
+        String uri =registryEndpoint + "/v2/" + name + "/manifests/" + tag;
 
         String body = rest.exchange(
                 uri,
