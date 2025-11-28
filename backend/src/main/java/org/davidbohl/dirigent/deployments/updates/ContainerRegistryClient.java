@@ -1,5 +1,6 @@
 package org.davidbohl.dirigent.deployments.updates;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -75,16 +76,15 @@ public class ContainerRegistryClient {
         HttpHeaders h = new HttpHeaders();
         h.setBearerAuth(token);
         h.setAccept(MediaType.parseMediaTypes(List.of(
-                "application/vnd.docker.distribution.manifest.v2+json",
-                "application/vnd.docker.distribution.manifest.list.v2+json")
+                "application/vnd.docker.distribution.manifest.v2+json")
             ));
 
         HttpEntity<Void> req = new HttpEntity<>(h);
 
-        String url = "https://%s/v2/%s/manifests/%s".formatted(host, name, tag);
+        URI uri = URI.create(host + name + "/manifests/" + tag);
 
         String body = rest.exchange(
-                url,
+                uri,
                 HttpMethod.GET,
                 req,
                 String.class)

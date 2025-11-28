@@ -97,28 +97,38 @@ public class DeploymentUpdateService {
         }
     }
 
-    private DockerImage parseDockerImage(String imageString) {
+    private DockerImage parseDockerImage(String imageRef) {
 
-        // TODO: Move this to config
-        String host = "registry-1.docker.io";
-        String tag = "latest";
+        // Parse image reference (e.g., "quay.io/prometheus/node-exporter:latest")
+        String[] parts = imageRef.split("/", 2);
+        String registryDomain = parts.length > 1 && parts[0].contains(".") ? parts[0] : "docker.io";
+        String remainder = parts.length > 1 && parts[0].contains(".") ? parts[1] : imageRef;
 
-        String[] parts = imageString.split("/");
+        // Normalize registry URL (docker.io → registry-1.docker.io)
+        String registryUrl = normalizeRegistryUrl(registryDomain);
+        String imagePath = normalizeImagePath(remainder, registryDomain.equals("docker.io"));
+        String tag = extractTag(remainder);
 
-        if (parts.length > 1 && (parts[0].contains(".") || parts[0].matches(".*:\\d+"))) {
-            host = parts[0];
+        return new DockerImage(registryUrl, imagePath, tag);
+    }
+
+        private String normalizeRegistryUrl(String registryDomain) {
+        return registryDomain.equals("docker.io") 
+            ? "https://registry-1.docker.io/v2/" 
+            : "https://" + registryDomain + "/v2/";
+    }
+
+    private String normalizeImagePath(String remainder, boolean isDockerHub) {
+        String[] parts = remainder.split(":");
+        String path = parts[0];
+        if (isDockerHub && !path.contains("/")) {
+            return "library/" + path;  // Docker Hub defaults to "library/" for official images
         }
+        return path;
+    }
 
-        int slashIndex = imageString.indexOf('/');
-
-        String image = (slashIndex != -1) ? imageString.substring(slashIndex + 1) : "library/" + imageString;
-
-        if (image.contains(":")) {
-            tag = image.split(":")[1];
-            image = image.split(":")[0];
-        }
-
-        return new DockerImage(host, image, tag);
+    private String extractTag(String remainder) {
+        return remainder.contains(":") ? remainder.split(":")[1] : "latest";
     }
 
 }
