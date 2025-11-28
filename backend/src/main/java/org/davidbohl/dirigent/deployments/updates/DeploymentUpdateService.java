@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
 import org.davidbohl.dirigent.deployments.events.ImageUpdateAvailableEvent;
 import org.davidbohl.dirigent.deployments.models.Deployment;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,8 +33,14 @@ public class DeploymentUpdateService {
     private final DeploymentsConfigurationProvider configurationProvider;
     private final ApplicationEventPublisher applicationEventPublisher;
 
+    @Value("${dirigent.update.enabled:false}")
+    boolean updateEnabled;
+
     @Scheduled(fixedRateString = "${dirigent.update.rate:30}", timeUnit = TimeUnit.SECONDS)
     public void checkAllDeploymentForUpdates() {
+
+        if(!updateEnabled)
+            return;
 
         log.info("Checking For Updates");
 
