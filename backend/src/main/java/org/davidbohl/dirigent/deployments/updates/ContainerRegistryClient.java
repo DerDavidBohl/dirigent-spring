@@ -82,8 +82,9 @@ public class ContainerRegistryClient {
         h.setBearerAuth(token);
         h.setAccept(MediaType.parseMediaTypes(List.of(
                 "application/vnd.docker.distribution.manifest.v2+json",
-                "application/vnd.oci.image.manifest.v1+json")
-            ));
+                "application/vnd.oci.image.manifest.v1+json",
+                "application/vnd.oci.image.index.v1+json"
+            )));
 
         HttpEntity<Void> req = new HttpEntity<>(h);
 
