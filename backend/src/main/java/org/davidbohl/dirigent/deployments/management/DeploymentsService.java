@@ -1,13 +1,35 @@
 package org.davidbohl.dirigent.deployments.management;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
-import org.davidbohl.dirigent.deployments.events.*;
+import org.davidbohl.dirigent.deployments.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.DeploymentStateEvent;
+import org.davidbohl.dirigent.deployments.events.MultipleNamedDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.NamedDeploymentStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.NamedDeploymentStopRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.RecreateAllDeploymentStatesEvent;
+import org.davidbohl.dirigent.deployments.events.SourceDeploymentStartRequestedEvent;
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
 import org.davidbohl.dirigent.deployments.state.DeploymentState;
 import org.davidbohl.dirigent.deployments.state.DeploymentStatePersistingService;
 import org.davidbohl.dirigent.sercrets.SecretService;
-import org.davidbohl.dirigent.utility.GitService;
+import org.davidbohl.dirigent.utility.git.GitService;
+import org.davidbohl.dirigent.utility.process.ProcessResult;
+import org.davidbohl.dirigent.utility.process.ProcessRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,17 +37,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor()
 public class DeploymentsService {
 
     public static final String DEPLOYMENTS_DIR_NAME = "deployments";
@@ -35,22 +50,10 @@ public class DeploymentsService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final DeploymentStatePersistingService deploymentStatePersistingService;
     private final SecretService secretService;
+    private final ProcessRunner processRunner;
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
-
-    public DeploymentsService(
-            DeploymentsConfigurationProvider deploymentsConfigurationProvider,
-            GitService gitService,
-            ApplicationEventPublisher applicationEventPublisher,
-            DeploymentStatePersistingService deploymentStatePersistingService,
-            SecretService secretService) {
-        this.deploymentsConfigurationProvider = deploymentsConfigurationProvider;
-        this.gitService = gitService;
-        this.applicationEventPublisher = applicationEventPublisher;
-        this.deploymentStatePersistingService = deploymentStatePersistingService;
-        this.secretService = secretService;
-    }
 
     @EventListener(AllDeploymentsStartRequestedEvent.class)
     public void onAllDeploymentsStartRequested(AllDeploymentsStartRequestedEvent event) {
@@ -188,26 +191,13 @@ public class DeploymentsService {
             }
 
             logger.info("Upping Compose for {}", deployment.name());
-            ProcessBuilder builder = new ProcessBuilder(commandArgs)
-                    .directory(deploymentDir);
 
-            builder.environment().putAll(secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name()));
-
-            Process process = builder
-                    .start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            StringBuilder errorOutput = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                errorOutput.append(line).append("\n");
-            }
-
-            int exitCode = process.waitFor();
-            reader.close();
+            ProcessResult composeUp = processRunner.executeCommand(commandArgs, 
+                deploymentDir, 
+                secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name()));
             
-            if ((exitCode != 0)) {
-                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, errorOutput.toString()));
+            if ((composeUp.exitCode() != 0)) {
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, composeUp.stderr()));
                 return;
             }
         } catch (IOException | InterruptedException e) {
@@ -256,10 +246,8 @@ public class DeploymentsService {
 
         List<String> commandArgs = new ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
         commandArgs.add("down");
-        new ProcessBuilder(commandArgs)
-                .directory(new File(DEPLOYMENTS_DIR_NAME + "/" + deploymentName))
-                .start()
-                .waitFor();
+
+        processRunner.executeCommand(commandArgs, new File(DEPLOYMENTS_DIR_NAME + "/" + deploymentName));
         applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName, DeploymentState.State.STOPPED, "Deployment '%s' stopped".formatted(deploymentName)));
     }
 
