@@ -94,14 +94,10 @@ public class ProcessRunner {
         } catch (InterruptedException e) {
             log.warn("Process got interupted", e);
         }
+        
+        watchdog.destroyProcess();
 
         streamHandler.stop();
-        watchdog.destroyProcess();
-        try {
-            watchdog.wait();
-        } catch (InterruptedException e) {
-            log.warn("Watchdog wait interupted", e);
-        }
 
         try {
             stdout.close();
@@ -114,6 +110,9 @@ public class ProcessRunner {
 
         String stdoutString = stdout.toString(StandardCharsets.UTF_8);
         String stderrString = stderr.toString(StandardCharsets.UTF_8);
+
+        exitCode = resultHandler.getExitValue();
+
         log.debug("Finished command <{}>\nExit code: <{}>\nstdout: {}\nstderr: {}", 
             String.join(" ", commandParts), exitCode, stdoutString, stderrString);
         
