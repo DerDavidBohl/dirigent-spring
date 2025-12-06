@@ -62,13 +62,13 @@ public class ProcessRunner {
         executor.setStreamHandler(streamHandler);
         executor.setWorkingDirectory(workingDirectory);
 
-        ExecuteWatchdog watchdog = null;
-        if (timeoutMs > 0) {
-            watchdog = ExecuteWatchdog.builder()
-                    .setTimeout(Duration.ofMillis(timeoutMs))
+        Duration timeOutDuration = timeoutMs > 0 ? Duration.ofMillis(timeoutMs) : null;
+
+        ExecuteWatchdog watchdog = ExecuteWatchdog.builder()
+                    .setTimeout(timeOutDuration)
                     .get();
-            executor.setWatchdog(watchdog);
-        }
+                    
+        executor.setWatchdog(watchdog);
 
         int exitCode = -1;
         try {
@@ -93,6 +93,8 @@ public class ProcessRunner {
 
         String stdoutString = stdout.toString(StandardCharsets.UTF_8);
         String stderrString = stderr.toString(StandardCharsets.UTF_8);
+
+        watchdog.destroyProcess();
 
         return new ProcessResult(exitCode, stdoutString, stderrString);
     }
