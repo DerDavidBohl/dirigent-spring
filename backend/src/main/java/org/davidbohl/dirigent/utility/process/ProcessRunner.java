@@ -67,7 +67,7 @@ public class ProcessRunner {
         ExecuteWatchdog watchdog = ExecuteWatchdog.builder()
                     .setTimeout(timeOutDuration)
                     .get();
-                    
+
         executor.setWatchdog(watchdog);
 
         int exitCode = -1;
@@ -80,6 +80,7 @@ public class ProcessRunner {
         } finally {
 
             streamHandler.stop();
+            watchdog.destroyProcess();
 
             try {
                 stdout.close();
@@ -93,8 +94,6 @@ public class ProcessRunner {
 
         String stdoutString = stdout.toString(StandardCharsets.UTF_8);
         String stderrString = stderr.toString(StandardCharsets.UTF_8);
-
-        watchdog.destroyProcess();
 
         return new ProcessResult(exitCode, stdoutString, stderrString);
     }

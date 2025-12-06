@@ -42,7 +42,7 @@ public class DeploymentUpdateService {
     @Value("${dirigent.update.enabled:false}")
     boolean updateEnabled;
 
-    @Scheduled(fixedRateString = "${dirigent.update.rate:30}", timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRateString = "${dirigent.update.rate:3}", timeUnit = TimeUnit.HOURS)
     public void checkAllDeploymentForUpdates() {
 
         if(!updateEnabled)
