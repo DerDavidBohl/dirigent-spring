@@ -18,7 +18,10 @@ import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Component
+@Slf4j
 public class ProcessRunner {
 
     public ProcessResult executeCommand(List<String> commandParts, long timeoutMs, Map<String, String> env)
@@ -78,6 +81,9 @@ public class ProcessRunner {
         executor.setWatchdog(watchdog);
 
         int exitCode = -1;
+
+        log.info("Running command <{}>", String.join(" ", commandParts));
+
         try {
             exitCode = executor.execute(command, finalEnv);
         } catch (ExecuteException e) {
@@ -101,6 +107,8 @@ public class ProcessRunner {
 
         String stdoutString = stdout.toString(StandardCharsets.UTF_8);
         String stderrString = stderr.toString(StandardCharsets.UTF_8);
+            log.info("Finished command <{}>\nExit code: <{}>\nstdout: {}\nstderr: {}", 
+            String.join(" ", commandParts), stdoutString, stderrString);
 
         return new ProcessResult(exitCode, stdoutString, stderrString);
     }
