@@ -257,6 +257,7 @@ Here is a roadmap with future Ideas
 
 - [ ] Automate Updates for deployments - Work in Progress
 - [ ] Add automated tests
+- [ ] Add cleanups (i. e. `docker system prune` or `docker volume prune`)
 - [ ] Add a single repo mode
 - [ ] Improve pathhandling for deployment related files in repo
 - [ ] Multiple Dirigent hosts
