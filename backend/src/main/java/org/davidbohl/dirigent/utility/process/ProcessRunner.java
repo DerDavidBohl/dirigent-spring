@@ -3,7 +3,6 @@ package org.davidbohl.dirigent.utility.process;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
@@ -11,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
@@ -78,39 +77,48 @@ public class ProcessRunner {
                     .setTimeout(timeOutDuration)
                     .get();
 
+        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+
+
         executor.setWatchdog(watchdog);
+        executor.setExitValue(1);
 
         int exitCode = -1;
 
-        log.info("Running command <{}>", String.join(" ", commandParts));
+        log.debug("Running command <{}>", String.join(" ", commandParts));
+
+        executor.execute(command, finalEnv, resultHandler);
 
         try {
-            exitCode = executor.execute(command, finalEnv);
-        } catch (ExecuteException e) {
-            exitCode = e.getExitValue();
-        } catch (InterruptedIOException e) {
-            throw e;
-        } finally {
+            resultHandler.waitFor(Duration.ofMinutes(1));
+        } catch (InterruptedException e) {
+            log.warn("Process got interupted", e);
+        }
 
-            streamHandler.stop();
-            watchdog.destroyProcess();
+        streamHandler.stop();
+        watchdog.destroyProcess();
+        try {
+            watchdog.wait();
+        } catch (InterruptedException e) {
+            log.warn("Watchdog wait interupted", e);
+        }
 
-            try {
-                stdout.close();
-            } catch (IOException ignored) {
-            }
-            try {
-                stderr.close();
-            } catch (IOException ignored) {
-            }
+        try {
+            stdout.close();
+        } catch (IOException ignored) {
+        }
+        try {
+            stderr.close();
+        } catch (IOException ignored) {
         }
 
         String stdoutString = stdout.toString(StandardCharsets.UTF_8);
         String stderrString = stderr.toString(StandardCharsets.UTF_8);
-        log.info("Finished command <{}>\nExit code: <{}>\nstdout: {}\nstderr: {}", 
+        log.debug("Finished command <{}>\nExit code: <{}>\nstdout: {}\nstderr: {}", 
             String.join(" ", commandParts), exitCode, stdoutString, stderrString);
         
-        log.info("Process killed: {}", watchdog.killedProcess());
+
+        log.debug("Process killed: {}", watchdog.killedProcess());
 
         return new ProcessResult(exitCode, stdoutString, stderrString);
     }
