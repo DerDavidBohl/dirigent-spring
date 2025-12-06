@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,11 @@ public class ProcessRunner {
         return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, Map.of());
     }
 
+    public ProcessResult executeCommand(List<String> commandParts, Map<String, String> env)
+            throws IOException {
+        return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, env);
+    }
+
     public ProcessResult executeCommand(List<String> commandParts, File workingDirectory)
             throws IOException {
         return executeInternal(commandParts, workingDirectory, 0, Map.of());
@@ -43,7 +49,8 @@ public class ProcessRunner {
     private ProcessResult executeInternal(List<String> commandParts, File workingDirectory, long timeoutMs, Map<String, String> env)
             throws IOException {
 
-        Map<String, String> finalEnv = System.getenv();
+        Map<String, String> finalEnv = new HashMap<>();
+        finalEnv.putAll(System.getenv());
 
         if(env != null && env.size() > 0)
             finalEnv.putAll(env);
