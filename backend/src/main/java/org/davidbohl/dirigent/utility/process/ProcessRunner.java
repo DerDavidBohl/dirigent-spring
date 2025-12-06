@@ -107,8 +107,10 @@ public class ProcessRunner {
 
         String stdoutString = stdout.toString(StandardCharsets.UTF_8);
         String stderrString = stderr.toString(StandardCharsets.UTF_8);
-            log.info("Finished command <{}>\nExit code: <{}>\nstdout: {}\nstderr: {}", 
-            String.join(" ", commandParts), stdoutString, stderrString);
+        log.info("Finished command <{}>\nExit code: <{}>\nstdout: {}\nstderr: {}", 
+            String.join(" ", commandParts), exitCode, stdoutString, stderrString);
+        
+        log.info("Process killed: {}", watchdog.killedProcess());
 
         return new ProcessResult(exitCode, stdoutString, stderrString);
     }
