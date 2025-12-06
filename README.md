@@ -25,6 +25,7 @@ Tool to manage your docker compose deployments via git.
     - [State](#state)
 - [Develop](#develop)
   - [Setup for local Tests](#setup-for-local-tests)
+- [Roadmap](#roadmap)
 
 ## Screenshots
 
@@ -249,3 +250,12 @@ Store all your repositories for one host in one gitea organization. This way you
 1. copy `src/test/resources/application-local.properties.template` to `src/test/resources/application-local.properties`
 2. fill in your test repository url and auth token
 3. Done ;)
+
+## Roadmap
+
+Here is a roadmap with future Ideas
+
+- [ ] Automate Updates for deployments - Work in Progress
+- [ ] Add a single repo mode
+- [ ] Improve pathhandling for deployment related files in repo
+- [ ] Multiple Dirigent hosts
