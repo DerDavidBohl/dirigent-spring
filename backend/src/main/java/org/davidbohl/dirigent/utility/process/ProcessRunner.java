@@ -15,6 +15,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.exec.ShutdownHookProcessDestroyer;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
@@ -66,22 +67,21 @@ public class ProcessRunner {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
         PumpStreamHandler streamHandler = new PumpStreamHandler(stdout, stderr);
 
-        Executor executor = DefaultExecutor.builder().get();
-        executor.setExitValue(0);
-        executor.setStreamHandler(streamHandler);
-        executor.setWorkingDirectory(workingDirectory);
-
         ExecuteWatchdog watchdog = ExecuteWatchdog.builder()
                     .setTimeout(Duration.ofMinutes(1))
                     .get();
 
-        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
 
+        int exitCode = 1;
 
+        Executor executor = DefaultExecutor.builder().get();
+        executor.setStreamHandler(streamHandler);
+        executor.setWorkingDirectory(workingDirectory);
         executor.setWatchdog(watchdog);
         executor.setExitValue(1);
+        executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
 
-        int exitCode = -1;
+        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
 
         log.debug("Running command <{}>", String.join(" ", commandParts));
 
