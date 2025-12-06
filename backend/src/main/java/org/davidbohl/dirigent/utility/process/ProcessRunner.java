@@ -71,10 +71,8 @@ public class ProcessRunner {
         executor.setStreamHandler(streamHandler);
         executor.setWorkingDirectory(workingDirectory);
 
-        Duration timeOutDuration = timeoutMs > 0 ? Duration.ofMillis(timeoutMs) : null;
-
         ExecuteWatchdog watchdog = ExecuteWatchdog.builder()
-                    .setTimeout(timeOutDuration)
+                    .setTimeout(Duration.ofMinutes(1))
                     .get();
 
         DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
