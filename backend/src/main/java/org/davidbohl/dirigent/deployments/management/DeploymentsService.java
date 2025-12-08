@@ -273,28 +273,30 @@ public class DeploymentsService {
 
         TreeMap<Integer, List<Deployment>> sortedDeployments = new TreeMap<>(deploymentsByOrder);
 
-        try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        //try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
             for (Integer orderGroupKey : sortedDeployments.keySet()) {
 
                 logger.info("Starting deployments with order {}", orderGroupKey);
 
                 List<Deployment> deploymentsOrderUnit = sortedDeployments.get(orderGroupKey);
 
-                List<CompletableFuture<Void>> futures = new ArrayList<>();
+                // Disabled this temporary to test
+                // List<CompletableFuture<Void>> futures = new ArrayList<>();
                 for (Deployment deployment : deploymentsOrderUnit) {
-                    futures.add(CompletableFuture.runAsync(() -> deploy(deployment, forceRecreate), executorService));
+                    deploy(deployment, forceRecreate);
+                    // futures.add(CompletableFuture.runAsync(() -> deploy(deployment, forceRecreate), executorService));
                 }
 
-                try {
-                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-                } catch (Throwable ex) {
-                    throw new RuntimeException(ex);
-                }
+                // try {
+                //     CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                // } catch (Throwable ex) {
+                //     throw new RuntimeException(ex);
+                // }
 
 
                 logger.info("Deployments with order {} finished", orderGroupKey);
             }
-        }
+        //}
     }
 
     private DeploynentConfiguration tryGetConfiguration() {
