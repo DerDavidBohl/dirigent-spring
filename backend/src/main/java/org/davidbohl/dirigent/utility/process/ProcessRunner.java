@@ -52,24 +52,7 @@ public class ProcessRunner {
             finalEnv.putAll(env);
         }
 
-        // Critical: Use shell to run commands so we can kill the entire process group
-        // This prevents git's child processes from becoming zombies
-        String osName = System.getProperty("os.name").toLowerCase();
-        boolean isWindows = osName.contains("win");
-        
-        List<String> finalCommand;
-        if (isWindows) {
-            // Windows: use cmd /c
-            finalCommand = new java.util.ArrayList<>();
-            finalCommand.add("cmd");
-            finalCommand.add("/c");
-            finalCommand.addAll(commandParts);
-        } else {
-            // Linux/Unix: use sh -c with process group
-            finalCommand = List.of("sh", "-c", String.join(" ", commandParts));
-        }
-
-        ProcessBuilder processBuilder = new ProcessBuilder(finalCommand);
+        ProcessBuilder processBuilder = new ProcessBuilder(commandParts);
         processBuilder.directory(workingDirectory);
         processBuilder.environment().putAll(finalEnv);
 
@@ -93,7 +76,8 @@ public class ProcessRunner {
             
             if (!finished) {
                 log.warn("Process timed out: {}", String.join(" ", commandParts));
-                killProcess(process);
+                process.destroyForcibly();
+                process.waitFor(5, TimeUnit.SECONDS);
             }
 
             // Wait for output streams to finish reading
@@ -105,17 +89,17 @@ public class ProcessRunner {
         } catch (InterruptedException e) {
             log.warn("Process interrupted: {}", String.join(" ", commandParts), e);
             if (process != null && process.isAlive()) {
-                killProcess(process);
+                process.destroyForcibly();
+                try {
+                    process.waitFor(5, TimeUnit.SECONDS);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
             }
             Thread.currentThread().interrupt();
         } finally {
-            // Ensure process is terminated and streams are closed
+            // Close streams to release resources
             if (process != null) {
-                if (process.isAlive()) {
-                    log.warn("Force killing remaining process");
-                    killProcess(process);
-                }
-                // Close all streams to release resources and prevent leaks
                 closeQuietly(process.getInputStream());
                 closeQuietly(process.getOutputStream());
                 closeQuietly(process.getErrorStream());
@@ -133,21 +117,6 @@ public class ProcessRunner {
                 closeable.close();
             } catch (IOException ignored) {
             }
-        }
-    }
-
-    /**
-     * Kills process and waits for it to die (reaps zombie)
-     */
-    private void killProcess(Process process) {
-        log.debug("Killing process: {} (alive: {})", process.pid(), process.isAlive());
-        process.destroyForcibly();
-        
-        // CRITICAL: Must waitFor() to reap the zombie
-        try {
-            process.waitFor(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
     }
 
