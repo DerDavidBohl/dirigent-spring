@@ -27,13 +27,13 @@ public class DirigentApplication {
 
 	private static boolean isComposeInstalled(String composeCommand) {
 		try {
-			Runtime.getRuntime().exec((composeCommand + " --version").split(" "));
-			return true;
+			Process process = Runtime.getRuntime().exec((composeCommand + " --version").split(" "));
+			int exitCode = process.waitFor();
+			return exitCode == 0;
 		} catch (Exception e) {
             logger.error("Compose is not installed. Please install it and try again.", e);
-			// Handle exception if needed
+			return false;
 		}
-		return false;
 	}
 
 }
