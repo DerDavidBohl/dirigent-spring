@@ -5,6 +5,7 @@ import org.davidbohl.dirigent.deployments.events.DeploymentStateChangedEvent;
 import org.davidbohl.dirigent.deployments.events.ImageUpdateAvailableEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -19,6 +20,7 @@ public class NotificationService {
     private String gotifyToken;
 
     @EventListener(DeploymentStateChangedEvent.class)
+    @Async
     public void onDeploymentStateChanged(DeploymentStateChangedEvent event) {
         String title = "%s: \"%s\"".formatted(event.getState(), event.getDeploymentName());
         String context = event.getContext();
@@ -28,6 +30,7 @@ public class NotificationService {
     }
 
     @EventListener(ImageUpdateAvailableEvent.class)
+    @Async
     public void onImageUpdateAvailable(ImageUpdateAvailableEvent event) {
         String title = "Image Update available: " + event.getImage();
         String message = "New version of image " + event.getImage() + " in deployment " + event.getDeploymentName() + " in service " + event.getServiceName() + " found.";

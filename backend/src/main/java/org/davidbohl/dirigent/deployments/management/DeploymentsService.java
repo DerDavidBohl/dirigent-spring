@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,7 @@ public class DeploymentsService {
     private String composeCommand;
 
     @EventListener(AllDeploymentsStartRequestedEvent.class)
+    @Async
     public void onAllDeploymentsStartRequested(AllDeploymentsStartRequestedEvent event) {
 
         makeDeploymentsDir();
@@ -72,6 +74,7 @@ public class DeploymentsService {
     }
 
     @EventListener(MultipleNamedDeploymentsStartRequestedEvent.class)
+    @Async
     public void onMultipleNamedDeploymentsStartRequested(MultipleNamedDeploymentsStartRequestedEvent event) {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
@@ -95,6 +98,7 @@ public class DeploymentsService {
     }
 
     @EventListener(NamedDeploymentStartRequestedEvent.class)
+    @Async
     public void onNamedDeploymentStartRequested(NamedDeploymentStartRequestedEvent event) {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
@@ -108,6 +112,7 @@ public class DeploymentsService {
     }
 
     @EventListener(SourceDeploymentStartRequestedEvent.class)
+    @Async
     public void onSourceDeploymentStartRequested(SourceDeploymentStartRequestedEvent event) {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
@@ -124,12 +129,14 @@ public class DeploymentsService {
     }
 
     @EventListener(NamedDeploymentStopRequestedEvent.class)
+    @Async
     public void onNamedDeploymentStopRequested(NamedDeploymentStopRequestedEvent event) throws IOException, InterruptedException {
         makeDeploymentsDir();
         stopDeployment(event.getName());
     }
 
     @EventListener(RecreateAllDeploymentStatesEvent.class)
+    @Async
     public void onRecreateAllDeploymentStatesEvent() {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
