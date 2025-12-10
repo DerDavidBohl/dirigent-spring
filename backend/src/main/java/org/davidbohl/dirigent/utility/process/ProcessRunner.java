@@ -3,11 +3,13 @@ package org.davidbohl.dirigent.utility.process;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Component;
@@ -76,8 +78,7 @@ public class ProcessRunner {
             
             if (!finished) {
                 log.warn("Process timed out: {}", String.join(" ", commandParts));
-                process.destroyForcibly();
-                process.waitFor(5, TimeUnit.SECONDS);
+                killProcessTree(process);
             }
 
             // Wait for output streams to finish reading
@@ -89,30 +90,63 @@ public class ProcessRunner {
         } catch (InterruptedException e) {
             log.warn("Process interrupted: {}", String.join(" ", commandParts), e);
             if (process != null && process.isAlive()) {
-                process.destroyForcibly();
-                try {
-                    process.waitFor(5, TimeUnit.SECONDS);
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                }
+                killProcessTree(process);
             }
             Thread.currentThread().interrupt();
         } finally {
-            // Ensure process is terminated
-            if (process != null && process.isAlive()) {
-                log.warn("Force killing remaining process");
-                process.destroyForcibly();
-                try {
-                    process.waitFor(5, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+            // Ensure process tree is terminated and streams are closed
+            if (process != null) {
+                if (process.isAlive()) {
+                    log.warn("Force killing remaining process tree");
+                    killProcessTree(process);
                 }
+                // Close all streams to release resources and prevent leaks
+                closeQuietly(process.getInputStream());
+                closeQuietly(process.getOutputStream());
+                closeQuietly(process.getErrorStream());
             }
         }
 
         log.debug("Finished command <{}> with exit code {}", String.join(" ", commandParts), exitCode);
 
         return new ProcessResult(exitCode, stdout.toString().trim(), stderr.toString().trim());
+    }
+
+    private void closeQuietly(java.io.Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    /**
+     * Kills the entire process tree to prevent orphaned child processes
+     */
+    private void killProcessTree(Process process) {
+        // First, wait for any child processes to finish and reap them
+        process.descendants().forEach(child -> {
+            if (child.isAlive()) {
+                log.debug("Killing child process: {}", child.pid());
+                child.destroyForcibly();
+                try {
+                    child.waitFor(2, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        });
+        
+        // Kill the parent process
+        process.destroyForcibly();
+        
+        // Wait for parent to die
+        try {
+            process.waitFor(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private Thread readStream(java.io.InputStream inputStream, StringBuilder output) {
