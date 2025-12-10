@@ -1,30 +1,47 @@
 package org.davidbohl.dirigent.deployments.management;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
-import org.davidbohl.dirigent.deployments.events.*;
+import org.davidbohl.dirigent.deployments.events.AllDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.DeploymentStateEvent;
+import org.davidbohl.dirigent.deployments.events.MultipleNamedDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.NamedDeploymentStartRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.NamedDeploymentStopRequestedEvent;
+import org.davidbohl.dirigent.deployments.events.RecreateAllDeploymentStatesEvent;
+import org.davidbohl.dirigent.deployments.events.SourceDeploymentStartRequestedEvent;
 import org.davidbohl.dirigent.deployments.models.Deployment;
 import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
 import org.davidbohl.dirigent.deployments.state.DeploymentState;
 import org.davidbohl.dirigent.deployments.state.DeploymentStatePersistingService;
 import org.davidbohl.dirigent.sercrets.SecretService;
-import org.davidbohl.dirigent.utility.GitService;
+import org.davidbohl.dirigent.utility.git.GitService;
+import org.davidbohl.dirigent.utility.process.ProcessResult;
+import org.davidbohl.dirigent.utility.process.ProcessRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor()
 public class DeploymentsService {
 
     public static final String DEPLOYMENTS_DIR_NAME = "deployments";
@@ -34,24 +51,13 @@ public class DeploymentsService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final DeploymentStatePersistingService deploymentStatePersistingService;
     private final SecretService secretService;
+    private final ProcessRunner processRunner;
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
 
-    public DeploymentsService(
-            DeploymentsConfigurationProvider deploymentsConfigurationProvider,
-            GitService gitService,
-            ApplicationEventPublisher applicationEventPublisher,
-            DeploymentStatePersistingService deploymentStatePersistingService,
-            SecretService secretService) {
-        this.deploymentsConfigurationProvider = deploymentsConfigurationProvider;
-        this.gitService = gitService;
-        this.applicationEventPublisher = applicationEventPublisher;
-        this.deploymentStatePersistingService = deploymentStatePersistingService;
-        this.secretService = secretService;
-    }
-
     @EventListener(AllDeploymentsStartRequestedEvent.class)
+    @Async
     public void onAllDeploymentsStartRequested(AllDeploymentsStartRequestedEvent event) {
 
         makeDeploymentsDir();
@@ -68,6 +74,7 @@ public class DeploymentsService {
     }
 
     @EventListener(MultipleNamedDeploymentsStartRequestedEvent.class)
+    @Async
     public void onMultipleNamedDeploymentsStartRequested(MultipleNamedDeploymentsStartRequestedEvent event) {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
@@ -91,6 +98,7 @@ public class DeploymentsService {
     }
 
     @EventListener(NamedDeploymentStartRequestedEvent.class)
+    @Async
     public void onNamedDeploymentStartRequested(NamedDeploymentStartRequestedEvent event) {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
@@ -104,25 +112,31 @@ public class DeploymentsService {
     }
 
     @EventListener(SourceDeploymentStartRequestedEvent.class)
+    @Async
     public void onSourceDeploymentStartRequested(SourceDeploymentStartRequestedEvent event) {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
 
         List<Deployment> deployments = deploynentConfiguration.deployments()
                 .stream()
-                .filter(d -> Objects.equals(d.source(), event.getDeploymentSource()))
+                .filter(d ->
+                        Objects.equals(d.source(), event.getDeploymentSource()) &&
+                        (d.ref() == null || Objects.equals(d.ref(), event.getRef()))
+                )
                 .collect(Collectors.toList());
 
-        deployListOfDeployments(deployments, true);
+        deployListOfDeployments(deployments, false);
     }
 
     @EventListener(NamedDeploymentStopRequestedEvent.class)
+    @Async
     public void onNamedDeploymentStopRequested(NamedDeploymentStopRequestedEvent event) throws IOException, InterruptedException {
         makeDeploymentsDir();
         stopDeployment(event.getName());
     }
 
     @EventListener(RecreateAllDeploymentStatesEvent.class)
+    @Async
     public void onRecreateAllDeploymentStatesEvent() {
         makeDeploymentsDir();
         DeploynentConfiguration deploynentConfiguration = tryGetConfiguration();
@@ -154,7 +168,8 @@ public class DeploymentsService {
 
         try {
 
-            boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath());
+            String rev = deployment.ref() != null ? deployment.ref() : "HEAD";
+            boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath(), rev);
             Optional<DeploymentState> optionalState = deploymentStatePersistingService.getDeploymentStates().stream()
                     .filter(state -> state.getName().equals(deployment.name()))
                     .findFirst();
@@ -183,24 +198,13 @@ public class DeploymentsService {
             }
 
             logger.info("Upping Compose for {}", deployment.name());
-            ProcessBuilder builder = new ProcessBuilder(commandArgs)
-                    .directory(deploymentDir);
 
-            builder.environment().putAll(secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name()));
-
-            Process process = builder
-                    .start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            StringBuilder errorOutput = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                errorOutput.append(line).append("\n");
-            }
-
-            int exitCode = process.waitFor();
-            if ((exitCode != 0)) {
-                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, errorOutput.toString()));
+            ProcessResult composeUp = processRunner.executeCommand(commandArgs, 
+                deploymentDir, 
+                secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name()));
+            
+            if ((composeUp.exitCode() != 0)) {
+                applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentState.State.FAILED, composeUp.stderr()));
                 return;
             }
         } catch (IOException | InterruptedException e) {
@@ -249,10 +253,8 @@ public class DeploymentsService {
 
         List<String> commandArgs = new ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
         commandArgs.add("down");
-        new ProcessBuilder(commandArgs)
-                .directory(new File(DEPLOYMENTS_DIR_NAME + "/" + deploymentName))
-                .start()
-                .waitFor();
+
+        processRunner.executeCommand(commandArgs, new File(DEPLOYMENTS_DIR_NAME + "/" + deploymentName));
         applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName, DeploymentState.State.STOPPED, "Deployment '%s' stopped".formatted(deploymentName)));
     }
 
@@ -278,27 +280,30 @@ public class DeploymentsService {
 
         TreeMap<Integer, List<Deployment>> sortedDeployments = new TreeMap<>(deploymentsByOrder);
 
-        for (Integer orderGroupKey : sortedDeployments.keySet()) {
+        //try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            for (Integer orderGroupKey : sortedDeployments.keySet()) {
 
-            logger.info("Starting deployments with order {}", orderGroupKey);
+                logger.info("Starting deployments with order {}", orderGroupKey);
 
-            List<Deployment> deploymentsOrderUnit = sortedDeployments.get(orderGroupKey);
-            ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+                List<Deployment> deploymentsOrderUnit = sortedDeployments.get(orderGroupKey);
 
-            for (Deployment deployment : deploymentsOrderUnit) {
-                executorService.submit(() -> deploy(deployment, forceRecreate));
+                // Disabled this temporary to test
+                // List<CompletableFuture<Void>> futures = new ArrayList<>();
+                for (Deployment deployment : deploymentsOrderUnit) {
+                    deploy(deployment, forceRecreate);
+                    // futures.add(CompletableFuture.runAsync(() -> deploy(deployment, forceRecreate), executorService));
+                }
+
+                // try {
+                //     CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                // } catch (Throwable ex) {
+                //     throw new RuntimeException(ex);
+                // }
+
+
+                logger.info("Deployments with order {} finished", orderGroupKey);
             }
-
-            executorService.shutdown();
-            try {
-                executorService.awaitTermination(Long.MAX_VALUE, java.util.concurrent.TimeUnit.NANOSECONDS);
-            } catch (Throwable ex) {
-                throw new RuntimeException(ex);
-            }
-
-
-            logger.info("Deployments with order {} finished", orderGroupKey);
-        }
+        //}
     }
 
     private DeploynentConfiguration tryGetConfiguration() {

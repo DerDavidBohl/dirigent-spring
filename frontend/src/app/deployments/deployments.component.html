@@ -4,12 +4,10 @@
   <div>
     <a [href]="(systemInformation$ | async)?.gitUrl" target="_blank">View Source</a>
   </div>
-  <div class="md:grid md:grid-cols-5">
-    <mat-form-field class="w-full md:col-span-2">
-      <mat-label>Search...</mat-label>
-      <input matInput (keyup)="search($event)" >
-    </mat-form-field>
-  </div>
+  <mat-form-field class="md:col-span-2 w-3xl">
+    <mat-label>Search...</mat-label>
+    <input matInput (keyup)="search($event)" >
+  </mat-form-field>
   <mat-chip-listbox multiple (change)="updateFilter($event)">
     @for (filterValue of filterValues$ | async; track filterValue) {
         <mat-chip-option [style]="'background-color: ' + getBackgroudColorForState(filterValue)" [value]="filterValue"

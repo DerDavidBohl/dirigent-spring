@@ -1,11 +1,234 @@
-/* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
 
 html, body {
   height: 100%;
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
 body {
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: #f0f0f0;
+  color: #111111;
+}
+
+html.dark body {
+  background-color: #111111;
+  color: #f5f5f5;
+}
+
+:root {
+  --mdc-theme-primary: #7a7a7a;
+  --mdc-theme-surface: #ffffff;
+  --mdc-theme-background: #f0f0f0;
+  --mdc-theme-on-surface: #111111;
+  --md-sys-color-primary: #7a7a7a;
+  --md-sys-color-surface: #ffffff;
+  --md-sys-color-surface-container: #ffffff;
+  --md-sys-color-surface-container-lowest: #f0f0f0;
+  --md-sys-color-surface-container-highest: #e0e0e0;
+}
+
+html.dark {
+  --mdc-theme-primary: #d4d4d4;
+  --mdc-theme-surface: #1a1a1a;
+  --mdc-theme-background: #111111;
+  --mdc-theme-on-surface: #f5f5f5;
+  --md-sys-color-primary: #d4d4d4;
+  --md-sys-color-surface: #1a1a1a;
+  --md-sys-color-surface-container: #1a1a1a;
+  --md-sys-color-surface-container-lowest: #111111;
+  --md-sys-color-surface-container-highest: #222222;
+}
+
+/* Tabs */
+
+.mat-mdc-tab-group {
+  background-color: transparent;
+  margin-top: 12px;
+}
+
+.mat-mdc-tab-header {
+  border-bottom: none;
+}
+
+html.dark .mat-mdc-tab-header {
+  background-color: #1a1a1a;
+}
+
+html.dark .mat-mdc-tab .mdc-tab__text-label {
+  color: #d4d4d4;
+}
+
+html.dark .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+  color: #ffffff;
+}
+
+html.dark .mdc-tab-indicator__content--underline {
+  background-color: #f5f5f5;
+}
+
+.mat-mdc-tab-body-wrapper {
+  margin-top: 12px;
+}
+
+/* Generic surfaces (cards, table container ...) */
+
+.mat-mdc-card,
+.mat-mdc-table {
+  background-color: #ffffff;
+  color: #111111;
+}
+
+html.dark .mat-mdc-card,
+html.dark .mat-mdc-table {
+  background-color: #141414;
+  color: #f5f5f5;
+}
+
+/* Dialog surface (Add Secret) */
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: #ffffff;
+  color: #111111;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+html.dark .mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: #141414;
+  color: #f5f5f5;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+}
+
+.mdc-text-field__input,
+.mat-mdc-input-element {
+  background-color: transparent;
+  color: #111111;
+}
+
+html.dark .mdc-text-field__input,
+html.dark .mat-mdc-input-element {
+  background-color: transparent;
+  color: #ffffff;
+}
+
+html.dark .mdc-text-field__input::placeholder,
+html.dark .mat-mdc-input-element::placeholder {
+  color: #a3a3a3;
+}
+
+/* Table styling */
+
+.mat-mdc-table {
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+  border-collapse: collapse;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+html.dark .mat-mdc-table {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.mat-mdc-header-row {
+  background-color: #e0e0e0;
+  border-bottom: none;
+}
+
+.mat-mdc-row {
+  background-color: #ffffff;
+}
+
+.mat-mdc-cell,
+.mat-mdc-header-cell {
+  color: #111111;
+}
+
+/* Dark table */
+
+html.dark .mat-mdc-header-row {
+  background-color: #1f1f1f;
+  border-bottom: none;
+}
+
+html.dark .mat-mdc-header-cell {
+  border-bottom: none;
+}
+
+html.dark .mat-mdc-row {
+  background-color: #141414;
+}
+
+html.dark .mat-mdc-cell,
+html.dark .mat-mdc-header-cell {
+  color: #f5f5f5;
+}
+
+html.dark .mat-mdc-row,
+html.dark .mat-mdc-header-row {
+  border-color: #2c2c2c;
+}
+
+/* Smooth transitions */
+
+html.dark .mat-mdc-table,
+html.dark .mat-mdc-card,
+html.dark body,
+html.dark .mat-mdc-dialog-container .mdc-dialog__surface,
+html.dark .mat-mdc-form-field {
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mat-mdc-table,
+.mat-mdc-card,
+body,
+.mat-mdc-dialog-container .mdc-dialog__surface,
+.mat-mdc-form-field {
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.dark .bg-slate-900,
+html.dark .bg-slate-800,
+html.dark .bg-slate-700,
+html.dark .bg-slate-600 {
+  background-color: #111111 !important;
+}
+html.dark .mdc-text-field--filled,
+html.dark .mdc-text-field--filled .mdc-text-field__input,
+html.dark .mat-mdc-form-field-flex,
+html.dark .mat-mdc-form-field-infix {
+  background-color: #262626 !important;
+}
+html.dark .mat-mdc-input-element,
+html.dark .mdc-text-field__input {
+  color: #ffffff !important;
+}
+
+html.dark .mat-mdc-form-field-label,
+html.dark .mdc-text-field .mdc-floating-label {
+  color: #ffffff !important;
+}
+
+html.dark .mat-mdc-checkbox .mdc-label,
+html.dark .mdc-form-field > label {
+  color: #ffffff !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__surface .mat-mdc-form-field {
+  margin-bottom: 14px;
+}
+
+/* Improve readability of disabled buttons in dark mode */
+html.dark .mat-mdc-button-disabled,
+html.dark .mat-mdc-button-disabled .mdc-button__label,
+html.dark .mdc-button--disabled,
+html.dark .mdc-button--disabled .mdc-button__label {
+  color: #bfbfbf !important;
+  opacity: 0.7 !important;
+}
+
+/* Improve disabled icon buttons */
+html.dark .mat-mdc-icon-button.mat-mdc-button-disabled .mat-icon {
+  color: #bfbfbf !important;
+  opacity: 0.7 !important;
 }
