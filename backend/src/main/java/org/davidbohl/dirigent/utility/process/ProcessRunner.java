@@ -3,14 +3,11 @@ package org.davidbohl.dirigent.utility.process;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Component;
@@ -55,7 +52,24 @@ public class ProcessRunner {
             finalEnv.putAll(env);
         }
 
-        ProcessBuilder processBuilder = new ProcessBuilder(commandParts);
+        // Critical: Use shell to run commands so we can kill the entire process group
+        // This prevents git's child processes from becoming zombies
+        String osName = System.getProperty("os.name").toLowerCase();
+        boolean isWindows = osName.contains("win");
+        
+        List<String> finalCommand;
+        if (isWindows) {
+            // Windows: use cmd /c
+            finalCommand = new java.util.ArrayList<>();
+            finalCommand.add("cmd");
+            finalCommand.add("/c");
+            finalCommand.addAll(commandParts);
+        } else {
+            // Linux/Unix: use sh -c with process group
+            finalCommand = List.of("sh", "-c", String.join(" ", commandParts));
+        }
+
+        ProcessBuilder processBuilder = new ProcessBuilder(finalCommand);
         processBuilder.directory(workingDirectory);
         processBuilder.environment().putAll(finalEnv);
 
@@ -79,7 +93,7 @@ public class ProcessRunner {
             
             if (!finished) {
                 log.warn("Process timed out: {}", String.join(" ", commandParts));
-                killProcessTree(process);
+                killProcess(process);
             }
 
             // Wait for output streams to finish reading
@@ -91,15 +105,15 @@ public class ProcessRunner {
         } catch (InterruptedException e) {
             log.warn("Process interrupted: {}", String.join(" ", commandParts), e);
             if (process != null && process.isAlive()) {
-                killProcessTree(process);
+                killProcess(process);
             }
             Thread.currentThread().interrupt();
         } finally {
-            // Ensure process tree is terminated and streams are closed
+            // Ensure process is terminated and streams are closed
             if (process != null) {
                 if (process.isAlive()) {
-                    log.warn("Force killing remaining process tree");
-                    killProcessTree(process);
+                    log.warn("Force killing remaining process");
+                    killProcess(process);
                 }
                 // Close all streams to release resources and prevent leaks
                 closeQuietly(process.getInputStream());
@@ -123,26 +137,13 @@ public class ProcessRunner {
     }
 
     /**
-     * Kills the entire process tree to prevent orphaned child processes
+     * Kills process and waits for it to die (reaps zombie)
      */
-    private void killProcessTree(Process process) {
-        // First, wait for any child processes to finish and reap them
-        process.descendants().forEach(child -> {
-            if (child.isAlive()) {
-                log.debug("Killing child process: {}", child.pid());
-                child.destroyForcibly();
-                try {
-                    child.wait(Duration.ofSeconds(2).toMillis());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        });
-        
-        // Kill the parent process
+    private void killProcess(Process process) {
+        log.debug("Killing process: {} (alive: {})", process.pid(), process.isAlive());
         process.destroyForcibly();
         
-        // Wait for parent to die
+        // CRITICAL: Must waitFor() to reap the zombie
         try {
             process.waitFor(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
