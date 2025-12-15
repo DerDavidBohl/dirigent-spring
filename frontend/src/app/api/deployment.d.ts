@@ -3,4 +3,10 @@ export interface Deployment {
   state: string;
   message: string;
   source: string;
+  imageUpdates: Array<ImageUpdate>
+}
+
+export interface ImageUpdate {
+  service: string;
+  image: string;
 }

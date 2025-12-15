@@ -18,33 +18,28 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProcessRunner {
 
-    public ProcessResult executeCommand(List<String> commandParts, long timeoutMs, Map<String, String> env)
-            throws IOException {
+    public ProcessResult executeCommand(List<String> commandParts, long timeoutMs, Map<String, String> env) {
         return executeInternal(commandParts, new File(System.getProperty("user.dir")), timeoutMs, env);
     }
 
-    public ProcessResult executeCommand(List<String> commandParts)
-            throws IOException {
+    public ProcessResult executeCommand(List<String> commandParts) {
         return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, Map.of());
     }
 
-    public ProcessResult executeCommand(List<String> commandParts, Map<String, String> env)
-            throws IOException {
+    public ProcessResult executeCommand(List<String> commandParts, Map<String, String> env) {
         return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, env);
     }
 
-    public ProcessResult executeCommand(List<String> commandParts, File workingDirectory)
-            throws IOException {
+    public ProcessResult executeCommand(List<String> commandParts, File workingDirectory) {
         return executeInternal(commandParts, workingDirectory, 0, Map.of());
     }
 
-    public ProcessResult executeCommand(List<String> commandParts, File workingDirectory, Map<String, String> env)
-            throws IOException {
+    public ProcessResult executeCommand(List<String> commandParts, File workingDirectory, Map<String, String> env) {
         return executeInternal(commandParts, workingDirectory, 0, env);
     }
 
     private ProcessResult executeInternal(List<String> commandParts, File workingDirectory, long timeoutMs, Map<String, String> env)
-            throws IOException {
+             {
 
         Map<String, String> finalEnv = new HashMap<>();
         finalEnv.putAll(System.getenv());
@@ -86,8 +81,8 @@ public class ProcessRunner {
 
             exitCode = process.exitValue();
 
-        } catch (InterruptedException e) {
-            log.warn("Process interrupted: {}", String.join(" ", commandParts), e);
+        } catch (Throwable e) {
+            log.warn("Process failed: {}", String.join(" ", commandParts), e);
             if (process != null && process.isAlive()) {
                 process.destroyForcibly();
                 try {

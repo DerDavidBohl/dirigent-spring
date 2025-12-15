@@ -4,6 +4,7 @@ import {Deployment} from './deployment';
 import {HttpClient} from '@angular/common/http';
 import {Secret} from './secret';
 import {SystemInformation} from './system-information';
+import { DeploymentUpdate } from './deployment-update';
 
 @Injectable({
   providedIn: 'root'
@@ -24,7 +25,15 @@ export class ApiService {
     return this._secrets.asObservable();
   }
 
-  updateDeploymentStates(): void {
+  updateDeployment(deployment: Deployment): Observable<void> {
+    return this.http.post<void>(`api/v1/deployment-updates/${deployment.name}/run`, {});
+  }
+
+  getDeploymentUpdates(): Observable<Array<DeploymentUpdate>> {
+    return this.http.get<Array<DeploymentUpdate>>('api/v1/deployment-updates');
+  }
+
+  reloadDeploymentStates(): void {
     this.getAllDeploymentStates().subscribe(r => this._deploymentStates.next(r));
   }
 

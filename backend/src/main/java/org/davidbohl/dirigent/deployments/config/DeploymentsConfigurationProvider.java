@@ -2,7 +2,8 @@ package org.davidbohl.dirigent.deployments.config;
 
 import java.io.File;
 
-import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
+import org.davidbohl.dirigent.deployments.config.exception.DeploymentsConfigurationReadFailedException;
+import org.davidbohl.dirigent.deployments.config.model.DeploynentConfiguration;
 import org.davidbohl.dirigent.utility.git.GitService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,7 @@ public class DeploymentsConfigurationProvider {
 
             return objectMapper.readValue(configFile, DeploynentConfiguration.class);
         } catch (Throwable e) {
-            throw new DeploymentsConfigurationReadFailed(e);
+            throw new DeploymentsConfigurationReadFailedException(e);
         }
     }
 }

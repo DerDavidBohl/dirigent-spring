@@ -1,4 +1,4 @@
-import org.davidbohl.dirigent.deployments.models.Deployment;
+import org.davidbohl.dirigent.deployments.config.model.Deployment;
 import org.davidbohl.dirigent.deployments.updates.ContainerRegistryClient;
 import org.davidbohl.dirigent.deployments.updates.DeploymentUpdateService;
 import org.junit.jupiter.api.Test;

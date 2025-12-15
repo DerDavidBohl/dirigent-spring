@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -42,7 +43,7 @@ public class ContainerRegistryClient {
         try {
             return getManifestDigest(registryEndpoint, name, tag, token);
         } catch (Throwable e) {
-            log.warn("Could not Get Manifest Digest from Registry: {name}: {tag}", name, tag);
+            log.warn("Could not Get Manifest Digest from Registry: {}:{}", name, tag);
             throw new CouldNotGetManifestDigestFromRegistryFailedException(e);
         }
     }

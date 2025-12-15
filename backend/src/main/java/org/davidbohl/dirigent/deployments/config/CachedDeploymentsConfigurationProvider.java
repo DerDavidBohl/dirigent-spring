@@ -1,7 +1,8 @@
 package org.davidbohl.dirigent.deployments.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
+
+import org.davidbohl.dirigent.deployments.config.model.DeploynentConfiguration;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;

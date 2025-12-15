@@ -25,13 +25,22 @@
     <ng-container matColumnDef="actions">
       <th *matHeaderCellDef mat-header-cell> Actions</th>
       <td *matCellDef="let element" mat-cell>
-        <button [matMenuTriggerFor]="menu" mat-icon-button>
-          <mat-icon>more_vert</mat-icon>
-        </button>
+        <div matBadge="Update" matBadgeSize="small" [matBadgeHidden]="!(isUpdateAvailable(element.name) | async)" [matBadgePosition]="'above before'" class="h-full">
+          <button [matMenuTriggerFor]="menu" mat-icon-button [matBadge]="element.e" matBadgeColor="accent">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+        </div>
         <mat-menu #menu="matMenu">
+          
+          @if (isUpdateAvailable(element.name) | async) {
+          <button (click)="updateDeployment(element)" mat-menu-item>
+            Update
+          </button>
+          }
           <button (click)="startDeployment(element)" mat-menu-item>
             Start
           </button>
+
           <button (click)="stopDeployment(element)" mat-menu-item>
             Stop
           </button>

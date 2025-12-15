@@ -2,11 +2,12 @@ package org.davidbohl.dirigent.sercrets;
 
 import java.util.List;
 
+import org.davidbohl.dirigent.sercrets.entity.SecretEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface SecretRepository extends JpaRepository<Secret, String> {
+public interface SecretRepository extends JpaRepository<SecretEntity, String> {
 
-    List<Secret> findAllByDeploymentsContaining(String deployment);
-    List<Secret> findAllByEnvironmentVariableAndDeploymentsContaining(String environmentVariable, String deployment);
+    List<SecretEntity> findAllByDeploymentsContaining(String deployment);
+    List<SecretEntity> findAllByEnvironmentVariableAndDeploymentsContaining(String environmentVariable, String deployment);
 
 }

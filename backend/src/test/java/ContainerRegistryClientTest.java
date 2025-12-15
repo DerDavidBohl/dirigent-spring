@@ -3,7 +3,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Duration;
 
 import org.davidbohl.dirigent.deployments.updates.ContainerRegistryClient;
-import org.davidbohl.dirigent.deployments.updates.CouldNotGetManifestDigestFromRegistryFailedException;
+import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

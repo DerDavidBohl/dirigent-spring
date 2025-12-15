@@ -1,8 +1,9 @@
 package org.davidbohl.dirigent.deployments.notification;
 
 import lombok.extern.slf4j.Slf4j;
-import org.davidbohl.dirigent.deployments.events.DeploymentStateChangedEvent;
-import org.davidbohl.dirigent.deployments.events.ImageUpdateAvailableEvent;
+
+import org.davidbohl.dirigent.deployments.state.event.DeploymentStateChangedEvent;
+import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
