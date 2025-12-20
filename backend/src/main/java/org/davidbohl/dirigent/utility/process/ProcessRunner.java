@@ -103,9 +103,10 @@ public class ProcessRunner {
                 String line;
                 while ((line = br.readLine()) != null) {
                     output.append(line).append("\n");
+                    log.debug(line);
                 }
             } catch (IOException e) {
-                log.debug("Error reading stream", e);
+                log.warn("Error reading stream", e);
             }
         });
         reader.setDaemon(true);
