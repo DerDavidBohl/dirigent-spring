@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
 import org.davidbohl.dirigent.deployments.config.model.Deployment;
+import org.davidbohl.dirigent.deployments.management.event.NamedDeploymentStartRequestedEvent;
 import org.davidbohl.dirigent.deployments.updates.dto.DeploymentUpdateDto;
 import org.davidbohl.dirigent.deployments.updates.dto.DeploymentUpdateServiceImageDto;
 import org.davidbohl.dirigent.deployments.updates.entity.DeploymentUpdateEntity;
@@ -80,7 +81,7 @@ public class DeploymentUpdateService {
 
         processRunner.executeCommand(Arrays.asList(command.split(" ")), deploymentDir);
 
-        this.applicationEventPublisher.publishEvent(new NamedDeploymentUpdatedEvent(this, deploymentName));
+        this.applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, deploymentName, true));
 
         this.deploymentUpdateRepository.deleteAllByDeploymentName(deploymentName);
     }
