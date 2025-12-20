@@ -40,9 +40,13 @@ public class NotificationService {
     }
 
     private void sendGotifyMessage(String title, String message) {
-        if (gotifyToken != null && gotifyBaseUrl != null && !gotifyToken.isBlank() && !gotifyBaseUrl.isBlank()) {
-            RestTemplate restTemplate = new RestTemplate();
-            restTemplate.postForObject("%s/message?token=%s".formatted(gotifyBaseUrl, gotifyToken), new GotifyMessage(title, message, 5), Object.class);
+        try {
+            if (gotifyToken != null && gotifyBaseUrl != null && !gotifyToken.isBlank() && !gotifyBaseUrl.isBlank()) {
+                RestTemplate restTemplate = new RestTemplate();
+                restTemplate.postForObject("%s/message?token=%s".formatted(gotifyBaseUrl, gotifyToken), new GotifyMessage(title, message, 5), Object.class);
+            }
+        } catch(Throwable e) {
+            log.warn("Failed to send Message to gotify", e);
         }
     }
 
