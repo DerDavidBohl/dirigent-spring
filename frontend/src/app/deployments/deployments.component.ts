@@ -2,7 +2,7 @@ import { AsyncPipe } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatBadge } from '@angular/material/badge';
-import { MatIconButton } from '@angular/material/button';
+import { MatIconButton, MatButton, MatAnchor } from '@angular/material/button';
 import { MatChip, MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
@@ -21,10 +21,10 @@ import {
   MatRowDef,
   MatTable
 } from '@angular/material/table';
-import { interval, Observable, ReplaySubject } from 'rxjs';
-import { distinctUntilChanged, map, shareReplay, switchMap } from 'rxjs/operators';
+import { combineLatest, interval, Observable, ReplaySubject } from 'rxjs';
+import { distinctUntilChanged, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from '../api/api.service';
-import { Deployment } from '../api/deployment';
+import { DeploymentState } from '../api/deployment-state';
 import { DeploymentUpdate } from '../api/deployment-update';
 import { SystemInformation } from '../api/system-information';
 import { StartDialogComponent } from './start-dialog/start-dialog.component';
@@ -57,8 +57,10 @@ import { StartDialogComponent } from './start-dialog/start-dialog.component';
     MatSort,
     MatLabel,
     MatInput,
-    MatFormField
-  ],
+    MatFormField,
+    MatButton,
+    MatAnchor
+],
   templateUrl: './deployments.component.html',
   styleUrl: './deployments.component.css',
 })
@@ -68,31 +70,40 @@ export class DeploymentsComponent implements OnInit {
   sort$ = new ReplaySubject<Sort>(1);
   search$ = new ReplaySubject<string>(1);
 
-  deployments$: Observable<Array<Deployment>>;
-  tableDataSource$: Observable<Array<Deployment>>;
+  deploymentStates$: Observable<Array<DeploymentState>>;
+  tableDataSource$: Observable<Array<DeploymentState>>;
   filterValues$: Observable<string[]>;
   systemInformation$: Observable<SystemInformation>;
   deploymentUpdates$: Observable<Array<DeploymentUpdate>>;
+  statesAndUpdates$: Observable<Array<DeploymentState &  {updates: Array<DeploymentUpdate>}>>;
 
   displayedColumns = ['actions', 'name', 'state', 'message'];
+  isCheckingForUpdates = false;
 
   readonly dialog = inject(MatDialog);
 
   constructor(private apiService: ApiService) {
 
-    this.deploymentUpdates$ = apiService.getDeploymentUpdates().pipe(shareReplay(1));
+    this.deploymentUpdates$ = this.apiService.deploymentUpdates$;
+
+    this.deploymentStates$ = this.apiService.deploymentStates$;    
 
     this.systemInformation$ = apiService.getSystemInformation();
 
     this.systemInformation$.subscribe(i => document.title = `Dirigent@${i.instanceName}`)
 
-    this.deployments$ = this.apiService.deploymentStates$.pipe(
-      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
-    );
-    this.filterValues$ = this.deployments$.pipe(map(ds => [...new Set(ds.map(ds => ds.state))]));
+    this.statesAndUpdates$ = combineLatest([this.deploymentStates$, this.deploymentUpdates$])
+      .pipe(
+        distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
+        tap(a => console.log('triggered', a)),
+        map(([states, updates]) => 
+          states.map(s => ({...s, updates: updates.filter(u => u.deploymentName === s.name)})
+      )));
+
+    this.filterValues$ = this.statesAndUpdates$.pipe(map(ds => [...new Set(ds.map(ds => ds.state))]));
 
     this.tableDataSource$ = this.selectedFilterValues$.pipe(
-      switchMap(selectedFilterValues => this.deployments$.pipe(
+      switchMap(selectedFilterValues => this.statesAndUpdates$.pipe(
         map(ds => ds.filter(ds => selectedFilterValues.includes(ds.state))),
       )),
       switchMap(ds => this.search$.pipe(
@@ -121,7 +132,10 @@ export class DeploymentsComponent implements OnInit {
     );
     this.apiService.reloadDeploymentStates();
 
-    interval(2000).subscribe(() => this.apiService.reloadDeploymentStates());
+    interval(2000).subscribe(() => {
+      this.apiService.reloadDeploymentStates();
+      this.apiService.reloadDeployementUpdates();
+    });
 
   }
 
@@ -131,19 +145,17 @@ export class DeploymentsComponent implements OnInit {
     this.search$.next('');
   }
 
-  isUpdateAvailable(deploymentName: string): Observable<boolean> {
-    return this.deploymentUpdates$.pipe(
-      map(dus => dus.find(du => du.deploymentName === deploymentName)),
-      map(Boolean)
-    );
+  checkForUpdates() {
+    this.isCheckingForUpdates = true;
+    this.apiService.checkForUpdates().subscribe(() => this.isCheckingForUpdates = false)
   }
 
-  updateDeployment(deployment: Deployment) {
+  updateDeployment(deployment: DeploymentState) {
     this.apiService.updateDeployment(deployment)
       .subscribe(() => this.apiService.reloadDeploymentStates());
   }
 
-  startDeployment(deploymentState: Deployment) {
+  startDeployment(deploymentState: DeploymentState) {
     const dialogRef = this.dialog.open(StartDialogComponent);
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -154,7 +166,7 @@ export class DeploymentsComponent implements OnInit {
     });
   }
 
-  stopDeployment(element: Deployment) {
+  stopDeployment(element: DeploymentState) {
 
     this.apiService.stopDeployment(element).subscribe(() => this.apiService.reloadDeploymentStates());
 
@@ -187,7 +199,7 @@ export class DeploymentsComponent implements OnInit {
   }
 
   countDeploymentsByState(state: string): Observable<number> {
-    return this.deployments$.pipe(
+    return this.deploymentStates$.pipe(
       map(deployments => deployments.filter(deployment => deployment.state === state).length)
     );
   }

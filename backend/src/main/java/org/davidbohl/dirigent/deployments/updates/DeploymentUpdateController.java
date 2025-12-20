@@ -27,4 +27,9 @@ public class DeploymentUpdateController {
         deploymentUpdateService.updateDeployment(deploymentName);
     }
 
+    @PostMapping("check") 
+    public void podtDeploymentUpdateCheck() {
+        deploymentUpdateService.checkAllDeploymentForUpdates();
+    }
+
 }

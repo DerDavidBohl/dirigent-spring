@@ -56,6 +56,20 @@ public class DeploymentUpdateService {
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
+    
+    @Transactional
+    public void updateDeployment(String deploymentName) {
+
+        File deploymentDir = new File("deployments/" + deploymentName);
+
+        String command = this.composeCommand + " pull";
+
+        processRunner.executeCommand(Arrays.asList(command.split(" ")), deploymentDir);
+
+        this.applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, deploymentName, true));
+
+        this.deploymentUpdateRepository.deleteAllByDeploymentName(deploymentName);
+    }
 
     @Scheduled(fixedRateString = "${dirigent.update.rate:3}", timeUnit = TimeUnit.HOURS)
     public void checkAllDeploymentForUpdates() {
@@ -70,20 +84,6 @@ public class DeploymentUpdateService {
         for (Deployment deployment : deployments) {
             checkIfImageUpdatesExistForDeployment(deployment);
         }
-    }
-    
-    @Transactional
-    public void updateDeployment(String deploymentName) {
-
-        File deploymentDir = new File("deployments/" + deploymentName);
-
-        String command = this.composeCommand + " pull";
-
-        processRunner.executeCommand(Arrays.asList(command.split(" ")), deploymentDir);
-
-        this.applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, deploymentName, true));
-
-        this.deploymentUpdateRepository.deleteAllByDeploymentName(deploymentName);
     }
 
     @Async
@@ -129,7 +129,6 @@ public class DeploymentUpdateService {
 
                 List<DeploymentUpdateEntity> deploymentUpdates = deploymentUpdateRepository
                         .findAllByDeploymentNameAndServiceAndImage(deployment.name(), service, container.getImage());
-                ;
 
                 if (deploymentUpdates.size() > 0)
                     return;
