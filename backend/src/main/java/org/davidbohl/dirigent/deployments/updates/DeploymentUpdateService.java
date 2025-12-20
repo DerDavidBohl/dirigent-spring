@@ -116,9 +116,6 @@ public class DeploymentUpdateService {
                 String registryDigest = this.containerRegistryClient.getRegistryDigest(image.registryEndpoint(),
                         image.image(), image.tag());
 
-                InspectImageResponse imageData =
-                dockerClient.inspectImageCmd(container.getImageId()).exec();
-
                 if (registryDigest.equals(container.getImageId()))
                 continue;
 
