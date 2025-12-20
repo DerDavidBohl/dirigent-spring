@@ -51,8 +51,8 @@ public class DeploymentUpdateService {
     private final ProcessRunner processRunner;
     private final DeploymentUpdateRepository deploymentUpdateRepository;
 
-    @Value("${dirigent.update.enabled:false}")
-    private boolean updateEnabled;
+    @Value("${dirigent.updates.disabled:false}")
+    private boolean updatesDisabled;
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
@@ -74,7 +74,7 @@ public class DeploymentUpdateService {
     @Scheduled(fixedRateString = "${dirigent.update.rate:3}", timeUnit = TimeUnit.HOURS)
     public void checkAllDeploymentForUpdates() {
 
-        if (!updateEnabled)
+        if (updatesDisabled)
             return;
 
         log.info("Checking For Updates");
