@@ -1,15 +1,10 @@
 <div class="space-y-4">
 
-  <h2 class="text-2xl">Deployments&#64;{{ (systemInformation$ | async)?.instanceName }} (<strong>{{ (deployments$ | async)?.length}}</strong>)</h2>
-  <div>
-    <a [href]="(systemInformation$ | async)?.gitUrl" target="_blank">View Source</a>
-  </div>
-  <div class="md:grid md:grid-cols-5">
-    <mat-form-field class="w-full md:col-span-2">
-      <mat-label>Search...</mat-label>
-      <input matInput (keyup)="search($event)" >
-    </mat-form-field>
-  </div>
+  <h2 class="text-2xl">Deployments&#64;{{ (systemInformation$ | async)?.instanceName }} (<strong>{{ (deploymentStates$ | async)?.length}}</strong>)</h2>
+  <mat-form-field class="md:col-span-2 w-3xl">
+    <mat-label>Search...</mat-label>
+    <input matInput (keyup)="search($event)" >
+  </mat-form-field>
   <mat-chip-listbox multiple (change)="updateFilter($event)">
     @for (filterValue of filterValues$ | async; track filterValue) {
         <mat-chip-option [style]="'background-color: ' + getBackgroudColorForState(filterValue)" [value]="filterValue"
@@ -18,6 +13,14 @@
         </mat-chip-option>
     }
   </mat-chip-listbox>
+  <button [disabled]="isCheckingForUpdates" (click)="checkForUpdates()" mat-button>
+    @if(isCheckingForUpdates) {
+      checking for updates...
+    } @else {
+      Check for updates
+    }
+  </button>
+  <a mat-button [href]="(systemInformation$ | async)?.gitUrl" target="_blank">View Source</a>
   <table [dataSource]="tableDataSource$" class="mat-elevation-z8" mat-table matSort (matSortChange)="announceSortChange($event)" >
 
     <!--- Note that these columns can be defined in any order.
@@ -27,13 +30,22 @@
     <ng-container matColumnDef="actions">
       <th *matHeaderCellDef mat-header-cell> Actions</th>
       <td *matCellDef="let element" mat-cell>
-        <button [matMenuTriggerFor]="menu" mat-icon-button>
-          <mat-icon>more_vert</mat-icon>
-        </button>
+        <div matBadge="Update" matBadgeSize="small" [matBadgeHidden]="!(element.updates.length && element.updates.length > 0)" [matBadgePosition]="'above before'" class="h-full">
+          <button [matMenuTriggerFor]="menu" mat-icon-button [matBadge]="element.e" matBadgeColor="accent">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+        </div>
         <mat-menu #menu="matMenu">
+          
+          @if (element.updates.length && element.updates.length > 0) {
+          <button (click)="updateDeployment(element)" mat-menu-item>
+            Update
+          </button>
+          }
           <button (click)="startDeployment(element)" mat-menu-item>
             Start
           </button>
+
           <button (click)="stopDeployment(element)" mat-menu-item>
             Stop
           </button>

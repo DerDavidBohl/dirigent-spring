@@ -1,6 +1,6 @@
 package org.davidbohl.dirigent.deployments.management;
 
-import org.davidbohl.dirigent.deployments.events.RecreateAllDeploymentStatesEvent;
+import org.davidbohl.dirigent.deployments.management.event.RecreateAllDeploymentStatesEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

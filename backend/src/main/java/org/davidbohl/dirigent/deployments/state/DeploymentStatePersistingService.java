@@ -1,7 +1,11 @@
 package org.davidbohl.dirigent.deployments.state;
 
-import org.davidbohl.dirigent.deployments.events.DeploymentStateChangedEvent;
-import org.davidbohl.dirigent.deployments.events.DeploymentStateEvent;
+import org.davidbohl.dirigent.deployments.management.event.DeploymentStateEvent;
+import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity;
+import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity.State;
+import org.davidbohl.dirigent.deployments.state.event.DeploymentStateChangedEvent;
+import org.davidbohl.dirigent.deployments.updates.entity.DeploymentUpdateEntity;
+import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -9,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class DeploymentStatePersistingService {
@@ -16,7 +21,8 @@ public class DeploymentStatePersistingService {
     private final DeploymentStateRepository deploymentStateRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    public DeploymentStatePersistingService(DeploymentStateRepository deploymentStateRepository, ApplicationEventPublisher applicationEventPublisher) {
+    public DeploymentStatePersistingService(DeploymentStateRepository deploymentStateRepository,
+            ApplicationEventPublisher applicationEventPublisher) {
         this.deploymentStateRepository = deploymentStateRepository;
         this.applicationEventPublisher = applicationEventPublisher;
     }
@@ -24,23 +30,29 @@ public class DeploymentStatePersistingService {
     @EventListener(DeploymentStateEvent.class)
     public void handleDeploymentStateChangedEvent(DeploymentStateEvent event) {
 
-        Optional<DeploymentState> byId = deploymentStateRepository.findById(event.getDeploymentName());
+        Optional<DeploymentStateEntity> byId = deploymentStateRepository.findById(event.getDeploymentName());
+
+        DeploymentStateEntity deploymentState = byId.orElse(
+                new DeploymentStateEntity(event.getDeploymentName(), event.getState(), event.getContext()));
 
         if (byId.isPresent() && byId.get().getState() == event.getState())
             return;
 
-        DeploymentState deploymentState = new DeploymentState(event.getDeploymentName(), event.getState(), event.getContext());
+        deploymentState.setMessage(event.getContext());
+        deploymentState.setState(event.getState());
+
         deploymentStateRepository.save(deploymentState);
-        applicationEventPublisher.publishEvent(new DeploymentStateChangedEvent(this, event.getDeploymentName(), event.getState(), event.getContext()));
+        applicationEventPublisher.publishEvent(
+                new DeploymentStateChangedEvent(this, event.getDeploymentName(), event.getState(), event.getContext()));
 
     }
 
-    public List<DeploymentState> getDeploymentStates() {
-        Iterable<DeploymentState> all = deploymentStateRepository.findAll();
+    public List<DeploymentStateEntity> getDeploymentStates() {
+        Iterable<DeploymentStateEntity> all = deploymentStateRepository.findAll();
 
-        List<DeploymentState> result = new ArrayList<>();
+        List<DeploymentStateEntity> result = new ArrayList<>();
 
-        for (DeploymentState deploymentState : all) {
+        for (DeploymentStateEntity deploymentState : all) {
             result.add(deploymentState);
         }
 

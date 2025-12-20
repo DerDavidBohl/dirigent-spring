@@ -1,22 +1,24 @@
 import {Injectable} from '@angular/core';
 import {Observable, ReplaySubject, tap} from 'rxjs';
-import {Deployment} from './deployment';
+import {DeploymentState} from './deployment-state';
 import {HttpClient} from '@angular/common/http';
 import {Secret} from './secret';
 import {SystemInformation} from './system-information';
+import { DeploymentUpdate } from './deployment-update';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
 
-  private _deploymentStates: ReplaySubject<Array<Deployment>> = new ReplaySubject<Array<Deployment>>(1);
+  private _deploymentStates: ReplaySubject<Array<DeploymentState>> = new ReplaySubject<Array<DeploymentState>>(1);
   private _secrets: ReplaySubject<Array<Secret>> = new ReplaySubject<Array<Secret>>(1);
+  private _deploymentUpdates: ReplaySubject<Array<DeploymentUpdate>> = new ReplaySubject<Array<DeploymentUpdate>>;
 
   constructor(private http: HttpClient) {
   }
 
-  get deploymentStates$(): Observable<Array<Deployment>> {
+  get deploymentStates$(): Observable<Array<DeploymentState>> {
     return this._deploymentStates.asObservable();
   }
 
@@ -24,23 +26,43 @@ export class ApiService {
     return this._secrets.asObservable();
   }
 
-  updateDeploymentStates(): void {
+  get deploymentUpdates$(): Observable<Array<DeploymentUpdate>> {
+    return this._deploymentUpdates.asObservable();
+  }
+
+  reloadDeployementUpdates(): void {
+    this.getDeploymentUpdates().subscribe(r => this._deploymentUpdates.next(r))
+  }
+
+  updateDeployment(deployment: DeploymentState): Observable<void> {
+    return this.http.post<void>(`api/v1/deployment-updates/${deployment.name}/run`, {});
+  }
+
+  checkForUpdates() {
+    return this.http.post<void>(`api/v1/deployment-updates/check`, {});
+  }
+
+  getDeploymentUpdates(): Observable<Array<DeploymentUpdate>> {
+    return this.http.get<Array<DeploymentUpdate>>('api/v1/deployment-updates');
+  }
+
+  reloadDeploymentStates(): void {
     this.getAllDeploymentStates().subscribe(r => this._deploymentStates.next(r));
   }
 
-  getAllDeploymentStates(): Observable<Array<Deployment>> {
-    return this.http.get<Array<Deployment>>('api/v1/deployments');
+  getAllDeploymentStates(): Observable<Array<DeploymentState>> {
+    return this.http.get<Array<DeploymentState>>('api/v1/deployments');
   }
 
   getSystemInformation(): Observable<SystemInformation> {
     return this.http.get<SystemInformation>('api/v1/system-information');
   }
 
-  stopDeployment(deploymentState: Deployment): Observable<void> {
+  stopDeployment(deploymentState: DeploymentState): Observable<void> {
     return this.http.post<void>(`api/v1/deployments/${deploymentState.name}/stop`, {});
   }
 
-  startDeployment(deploymentState: Deployment, force: boolean): Observable<void> {
+  startDeployment(deploymentState: DeploymentState, force: boolean): Observable<void> {
     return this.http.post<void>(`api/v1/deployments/${deploymentState.name}/start?forceRecreate=${force}`, {});
   }
 

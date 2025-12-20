@@ -1,13 +1,15 @@
 package org.davidbohl.dirigent.deployments.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.davidbohl.dirigent.deployments.models.DeploynentConfiguration;
-import org.davidbohl.dirigent.utility.GitService;
+import java.io.File;
+
+import org.davidbohl.dirigent.deployments.config.exception.DeploymentsConfigurationReadFailedException;
+import org.davidbohl.dirigent.deployments.config.model.DeploynentConfiguration;
+import org.davidbohl.dirigent.utility.git.GitService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 @Service
 public class DeploymentsConfigurationProvider {
@@ -26,13 +28,13 @@ public class DeploymentsConfigurationProvider {
 
         try {
         if (gitUrl != null)
-            gitService.updateRepo(gitUrl, "config");
+            gitService.updateRepo(gitUrl, "config", "HEAD");
 
         File configFile = new File("config/deployments.yml");
 
             return objectMapper.readValue(configFile, DeploynentConfiguration.class);
         } catch (Throwable e) {
-            throw new DeploymentsConfigurationReadFailed(e);
+            throw new DeploymentsConfigurationReadFailedException(e);
         }
     }
 }

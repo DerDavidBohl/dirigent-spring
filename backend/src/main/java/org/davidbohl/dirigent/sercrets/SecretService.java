@@ -1,7 +1,10 @@
 package org.davidbohl.dirigent.sercrets;
 
 import lombok.extern.slf4j.Slf4j;
-import org.davidbohl.dirigent.deployments.events.MultipleNamedDeploymentsStartRequestedEvent;
+
+import org.davidbohl.dirigent.deployments.management.event.MultipleNamedDeploymentsStartRequestedEvent;
+import org.davidbohl.dirigent.sercrets.entity.SecretEntity;
+import org.davidbohl.dirigent.sercrets.model.SecretDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -36,7 +39,7 @@ public class SecretService {
     public void saveSecret(String key, String environmentVariable, String value, List<String> deployments, boolean restartDeployments) {
         try {
 
-            Secret secret = secretRepository.findById(key).orElseGet(() -> new Secret(key, environmentVariable, value, deployments));
+            SecretEntity secret = secretRepository.findById(key).orElseGet(() -> new SecretEntity(key, environmentVariable, value, deployments));
 
             List<String> oldDeployments = new ArrayList<>(secret.getDeployments());
 
@@ -64,10 +67,10 @@ public class SecretService {
     }
 
     public Map<String, String> getAllSecretsAsEnvironmentVariableMapByDeployment(String deployment) { 
-        List<Secret> secrets = secretRepository.findAllByDeploymentsContaining(deployment);
+        List<SecretEntity> secrets = secretRepository.findAllByDeploymentsContaining(deployment);
         Map<String, String> result = new HashMap<>();
 
-        for (Secret secret : secrets) {
+        for (SecretEntity secret : secrets) {
             try {
                 result.put(secret.getEnvironmentVariable(), decrypt(secret.getEncryptedValue()));
             } catch(Exception ex) {
@@ -86,11 +89,11 @@ public class SecretService {
     }
 
     public void deleteSecret(String key, boolean restartDeployments) {
-        Optional<Secret> byId = this.secretRepository.findById(key);
+        Optional<SecretEntity> byId = this.secretRepository.findById(key);
 
         if(byId.isEmpty()) return;
 
-        Secret secret = byId.get();
+        SecretEntity secret = byId.get();
         secretRepository.deleteById(key);
 
         log.debug("Deleted Secret <{}>", key);
