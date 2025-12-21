@@ -46,7 +46,7 @@ jobs:
           echo "TAG_REF=$TAG_REF" >> $GITHUB_ENV
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           # Checke explizit den Tag aus, falls vorhanden, sonst Standardverhalten
           ref: ${{ env.TAG_NAME != '' && env.TAG_NAME || '' }}
