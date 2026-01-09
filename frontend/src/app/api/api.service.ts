@@ -34,8 +34,8 @@ export class ApiService {
     this.getDeploymentUpdates().subscribe(r => this._deploymentUpdates.next(r))
   }
 
-  updateDeployment(deployment: DeploymentState): Observable<void> {
-    return this.http.post<void>(`api/v1/deployment-updates/${deployment.name}/run`, {});
+  updateDeployment(deploymentName: string): Observable<void> {
+    return this.http.post<void>(`api/v1/deployment-updates/${deploymentName}/run`, {});
   }
 
   checkForUpdates() {

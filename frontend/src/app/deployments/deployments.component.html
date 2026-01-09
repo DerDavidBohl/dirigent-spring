@@ -13,13 +13,6 @@
         </mat-chip-option>
     }
   </mat-chip-listbox>
-  <button [disabled]="isCheckingForUpdates" (click)="checkForUpdates()" mat-button>
-    @if(isCheckingForUpdates) {
-      checking for updates...
-    } @else {
-      Check for updates
-    }
-  </button>
   <a mat-button [href]="(systemInformation$ | async)?.gitUrl" target="_blank">View Source</a>
   <table [dataSource]="tableDataSource$" class="mat-elevation-z8" mat-table matSort (matSortChange)="announceSortChange($event)" >
 
@@ -30,18 +23,11 @@
     <ng-container matColumnDef="actions">
       <th *matHeaderCellDef mat-header-cell> Actions</th>
       <td *matCellDef="let element" mat-cell>
-        <div matBadge="Update" matBadgeSize="small" [matBadgeHidden]="!(element.updates.length && element.updates.length > 0)" [matBadgePosition]="'above before'" class="h-full">
-          <button [matMenuTriggerFor]="menu" mat-icon-button [matBadge]="element.e" matBadgeColor="accent">
-            <mat-icon>more_vert</mat-icon>
-          </button>
-        </div>
+        <button [matMenuTriggerFor]="menu" mat-icon-button>
+          <mat-icon>more_vert</mat-icon>
+        </button>
         <mat-menu #menu="matMenu">
           
-          @if (element.updates.length && element.updates.length > 0) {
-          <button (click)="updateDeployment(element)" mat-menu-item>
-            Update
-          </button>
-          }
           <button (click)="startDeployment(element)" mat-menu-item>
             Start
           </button>

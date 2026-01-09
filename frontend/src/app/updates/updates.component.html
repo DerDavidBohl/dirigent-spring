@@ -1,0 +1,33 @@
+<div class="space-y-4">
+<h1>Updates</h1>
+<button [disabled]="isCheckingForUpdates" (click)="checkForUpdates()" mat-button>
+@if(isCheckingForUpdates) {
+    checking for updates...
+} @else {
+    Check for updates
+}
+</button>
+
+<table mat-table [dataSource]="updates$">
+    <ng-container matColumnDef="action">
+        <th mat-header-cell *matHeaderCellDef> Action </th>
+        <td mat-cell *matCellDef="let element">
+            <button [disabled]="isCurrentlyUpdating(element.deploymentName)" (click)="updateDeployment(element.deploymentName)" mat-button>Update</button>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="deployment">
+        <th mat-header-cell *matHeaderCellDef> Deployment </th>
+        <td mat-cell *matCellDef="let element"> {{element.deploymentName}} </td>
+
+    </ng-container>
+
+    <ng-container matColumnDef="details">
+        <th mat-header-cell *matHeaderCellDef> Details </th>
+        <td mat-cell *matCellDef="let element"> {{ createServiceUpdateString(element.serviceUpdates) }} </td>
+    </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="['action', 'deployment', 'details']"></tr>
+  <tr mat-row *matRowDef="let row; columns: ['action', 'deployment', 'details'];"></tr>
+</table>
+</div>
