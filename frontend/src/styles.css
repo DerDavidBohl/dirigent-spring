@@ -17,10 +17,10 @@ html.dark body {
 }
 
 :root {
-  --mdc-theme-primary: #7a7a7a;
-  --mdc-theme-surface: #ffffff;
-  --mdc-theme-background: #f0f0f0;
-  --mdc-theme-on-surface: #111111;
+  --mat-theme-primary: #7a7a7a;
+  --mat-theme-surface: #ffffff;
+  --mat-theme-background: #f0f0f0;
+  --mat-theme-on-surface: #111111;
   --md-sys-color-primary: #7a7a7a;
   --md-sys-color-surface: #ffffff;
   --md-sys-color-surface-container: #ffffff;
@@ -29,10 +29,10 @@ html.dark body {
 }
 
 html.dark {
-  --mdc-theme-primary: #d4d4d4;
-  --mdc-theme-surface: #1a1a1a;
-  --mdc-theme-background: #111111;
-  --mdc-theme-on-surface: #f5f5f5;
+  --mat-theme-primary: #d4d4d4;
+  --mat-theme-surface: #1a1a1a;
+  --mat-theme-background: #111111;
+  --mat-theme-on-surface: #f5f5f5;
   --md-sys-color-primary: #d4d4d4;
   --md-sys-color-surface: #1a1a1a;
   --md-sys-color-surface-container: #1a1a1a;
