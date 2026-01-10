@@ -1,18 +1,10 @@
 package org.davidbohl.dirigent.deployments.state.entity;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.davidbohl.dirigent.deployments.updates.entity.DeploymentUpdateEntity;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

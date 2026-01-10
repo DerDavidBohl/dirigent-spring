@@ -1,19 +1,15 @@
 package org.davidbohl.dirigent.deployments.state;
 
-import org.davidbohl.dirigent.deployments.management.event.DeploymentStateEvent;
-import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity;
-import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity.State;
-import org.davidbohl.dirigent.deployments.state.event.DeploymentStateChangedEvent;
-import org.davidbohl.dirigent.deployments.updates.entity.DeploymentUpdateEntity;
-import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+
+import org.davidbohl.dirigent.deployments.management.event.DeploymentStateEvent;
+import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity;
+import org.davidbohl.dirigent.deployments.state.event.DeploymentStateChangedEvent;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Service;
 
 @Service
 public class DeploymentStatePersistingService {
