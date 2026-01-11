@@ -58,8 +58,7 @@ import { MatIcon } from "@angular/material/icon";
     MatIcon,
     MatIconButton
 ],
-  templateUrl: './deployments.component.html',
-  styleUrl: './deployments.component.css',
+  templateUrl: './deployments.component.html'
 })
 export class DeploymentsComponent implements OnInit {
 

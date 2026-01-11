@@ -5,18 +5,13 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
 import org.davidbohl.dirigent.deployments.config.model.Deployment;
-import org.davidbohl.dirigent.deployments.management.event.NamedDeploymentStartRequestedEvent;
 import org.davidbohl.dirigent.deployments.updates.dto.DeploymentUpdateDto;
-import org.davidbohl.dirigent.deployments.updates.dto.DeploymentUpdateServiceImageDto;
 import org.davidbohl.dirigent.deployments.updates.entity.DeploymentUpdateEntity;
 import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
-import org.davidbohl.dirigent.deployments.updates.event.NamedDeploymentUpdatedEvent;
 import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
 import org.davidbohl.dirigent.deployments.updates.model.DockerImage;
 import org.davidbohl.dirigent.utility.process.ProcessRunner;
@@ -25,17 +20,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
-import com.google.common.collect.Lists;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,18 +49,32 @@ public class DeploymentUpdateService {
     @Value("${dirigent.compose.command}")
     private String composeCommand;
     
-    @Transactional
-    public void updateDeployment(String deploymentName) {
+    @Async
+    public void updateDeployment(DeploymentUpdateDto deploymentUpdate) {
 
-        File deploymentDir = new File("deployments/" + deploymentName);
+        List<DeploymentUpdateEntity> entities = this.deploymentUpdateRepository.findAllByDeploymentNameAndServiceAndImage(deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image());;
 
-        String command = this.composeCommand + " pull";
+        List<DeploymentUpdateEntity> runnintEntities = entities.stream().map(e -> {e.setRunning(true); return e;}).toList();
 
-        processRunner.executeCommand(Arrays.asList(command.split(" ")), deploymentDir);
+        if(runnintEntities == null)
+            runnintEntities = new ArrayList<>();
 
-        this.applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, deploymentName, true));
+        Iterable<DeploymentUpdateEntity> updatingEntities = this.deploymentUpdateRepository.saveAll(runnintEntities);;
 
-        this.deploymentUpdateRepository.deleteAllByDeploymentName(deploymentName);
+        try {
+            String pullCommand = composeCommand + " pull " + deploymentUpdate.service();
+
+            File deploymentDir = new File("deployments/" + deploymentUpdate.deploymentName());
+            processRunner.executeCommand(Arrays.asList(pullCommand.split(" ")), deploymentDir);
+
+            String upCommand = composeCommand + " up --remove-orphans -d " + deploymentUpdate.service();
+            processRunner.executeCommand(Arrays.asList(upCommand.split(" ")), deploymentDir);
+
+        } catch(Throwable e) {
+            log.warn("Failed to update deployment " + deploymentUpdate.deploymentName() + " service " + deploymentUpdate.service() + " image "+ deploymentUpdate.image(), e);
+        }
+
+        this.deploymentUpdateRepository.deleteAll(updatingEntities);
     }
 
     @Scheduled(fixedRateString = "${dirigent.update.rate:3}", timeUnit = TimeUnit.HOURS)
@@ -134,7 +140,7 @@ public class DeploymentUpdateService {
                     return;
 
                 deploymentUpdateRepository
-                        .save(new DeploymentUpdateEntity(null, deployment.name(), service, container.getImage()));
+                        .save(new DeploymentUpdateEntity(null, deployment.name(), service, container.getImage(), false));
 
             } catch (CouldNotGetManifestDigestFromRegistryFailedException e) {
                 log.warn("could not get digest from registry for image {}", image);
@@ -179,23 +185,12 @@ public class DeploymentUpdateService {
     }
 
     public List<DeploymentUpdateDto> getDeploymentUpdates() {
+        
+        List<DeploymentUpdateEntity> allDeploymentEntities = this.deploymentUpdateRepository.findAll();
 
-        Map<String, List<DeploymentUpdateEntity>> mapped = Lists.newArrayList(this.deploymentUpdateRepository.findAll())
-                .stream().collect(Collectors.groupingBy(DeploymentUpdateEntity::getDeploymentName));
-
-        List<DeploymentUpdateDto> result = new ArrayList<>();
-
-        for (String deploymentName : mapped.keySet()) {
-
-            DeploymentUpdateDto dto = new DeploymentUpdateDto(deploymentName,
-                    mapped.get(deploymentName).stream()
-                            .map(du -> new DeploymentUpdateServiceImageDto(du.getService(), du.getImage()))
-                            .toList());
-            result.add(dto);
-
-        }
-
-        return result;
+        return allDeploymentEntities.stream()
+                .map(e -> new DeploymentUpdateDto(e.getDeploymentName(), e.getService(), e.getImage(), e.isRunning()))
+                .toList();
 
     }
 

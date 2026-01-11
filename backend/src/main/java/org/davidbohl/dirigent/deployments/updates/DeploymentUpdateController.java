@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.davidbohl.dirigent.deployments.updates.dto.DeploymentUpdateDto;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,9 +22,9 @@ public class DeploymentUpdateController {
         return deploymentUpdateService.getDeploymentUpdates();
     }
 
-    @PostMapping("{deploymentName}/run")
-    public void postDeploymentUpdate(@PathVariable String deploymentName) {
-        deploymentUpdateService.updateDeployment(deploymentName);
+    @PostMapping("run")
+    public void postDeploymentUpdate(@RequestBody DeploymentUpdateDto deploymentUpdate) {
+        deploymentUpdateService.updateDeployment(deploymentUpdate);
     }
 
     @PostMapping("check") 

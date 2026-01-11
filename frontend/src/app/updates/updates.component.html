@@ -1,5 +1,5 @@
 <div class="space-y-4">
-<h1>Updates</h1>
+<h1 class="text-2xl">Updates</h1>
 <button [disabled]="isCheckingForUpdates" (click)="checkForUpdates()" mat-button>
 @if(isCheckingForUpdates) {
     checking for updates...
@@ -12,7 +12,7 @@
     <ng-container matColumnDef="action">
         <th mat-header-cell *matHeaderCellDef> Action </th>
         <td mat-cell *matCellDef="let element">
-            <button [disabled]="isCurrentlyUpdating(element.deploymentName)" (click)="updateDeployment(element.deploymentName)" mat-button>Update</button>
+            <button [disabled]="element.isRunning" (click)="updateDeployment(element)" mat-button>Update</button>
         </td>
     </ng-container>
 
@@ -22,12 +22,17 @@
 
     </ng-container>
 
-    <ng-container matColumnDef="details">
-        <th mat-header-cell *matHeaderCellDef> Details </th>
-        <td mat-cell *matCellDef="let element"> {{ createServiceUpdateString(element.serviceUpdates) }} </td>
+    <ng-container matColumnDef="service">
+        <th mat-header-cell *matHeaderCellDef> Service </th>
+        <td mat-cell *matCellDef="let element"> {{ element.service }} </td>
     </ng-container>
 
-  <tr mat-header-row *matHeaderRowDef="['action', 'deployment', 'details']"></tr>
-  <tr mat-row *matRowDef="let row; columns: ['action', 'deployment', 'details'];"></tr>
+    <ng-container matColumnDef="image">
+        <th mat-header-cell *matHeaderCellDef> Image </th>
+        <td mat-cell *matCellDef="let element"> {{ element.image }} </td>
+    </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="['action', 'deployment', 'service', 'image']"></tr>
+  <tr mat-row *matRowDef="let row; columns: ['action', 'deployment', 'service', 'image'];"></tr>
 </table>
 </div>

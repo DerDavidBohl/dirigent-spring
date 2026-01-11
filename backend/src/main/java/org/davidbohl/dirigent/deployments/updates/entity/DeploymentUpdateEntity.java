@@ -2,8 +2,10 @@ package org.davidbohl.dirigent.deployments.updates.entity;
 
 import java.util.UUID;
 
+import org.hibernate.annotations.ColumnDefault;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,10 +21,14 @@ import lombok.Setter;
 public class DeploymentUpdateEntity {
     
     @Id
-    @GeneratedValue
     private UUID id;
+
     private String deploymentName;
     private String service;
     private String image;
+
+    @Column()
+    @ColumnDefault("false")
+    private boolean isRunning;
 
 }

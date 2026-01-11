@@ -2,5 +2,7 @@ import { DeploymentUpdateServiceImage } from "./deployment-update-service-image"
 
 export interface DeploymentUpdate {
     deploymentName: string;
-    serviceUpdates: Array<DeploymentUpdateServiceImage>;
+    service: string;
+    image: string;
+    isRunning: boolean;
 }
