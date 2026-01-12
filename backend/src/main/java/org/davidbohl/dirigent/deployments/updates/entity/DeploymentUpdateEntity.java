@@ -21,6 +21,7 @@ import lombok.Setter;
 public class DeploymentUpdateEntity {
     
     @Id
+    @GeneratedValue
     private UUID id;
 
     private String deploymentName;
