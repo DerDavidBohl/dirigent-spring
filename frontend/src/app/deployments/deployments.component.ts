@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatAnchor, MatButton, MatIconButton } from '@angular/material/button';
 import { MatChip, MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
+import { MatIcon } from "@angular/material/icon";
 import { MatFormField, MatInput, MatLabel } from '@angular/material/input';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatSort, MatSortHeader, Sort } from '@angular/material/sort';
@@ -20,12 +21,11 @@ import {
   MatTable
 } from '@angular/material/table';
 import { interval, Observable, ReplaySubject } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 import { ApiService } from '../api/api.service';
 import { DeploymentState } from '../api/deployment-state';
 import { SystemInformation } from '../api/system-information';
 import { StartDialogComponent } from './start-dialog/start-dialog.component';
-import { MatIcon } from "@angular/material/icon";
 
 @Component({
   selector: 'app-deployments',
@@ -77,7 +77,7 @@ export class DeploymentsComponent implements OnInit {
 
   constructor(private apiService: ApiService) {
 
-    this.deploymentStates$ = this.apiService.deploymentStates$;    
+    this.deploymentStates$ = this.apiService.deploymentStates$.pipe(distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)));    
 
     this.systemInformation$ = apiService.getSystemInformation();
 
@@ -111,7 +111,7 @@ export class DeploymentsComponent implements OnInit {
         })
 
 
-      ))
+      )),
     );
     this.apiService.reloadDeploymentStates();
 

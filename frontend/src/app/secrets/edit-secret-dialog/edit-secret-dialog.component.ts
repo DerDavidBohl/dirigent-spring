@@ -46,8 +46,6 @@ import { MatCheckbox } from "@angular/material/checkbox";
 })
 export class EditSecretDialogComponent {
 
-  protected readonly ENTER = ENTER;
-  protected readonly SPACE = SPACE;
   readonly dialogRef = inject(MatDialogRef<EditSecretDialogComponent>);
   
   secret: Secret;
