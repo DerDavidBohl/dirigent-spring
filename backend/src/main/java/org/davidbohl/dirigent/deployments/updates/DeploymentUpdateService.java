@@ -159,7 +159,8 @@ public class DeploymentUpdateService {
 
     @EventListener
     public void deleteAllUpdatesFromDatabseOnStrtUp(ContextRefreshedEvent event) {
-        deploymentUpdateRepository.deleteAll();
+        log.info("Cleaned update repository");
+        deploymentUpdateRepository.deleteAllByIsRunning(true);
     }
 
     private DockerImage parseDockerImage(String imageRef) {

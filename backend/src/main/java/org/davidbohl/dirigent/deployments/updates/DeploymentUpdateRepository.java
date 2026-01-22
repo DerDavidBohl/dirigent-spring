@@ -8,5 +8,6 @@ import org.springframework.data.repository.ListCrudRepository;
 public interface DeploymentUpdateRepository extends ListCrudRepository<DeploymentUpdateEntity, UUID> {
     List<DeploymentUpdateEntity> findAllByDeploymentNameAndServiceAndImage(String deploymentName, String service, String image);
     void deleteAllByDeploymentName(String deploymentName);
+    void deleteAllByIsRunning(boolean isRunning);
     
 }
