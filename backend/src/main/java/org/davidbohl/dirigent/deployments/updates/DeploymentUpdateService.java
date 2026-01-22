@@ -17,6 +17,8 @@ import org.davidbohl.dirigent.deployments.updates.model.DockerImage;
 import org.davidbohl.dirigent.utility.process.ProcessRunner;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -59,7 +61,7 @@ public class DeploymentUpdateService {
         if(runnintEntities == null)
             runnintEntities = new ArrayList<>();
 
-        Iterable<DeploymentUpdateEntity> updatingEntities = this.deploymentUpdateRepository.saveAll(runnintEntities);;
+        List<DeploymentUpdateEntity> updatingEntities = this.deploymentUpdateRepository.saveAll(runnintEntities);;
 
         try {
             String pullCommand = composeCommand + " pull " + deploymentUpdate.service();
@@ -71,6 +73,11 @@ public class DeploymentUpdateService {
             processRunner.executeCommand(Arrays.asList(upCommand.split(" ")), deploymentDir);
 
         } catch(Throwable e) {
+            List<DeploymentUpdateEntity> notRunningEntities = updatingEntities.stream().map(due -> {due.setRunning(false); return due;}).toList();
+            
+            if(notRunningEntities != null)
+                this.deploymentUpdateRepository.saveAll(notRunningEntities);
+
             log.warn("Failed to update deployment " + deploymentUpdate.deploymentName() + " service " + deploymentUpdate.service() + " image "+ deploymentUpdate.image(), e);
         }
 
@@ -148,6 +155,11 @@ public class DeploymentUpdateService {
             }
 
         }
+    }
+
+    @EventListener
+    public void deleteAllUpdatesFromDatabseOnStrtUp(ContextRefreshedEvent event) {
+        deploymentUpdateRepository.deleteAll();
     }
 
     private DockerImage parseDockerImage(String imageRef) {
