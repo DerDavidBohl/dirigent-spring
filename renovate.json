@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended"
   ],
+   "baseBranchPatterns": ["main", "dev"],
    "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
