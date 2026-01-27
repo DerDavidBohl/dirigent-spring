@@ -2,7 +2,7 @@ name: Build Docker Image
 on:
   workflow_dispatch:
   repository_dispatch:
-    types: [tag-created]
+    types: [tag-created, branch-updated]
   pull_request:
     types: [opened, reopened, synchronize]
   push:
@@ -11,53 +11,57 @@ on:
     branches:
       - '*'
 
-# Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-# There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
   build-and-push-image:
     runs-on: 
       - ubuntu-latest
       
-    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
       contents: read
       packages: write
       attestations: write
       id-token: write
-      # 
+      
     steps:
-      - name: Set TAG_REF and TAG_NAME
-        id: tags
+      - name: Set REF and NAME based on event
+        id: refs
         run: |
-          TAG_REF="${GITHUB_REF}"
-          TAG_NAME=""
+          REF="${GITHUB_REF}"
+          NAME=""
           
-          if [ "${{ github.event_name }}" = "repository_dispatch" ] && [ -n "${{ github.event.client_payload.tag }}" ]; then
-            TAG_NAME="${{ github.event.client_payload.tag }}"
-            TAG_REF="refs/tags/${TAG_NAME}"
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            if [ -n "${{ github.event.client_payload.tag }}" ]; then
+              NAME="${{ github.event.client_payload.tag }}"
+              REF="refs/tags/${NAME}"
+            elif [ -n "${{ github.event.client_payload.branch }}" ]; then
+              NAME="${{ github.event.client_payload.branch }}"
+              REF="refs/heads/${NAME}"
+            fi
           elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            NAME="${GITHUB_REF#refs/tags/}"
+          elif [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            NAME="${GITHUB_REF#refs/heads/}"
           fi
-          echo "TAG_REF=$TAG_REF" >> $GITHUB_ENV
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          
+          echo "REF=$REF" >> $GITHUB_ENV
+          echo "NAME=$NAME" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          # Checke explizit den Tag aus, falls vorhanden, sonst Standardverhalten
-          ref: ${{ env.TAG_NAME != '' && env.TAG_NAME || '' }}
+          ref: ${{ env.NAME != '' && env.REF || '' }}
 
-      # Uses the `docker/login-action` action to log in to the Container registry registry using the account and password that will publish the packages. Once published, the packages are scoped to the account defined here.
       - name: Log in to the Container registry
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about) to extract tags and labels that will be applied to the specified image. The `id` "meta" allows the output of this step to be referenced in a subsequent step. The `images` value provides the base name for the tags and labels.
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -72,10 +76,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
-
-      # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
-      # It uses the `context` parameter to define the build's context as the set of files located in the specified path. For more information, see "[Usage](https://github.com/docker/build-push-action#usage)" in the README of the `docker/build-push-action` repository.
-      # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@64c9b141502b80dbbd71e008a0130ad330f480f8
@@ -84,12 +84,3 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      
-      # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built. It increases supply chain security for people who consume the image. For more information, see "[AUTOTITLE](/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds)." 
-#      - name: Generate artifact attestation
-#        uses: actions/attest-build-provenance@v2
-#        with:
-#          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-#          subject-digest: ${{ steps.push.outputs.digest }}
-#          push-to-registry: true
-      
