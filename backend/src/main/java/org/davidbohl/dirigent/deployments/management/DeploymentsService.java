@@ -25,7 +25,6 @@ import org.davidbohl.dirigent.deployments.management.exception.DeploymentNameNot
 import org.davidbohl.dirigent.deployments.management.exception.DeploymentsDirCouldNotBeCreatedException;
 import org.davidbohl.dirigent.deployments.state.DeploymentStatePersistingService;
 import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity;
-import org.davidbohl.dirigent.deployments.updates.event.NamedDeploymentUpdatedEvent;
 import org.davidbohl.dirigent.sercrets.SecretService;
 import org.davidbohl.dirigent.utility.git.GitService;
 import org.davidbohl.dirigent.utility.process.ProcessResult;
@@ -157,19 +156,6 @@ public class DeploymentsService {
                 .toList();
 
         deployListOfDeployments(deployments, false);
-    }
-
-    @EventListener(NamedDeploymentUpdatedEvent.class)
-    @Async
-    public void handleNewImagePulledEvent(NamedDeploymentUpdatedEvent event) {
-        Optional<Deployment> optional = deploymentsConfigurationProvider.getConfiguration().deployments().stream()
-                .filter(d -> d.name() == event.getDeploymentName()).findFirst();
-
-        if(optional.isEmpty())
-            return;
-
-        deploy(optional.get(), true);
-            
     }
 
     private void deploy(Deployment deployment, boolean forceRecreate) {

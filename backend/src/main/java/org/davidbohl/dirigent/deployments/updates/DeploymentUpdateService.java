@@ -11,6 +11,8 @@ import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvide
 import org.davidbohl.dirigent.deployments.config.model.Deployment;
 import org.davidbohl.dirigent.deployments.updates.dto.DeploymentUpdateDto;
 import org.davidbohl.dirigent.deployments.updates.entity.DeploymentUpdateEntity;
+import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUpdateFailedEvent;
+import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUpdatedEvent;
 import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
 import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
 import org.davidbohl.dirigent.deployments.updates.model.DockerImage;
@@ -73,6 +75,10 @@ public class DeploymentUpdateService {
             String upCommand = composeCommand + " up --remove-orphans -d " + deploymentUpdate.service();
             processRunner.executeCommand(Arrays.asList(upCommand.split(" ")), deploymentDir);
 
+            this.applicationEventPublisher.publishEvent(
+                new DeploymentServiceImageUpdatedEvent(this, deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image())
+            );
+
         } catch(Throwable e) {
             List<DeploymentUpdateEntity> notRunningEntities = updatingEntities.stream().map(due -> {due.setRunning(false); return due;}).toList();
             
@@ -80,6 +86,9 @@ public class DeploymentUpdateService {
                 this.deploymentUpdateRepository.saveAll(notRunningEntities);
 
             log.warn("Failed to update deployment " + deploymentUpdate.deploymentName() + " service " + deploymentUpdate.service() + " image "+ deploymentUpdate.image(), e);
+            this.applicationEventPublisher.publishEvent(
+                new DeploymentServiceImageUpdateFailedEvent(this, deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image(), e.getMessage())
+            );
         }
 
         this.deploymentUpdateRepository.deleteAll(updatingEntities);

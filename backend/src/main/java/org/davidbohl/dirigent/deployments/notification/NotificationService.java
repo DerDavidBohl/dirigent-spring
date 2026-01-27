@@ -3,6 +3,8 @@ package org.davidbohl.dirigent.deployments.notification;
 import lombok.extern.slf4j.Slf4j;
 
 import org.davidbohl.dirigent.deployments.state.event.DeploymentStateChangedEvent;
+import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUpdateFailedEvent;
+import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUpdatedEvent;
 import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -35,6 +37,24 @@ public class NotificationService {
     public void onImageUpdateAvailable(ImageUpdateAvailableEvent event) {
         String title = "Image Update available: " + event.getImage();
         String message = "New version of image " + event.getImage() + " in deployment " + event.getDeploymentName() + " in service " + event.getServiceName() + " found.";
+
+        sendGotifyMessage(title, message);
+    }
+
+    @EventListener(DeploymentServiceImageUpdatedEvent.class)
+    @Async
+    public void onDeploymentServiceImageUpdated(DeploymentServiceImageUpdatedEvent event) {
+        String title = "Image updated";
+        String message = "Deployment: " + event.getDeploymentName() + "\nService: " + event.getService() + "\nImage: " + event.getImage();
+
+        sendGotifyMessage(title, message);
+    }
+
+    @EventListener(DeploymentServiceImageUpdateFailedEvent.class)
+    @Async
+    public void onDeploymentServiceImageUpdateFailed(DeploymentServiceImageUpdateFailedEvent event) {
+        String title = "Image Update failed";
+        String message = "Deployment: " + event.getDeploymentName() + "\nService: " + event.getService() + "\nImage: " + event.getImage() + "\nError:\n" + event.getMessage();
 
         sendGotifyMessage(title, message);
     }
