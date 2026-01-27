@@ -33,10 +33,9 @@ jobs:
       - name: Set TAG_REF and TAG_NAME
         id: tags
         run: |
-          # Standardmäßig Werte aus dem Event nehmen
           TAG_REF="${GITHUB_REF}"
           TAG_NAME=""
-          # repository_dispatch: Tag kommt aus Payload
+          
           if [ "${{ github.event_name }}" = "repository_dispatch" ] && [ -n "${{ github.event.client_payload.tag }}" ]; then
             TAG_NAME="${{ github.event.client_payload.tag }}"
             TAG_REF="refs/tags/${TAG_NAME}"
