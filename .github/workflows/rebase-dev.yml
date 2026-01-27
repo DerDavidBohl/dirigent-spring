@@ -1,0 +1,26 @@
+name: Rebase dev onto main
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  rebase-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required to get all branches for rebase
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Rebase dev onto main
+        run: |
+          git checkout dev
+          git rebase main
+          git push origin dev
