@@ -13,6 +13,7 @@ import org.davidbohl.dirigent.deployments.updates.dto.DeploymentUpdateDto;
 import org.davidbohl.dirigent.deployments.updates.entity.DeploymentUpdateEntity;
 import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUpdateFailedEvent;
 import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUpdatedEvent;
+import org.davidbohl.dirigent.deployments.updates.event.DeploymentUpdateTriggeredEvent;
 import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
 import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
 import org.davidbohl.dirigent.deployments.updates.model.DockerImage;
@@ -53,46 +54,61 @@ public class DeploymentUpdateService {
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
-    
-    @Async
+
+    @Transactional
     public void updateDeployment(DeploymentUpdateDto deploymentUpdate) {
+        List<DeploymentUpdateEntity> entities = this.deploymentUpdateRepository.findAllByDeploymentNameAndServiceAndImage(deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image());
+        if (entities.isEmpty()) {
+            return;
+        }
 
-        List<DeploymentUpdateEntity> entities = this.deploymentUpdateRepository.findAllByDeploymentNameAndServiceAndImage(deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image());;
+        List<DeploymentUpdateEntity> runningEntities = entities.stream().map(e -> {
+            e.setRunning(true);
+            return e;
+        }).toList();
 
-        List<DeploymentUpdateEntity> runnintEntities = entities.stream().map(e -> {e.setRunning(true); return e;}).toList();
+        this.deploymentUpdateRepository.saveAll(runningEntities);
+        this.applicationEventPublisher.publishEvent(new DeploymentUpdateTriggeredEvent(this, deploymentUpdate));
+    }
 
-        if(runnintEntities == null)
-            runnintEntities = new ArrayList<>();
-
-        List<DeploymentUpdateEntity> updatingEntities = this.deploymentUpdateRepository.saveAll(runnintEntities);;
-
+    @Async
+    @EventListener
+    public void onDeploymentUpdateTriggered(DeploymentUpdateTriggeredEvent event) {
+        DeploymentUpdateDto deploymentUpdate = event.getDeploymentUpdate();
         try {
             String pullCommand = composeCommand + " pull " + deploymentUpdate.service();
-
             File deploymentDir = new File("deployments/" + deploymentUpdate.deploymentName());
             processRunner.executeCommand(Arrays.asList(pullCommand.split(" ")), deploymentDir);
 
             String upCommand = composeCommand + " up --remove-orphans -d " + deploymentUpdate.service();
             processRunner.executeCommand(Arrays.asList(upCommand.split(" ")), deploymentDir);
 
-            this.applicationEventPublisher.publishEvent(
-                new DeploymentServiceImageUpdatedEvent(this, deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image())
-            );
+            handleUpdateSuccess(deploymentUpdate);
 
-        } catch(Throwable e) {
-            List<DeploymentUpdateEntity> notRunningEntities = updatingEntities.stream().map(due -> {due.setRunning(false); return due;}).toList();
-            
-            if(notRunningEntities != null)
-                this.deploymentUpdateRepository.saveAll(notRunningEntities);
-
-            log.warn("Failed to update deployment " + deploymentUpdate.deploymentName() + " service " + deploymentUpdate.service() + " image "+ deploymentUpdate.image(), e);
-            this.applicationEventPublisher.publishEvent(
-                new DeploymentServiceImageUpdateFailedEvent(this, deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image(), e.getMessage())
-            );
+        } catch (Throwable e) {
+            handleUpdateFailure(deploymentUpdate, e);
         }
-
-        this.deploymentUpdateRepository.deleteAll(updatingEntities);
     }
+
+    @Transactional
+    public void handleUpdateSuccess(DeploymentUpdateDto deploymentUpdate) {
+        this.applicationEventPublisher.publishEvent(
+                new DeploymentServiceImageUpdatedEvent(this, deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image())
+        );
+        List<DeploymentUpdateEntity> entities = this.deploymentUpdateRepository.findAllByDeploymentNameAndServiceAndImage(deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image());
+        this.deploymentUpdateRepository.deleteAll(entities);
+    }
+
+    @Transactional
+    public void handleUpdateFailure(DeploymentUpdateDto deploymentUpdate, Throwable e) {
+        log.warn("Failed to update deployment " + deploymentUpdate.deploymentName() + " service " + deploymentUpdate.service() + " image " + deploymentUpdate.image(), e);
+        this.applicationEventPublisher.publishEvent(
+                new DeploymentServiceImageUpdateFailedEvent(this, deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image(), e.getMessage())
+        );
+        List<DeploymentUpdateEntity> entities = this.deploymentUpdateRepository.findAllByDeploymentNameAndServiceAndImage(deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image());
+        this.deploymentUpdateRepository.deleteAll(entities);
+    }
+
 
     @Scheduled(fixedRateString = "${dirigent.update.rate:3}", timeUnit = TimeUnit.HOURS)
     public void checkAllDeploymentForUpdates() {
@@ -140,7 +156,7 @@ public class DeploymentUpdateService {
                         image.image(), image.tag());
 
                 if (registryDigest.equals(container.getImageId()))
-                continue;
+                    continue;
 
                 String service = container.getLabels().getOrDefault("com.docker.compose.service", "unknown");
 
