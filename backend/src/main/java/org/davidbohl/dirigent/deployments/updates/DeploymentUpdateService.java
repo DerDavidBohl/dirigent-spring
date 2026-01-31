@@ -55,14 +55,12 @@ public class DeploymentUpdateService {
     private String composeCommand;
     
     @Async
+    @Transactional
     public void updateDeployment(DeploymentUpdateDto deploymentUpdate) {
 
         List<DeploymentUpdateEntity> entities = this.deploymentUpdateRepository.findAllByDeploymentNameAndServiceAndImage(deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image());;
 
         List<DeploymentUpdateEntity> runnintEntities = entities.stream().map(e -> {e.setRunning(true); return e;}).toList();
-
-        if(runnintEntities == null)
-            runnintEntities = new ArrayList<>();
 
         List<DeploymentUpdateEntity> updatingEntities = this.deploymentUpdateRepository.saveAll(runnintEntities);;
 
