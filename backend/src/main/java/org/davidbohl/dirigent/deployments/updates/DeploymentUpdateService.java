@@ -55,14 +55,9 @@ public class DeploymentUpdateService {
     private String composeCommand;
     
     @Async
-    @Transactional
     public void updateDeployment(DeploymentUpdateDto deploymentUpdate) {
 
-        List<DeploymentUpdateEntity> entities = this.deploymentUpdateRepository.findAllByDeploymentNameAndServiceAndImage(deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image());;
-
-        List<DeploymentUpdateEntity> runnintEntities = entities.stream().map(e -> {e.setRunning(true); return e;}).toList();
-
-        List<DeploymentUpdateEntity> updatingEntities = this.deploymentUpdateRepository.saveAll(runnintEntities);;
+        List<DeploymentUpdateEntity> entities = markAsRunning(deploymentUpdate);
 
         try {
             String pullCommand = composeCommand + " pull " + deploymentUpdate.service();
@@ -78,7 +73,7 @@ public class DeploymentUpdateService {
             );
 
         } catch(Throwable e) {
-            List<DeploymentUpdateEntity> notRunningEntities = updatingEntities.stream().map(due -> {due.setRunning(false); return due;}).toList();
+            List<DeploymentUpdateEntity> notRunningEntities = entities.stream().map(due -> {due.setRunning(false); return due;}).toList();
             
             if(notRunningEntities != null)
                 this.deploymentUpdateRepository.saveAll(notRunningEntities);
@@ -89,7 +84,19 @@ public class DeploymentUpdateService {
             );
         }
 
-        this.deploymentUpdateRepository.deleteAll(updatingEntities);
+        cleanupEntities(entities);
+    }
+
+    @Transactional
+    List<DeploymentUpdateEntity> markAsRunning(DeploymentUpdateDto deploymentUpdate) {
+        List<DeploymentUpdateEntity> entities = this.deploymentUpdateRepository.findAllByDeploymentNameAndServiceAndImage(deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image());
+        entities.forEach(e -> e.setRunning(true));
+        return this.deploymentUpdateRepository.saveAll(entities);
+    }
+    
+    @Transactional
+    public void cleanupEntities(List<DeploymentUpdateEntity> entities) {
+        this.deploymentUpdateRepository.deleteAll(entities);
     }
 
     @Scheduled(fixedRateString = "${dirigent.update.rate:3}", timeUnit = TimeUnit.HOURS)
