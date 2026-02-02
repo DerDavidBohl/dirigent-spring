@@ -55,7 +55,6 @@ public class DeploymentUpdateService {
     private String composeCommand;
     
     @Async
-    @Transactional
     public void updateDeployment(DeploymentUpdateDto deploymentUpdate) {
 
         List<DeploymentUpdateEntity> entities = markAsRunning(deploymentUpdate);
