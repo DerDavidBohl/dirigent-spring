@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Observable, ReplaySubject, tap} from 'rxjs';
+import {finalize, Observable, ReplaySubject, tap} from 'rxjs';
 import {DeploymentState} from './deployment-state';
 import {HttpClient} from '@angular/common/http';
 import {Secret} from './secret';
@@ -13,7 +13,9 @@ export class ApiService {
 
   private _deploymentStates: ReplaySubject<Array<DeploymentState>> = new ReplaySubject<Array<DeploymentState>>(1);
   private _secrets: ReplaySubject<Array<Secret>> = new ReplaySubject<Array<Secret>>(1);
-  private _deploymentUpdates: ReplaySubject<Array<DeploymentUpdate>> = new ReplaySubject<Array<DeploymentUpdate>>;
+
+  private _deploymentUpdates: ReplaySubject<Array<DeploymentUpdate>> = new ReplaySubject<Array<DeploymentUpdate>>();
+  private _deploymentUpdatesReloading: ReplaySubject<boolean> = new ReplaySubject<boolean>();
 
   constructor(private http: HttpClient) {
   }
@@ -30,8 +32,21 @@ export class ApiService {
     return this._deploymentUpdates.asObservable();
   }
 
+  get deploymentUpdatesReloading$(): Observable<boolean> {
+    return this._deploymentUpdatesReloading.asObservable();
+  }
+
+
+
+
+
   reloadDeployementUpdates(): void {
-    this.getDeploymentUpdates().subscribe(r => this._deploymentUpdates.next(r))
+    this._deploymentUpdatesReloading.next(true);
+    this.getDeploymentUpdates().pipe(
+      finalize(() => this._deploymentUpdatesReloading.next(false))
+    ).subscribe(r => {
+       this._deploymentUpdates.next(r);
+     });
   }
 
   updateDeployment(deploymentUpdate: DeploymentUpdate): Observable<void> {
