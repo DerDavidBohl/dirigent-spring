@@ -35,4 +35,8 @@
   <tr mat-header-row *matHeaderRowDef="['action', 'deployment', 'service', 'image']"></tr>
   <tr mat-row *matRowDef="let row; columns: ['action', 'deployment', 'service', 'image'];"></tr>
 </table>
+
+@if(updatesReloading$ | async) {
+    <mat-progress-spinner [diameter]="25" [mode]="'indeterminate'" style="height: 50px; width: 50px;" ></mat-progress-spinner>
+}
 </div>
