@@ -60,12 +60,9 @@ public class DeploymentUpdateService {
         List<DeploymentUpdateEntity> entities = markAsRunning(deploymentUpdate);
 
         try {
-            String pullCommand = composeCommand + " pull " + deploymentUpdate.service();
-
             File deploymentDir = new File("deployments/" + deploymentUpdate.deploymentName());
-            processRunner.executeCommand(Arrays.asList(pullCommand.split(" ")), deploymentDir);
 
-            String upCommand = composeCommand + " up --remove-orphans -d " + deploymentUpdate.service();
+            String upCommand = composeCommand + " up --pull always --force-recreate --remove-orphans -d " + deploymentUpdate.service();
             processRunner.executeCommand(Arrays.asList(upCommand.split(" ")), deploymentDir);
 
             this.applicationEventPublisher.publishEvent(
