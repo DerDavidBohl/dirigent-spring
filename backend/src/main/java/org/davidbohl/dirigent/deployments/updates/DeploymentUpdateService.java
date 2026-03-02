@@ -4,6 +4,7 @@ import java.io.File;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
@@ -15,6 +16,7 @@ import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUp
 import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
 import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
 import org.davidbohl.dirigent.deployments.updates.model.DockerImage;
+import org.davidbohl.dirigent.sercrets.SecretService;
 import org.davidbohl.dirigent.utility.process.ProcessRunner;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -46,6 +48,8 @@ public class DeploymentUpdateService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ProcessRunner processRunner;
     private final DeploymentUpdateRepository deploymentUpdateRepository;
+    private final SecretService secretService;
+
 
     @Value("${dirigent.updates.disabled:false}")
     private boolean updatesDisabled;
@@ -62,7 +66,10 @@ public class DeploymentUpdateService {
             File deploymentDir = new File("deployments/" + deploymentUpdate.deploymentName());
 
             String upCommand = composeCommand + " up --pull always --force-recreate --remove-orphans -d " + deploymentUpdate.service();
-            processRunner.executeCommand(Arrays.asList(upCommand.split(" ")), deploymentDir);
+
+            Map<String, String> environmentVars = secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deploymentUpdate.deploymentName());
+
+            processRunner.executeCommand(Arrays.asList(upCommand.split(" ")), deploymentDir, environmentVars);
 
             this.applicationEventPublisher.publishEvent(
                 new DeploymentServiceImageUpdatedEvent(this, deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image())

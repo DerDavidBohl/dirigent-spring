@@ -19,7 +19,7 @@ export class UpdatesComponent {
 
   constructor(private apiService: ApiService) {
     this.updates$ = apiService.deploymentUpdates$;
-    this.updatesReloading$ = apiService.deploymentUpdatesReloading$.pipe(tap(console.log));
+    this.updatesReloading$ = apiService.deploymentUpdatesReloading$;
 
     apiService.reloadDeployementUpdates();
 
