@@ -8,6 +8,7 @@ import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUp
 import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -59,6 +60,7 @@ public class NotificationService {
         sendGotifyMessage(title, message);
     }
 
+    @Retryable
     private void sendGotifyMessage(String title, String message) {
         try {
             if (gotifyToken != null && gotifyBaseUrl != null && !gotifyToken.isBlank() && !gotifyBaseUrl.isBlank()) {
