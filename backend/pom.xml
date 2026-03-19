@@ -83,7 +83,7 @@
 		<dependency>
 			<groupId>com.github.docker-java</groupId>
 			<artifactId>docker-java-transport-httpclient5</artifactId>
-			<version>3.7.0</version>
+			<version>3.7.1</version>
 		</dependency>
 	</dependencies>
 
