@@ -78,7 +78,7 @@ jobs:
 
       - name: Build and push Docker image
         id: push
-        uses: docker/build-push-action@eb6512707bea5740b2608f2a43ece7bc543cb75b
+        uses: docker/build-push-action@de308676347136a77704e0f257298c8f1b30054f
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
