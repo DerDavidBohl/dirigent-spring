@@ -56,7 +56,7 @@ jobs:
           ref: ${{ env.NAME != '' && env.REF || '' }}
 
       - name: Log in to the Container registry
-        uses: docker/login-action@bb555fc48dca4deb5f227b07c7304c673b5708f0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
