@@ -61,7 +61,7 @@ public class DeploymentsService {
     private final SecretService secretService;
     private final ProcessRunner processRunner;
 
-    @Value("dirigent.host.deployments.dir:")
+    @Value("${dirigent.host.deployments.dir:}")
     private String dirigentHostDeploymentsDir;
 
     @Value("${dirigent.compose.command}")
