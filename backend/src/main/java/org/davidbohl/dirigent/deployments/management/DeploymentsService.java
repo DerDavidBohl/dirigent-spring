@@ -217,7 +217,7 @@ public class DeploymentsService {
             Map<String, String> environmentVariables = secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name());
 
             if(dirigentHostDeploymentsDir != null){
-                environmentVariables.put("DIRIGENT_HOST_DEPLOYMENTS_DIR", dirigentHostDeploymentsDir)
+                environmentVariables.put("DIRIGENT_HOST_DEPLOYMENTS_DIR", dirigentHostDeploymentsDir);
             } else {
 
                 DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
