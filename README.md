@@ -206,7 +206,7 @@ Store all your repositories for one host in one gitea organization. This way you
 
 ### Dirigent Host Deployments Dir
 
-Sometimes, you want to mount files or directories from your repo inside your docker compose. To help you with that Dirigent always passes the environment variable `DIRIGENT_HOST_DEPLOYMENTS_DIR` to its compose up commands.
+Sometimes, you want to mount files or directories from your repo inside your docker compose. To help you with that Dirigent always passes the environment variable `DIRIGENT_DEPLOYMENT_DIR` to its compose up commands.
 
 You can use it inside your docker-compose.yml Files to reference files, you want to track in you repository.
 
@@ -215,10 +215,10 @@ services:
   my-service:
     image: my-image
     volumes:
-      - ${DIRIGENT_HOST_DEPLOYMENTS_DIR}/config-dir:/var/lib/config-dir
+      - ${DIRIGENT_DEPLOYMENT_DIR}/config-dir:/var/lib/config-dir
 ```
 
-> The value of `DIRIGENT_HOST_DEPLOYMENTS_DIR` defaults to `<docker-root>/volumes/dirigent_deployments/_data`. If you mount a diffrent directory from your host as deployments dir, you have to pass this variable as environment to your setup!
+> The value of `DIRIGENT_DEPLOYMENT_DIR` defaults to `<docker-root>/volumes/dirigent_deployments/_data`. If you mount a diffrent directory from your host as deployments dir, you have to set the `DIRIGENT_HOST_DEPLOYMENTS_DIR` variable as environment to your setup!
 
 ## API
 
