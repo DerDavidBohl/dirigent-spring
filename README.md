@@ -14,6 +14,7 @@ Tool to manage your docker compose deployments via git.
   - [deployments.yml](#deploymentsyml)
   - [Volumes](#volumes)
   - [Step by Step (Gitea)](#step-by-step-gitea)
+- [Tweaks](#tweaks)
 - [API](#api)
   - [Gitea Webhook](#gitea-webhook)
   - [Deployments](#deployments)
@@ -63,6 +64,13 @@ Ideal for Self-hosters managing multiple services (e.g., Nextcloud, Gitea, Vault
 ### docker-compose
 
 ```yml
+
+volumes:
+  config:
+  deployments:
+    name: dirigent_deployments
+  data:
+
 services:
   app:
     image: ghcr.io/derdavidbohl/dirigent-spring:1
@@ -80,12 +88,13 @@ services:
       - DIRIGENT_GOTIFY_TOKEN= # optional
       - DIRIGENT_INSTANCENAME= # optional but recommended
       - DIRIGENT_UPDATES_DISABLED= # optional
+      - DIRIGENT_HOST_DEPLOYMENTS_DIR= # optional. Needed, if you mount your config volume to a diffrent place on you root system. Defaults do <docker-root>/volumes/dirigent_deployments/_data
     ports:
       - 8080:8080
     volumes:
-      - /path/to/config:/app/config
-      - /path/to/deployments:/app/deployments
-      - /path/to/data:/app/data
+      - config:/app/config
+      - deployments:/app/deployments
+      - data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
@@ -115,6 +124,10 @@ docker run -d \
   #optional
   -e DIRIGENT_UPDATES_DISABLED= \
 
+  # optional. Needed, if you mount your config volume to a diffrent place on you root system. Defaults do <docker-root>/volumes/dirigent_deployments/_data
+  -e DIRIGENT_HOST_DEPLOYMENTS_DIR=/path/to/deployments \
+
+
   -v /path/to/config:/app/config \
   -v /path/to/deployments:/app/deployments \
   -v /path/to/data:/app/data \
@@ -137,6 +150,7 @@ docker run -d \
 | DIRIGENT_GOTIFY_TOKEN                 | Gotify Token for Notification, when deployments fail                                                  |                  |
 | DIRIGENT_INSTANCENAME                 | Name of your Instance (will be shown in Web UI)                                                       |                  |
 | DIRIGENT_UPDATES_DISABLED             | Disable Update Feature                                                                                |`false`           |
+| DIRIGENT_HOST_DEPLOYMENTS_DIR             | Needed, if you mount your config volume to a diffrent place on you root system.                                                                                | Defaults do `<docker-root>/volumes/dirigent_deployments/_data`          |
 
 ### deployments.yml
 
@@ -187,6 +201,24 @@ deployments:
 
 #### Optional good practice:
 Store all your repositories for one host in one gitea organization. This way you only have to set up one webhook at organization level.
+
+## Tweaks
+
+### Dirigent Host Deployments Dir
+
+Sometimes, you want to mount files or directories from your repo inside your docker compose. To help you with that Dirigent always passes the environment variable `DIRIGENT_HOST_DEPLOYMENTS_DIR` to its compose up commands.
+
+You can use it inside your docker-compose.yml Files to reference files, you want to track in you repository.
+
+```yaml
+services:
+  my-service:
+    image: my-image
+    volumes:
+      - ${DIRIGENT_HOST_DEPLOYMENTS_DIR}/config-dir:/var/lib/config-dir
+```
+
+> The value of `DIRIGENT_HOST_DEPLOYMENTS_DIR` defaults to `<docker-root>/volumes/dirigent_deployments/_data`. If you mount a diffrent directory from your host as deployments dir, you have to pass this variable as environment to your setup!
 
 ## API
 

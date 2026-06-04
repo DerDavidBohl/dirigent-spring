@@ -2,6 +2,8 @@ package org.davidbohl.dirigent.deployments.management;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +39,13 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
+import com.github.dockerjava.transport.DockerHttpClient;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -51,6 +60,9 @@ public class DeploymentsService {
     private final DeploymentStatePersistingService deploymentStatePersistingService;
     private final SecretService secretService;
     private final ProcessRunner processRunner;
+
+    @Value("dirigent.host.deployments.dir:")
+    private String dirigentHostDeploymentsDir;
 
     @Value("${dirigent.compose.command}")
     private String composeCommand;
@@ -202,11 +214,39 @@ public class DeploymentsService {
 
             logger.info("Upping Compose for {}", deployment.name());
 
+            Map<String, String> environmentVariables = secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name());
+
+            if(dirigentHostDeploymentsDir != null){
+                environmentVariables.put("DIRIGENT_HOST_DEPLOYMENTS_DIR", dirigentHostDeploymentsDir)
+            } else {
+
+                DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+
+                DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
+                        .dockerHost(config.getDockerHost())
+                        .sslConfig(config.getSSLConfig())
+                        .maxConnections(100)
+                        .connectionTimeout(Duration.ofSeconds(30))
+                        .responseTimeout(Duration.ofSeconds(45))
+                        .build();
+
+                DockerClient dockerClient = DockerClientImpl.getInstance(config, httpClient);
+
+                String dockerRootDir = dockerClient.infoCmd().exec().getDockerRootDir();
+
+                String defaultDirigentHostDeploymentsDir = Path.of(dockerRootDir, "volumes", "dirigent_deployments", "_data").toString();;
+        
+                environmentVariables.put("DIRIGENT_HOST_DEPLOYMENTS_DIR", defaultDirigentHostDeploymentsDir);
+            }
+
             ProcessResult composeUp = processRunner.executeCommand(commandArgs,
                     deploymentDir,
-                    secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name()));
+                    environmentVariables);
 
             if ((composeUp.exitCode() != 0)) {
+
+                logger.warn("Failed to up compose for {} with this output: {}", deployment.name(), composeUp.stderr());
+
                 applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(),
                         DeploymentStateEntity.State.FAILED, composeUp.stderr()));
                 return;
