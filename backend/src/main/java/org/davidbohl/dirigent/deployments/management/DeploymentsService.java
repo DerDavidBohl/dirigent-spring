@@ -234,9 +234,9 @@ public class DeploymentsService {
 
                 String dockerRootDir = dockerClient.infoCmd().exec().getDockerRootDir();
 
-                String defaultDirigentHostDeploymentsDir = Path.of(dockerRootDir, "volumes", "dirigent_deployments", "_data").toString();;
+                String defaultDirigentHostDeploymentsDir = Path.of(dockerRootDir, "volumes", "dirigent_deployments", "_data", deployment.name()).toString();
         
-                environmentVariables.put("DIRIGENT_HOST_DEPLOYMENTS_DIR", defaultDirigentHostDeploymentsDir);
+                environmentVariables.put("DIRIGENT_HOST_DEPLOYMENT_DIR", defaultDirigentHostDeploymentsDir);
             }
 
             ProcessResult composeUp = processRunner.executeCommand(commandArgs,
