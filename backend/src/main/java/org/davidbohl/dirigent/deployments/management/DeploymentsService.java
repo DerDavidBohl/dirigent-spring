@@ -217,7 +217,7 @@ public class DeploymentsService {
             Map<String, String> environmentVariables = secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name());
 
             if(dirigentHostDeploymentsDir != null){
-                environmentVariables.put("DIRIGENT_HOST_DEPLOYMENTS_DIR", dirigentHostDeploymentsDir);
+                environmentVariables.put("DIRIGENT_DEPLOYMENT_DIR", dirigentHostDeploymentsDir);
             } else {
 
                 DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
@@ -236,7 +236,7 @@ public class DeploymentsService {
 
                 String defaultDirigentHostDeploymentsDir = Path.of(dockerRootDir, "volumes", "dirigent_deployments", "_data", deployment.name()).toString();
         
-                environmentVariables.put("DIRIGENT_HOST_DEPLOYMENT_DIR", defaultDirigentHostDeploymentsDir);
+                environmentVariables.put("DIRIGENT_DEPLOYMENT_DIR", defaultDirigentHostDeploymentsDir);
             }
 
             ProcessResult composeUp = processRunner.executeCommand(commandArgs,
