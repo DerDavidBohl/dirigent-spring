@@ -216,7 +216,7 @@ public class DeploymentsService {
 
             Map<String, String> environmentVariables = secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name());
 
-            if(dirigentHostDeploymentsDir != null){
+            if(dirigentHostDeploymentsDir != "" && dirigentHostDeploymentsDir != null){
                 environmentVariables.put("DIRIGENT_DEPLOYMENT_DIR", dirigentHostDeploymentsDir);
             } else {
 
