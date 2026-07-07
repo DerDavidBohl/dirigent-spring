@@ -51,7 +51,7 @@ jobs:
           echo "NAME=$NAME" >> $GITHUB_ENV
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ env.NAME != '' && env.REF || '' }}
 
