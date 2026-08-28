@@ -1,14 +1,12 @@
 package org.davidbohl.dirigent.deployments.updates;
 
-import java.io.File;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
 import org.davidbohl.dirigent.deployments.config.model.Deployment;
+import org.davidbohl.dirigent.deployments.management.DeploymentsService;
 import org.davidbohl.dirigent.deployments.updates.dto.DeploymentUpdateDto;
 import org.davidbohl.dirigent.deployments.updates.entity.DeploymentUpdateEntity;
 import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUpdateFailedEvent;
@@ -16,8 +14,6 @@ import org.davidbohl.dirigent.deployments.updates.event.DeploymentServiceImageUp
 import org.davidbohl.dirigent.deployments.updates.event.ImageUpdateAvailableEvent;
 import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
 import org.davidbohl.dirigent.deployments.updates.model.DockerImage;
-import org.davidbohl.dirigent.sercrets.SecretService;
-import org.davidbohl.dirigent.utility.process.ProcessRunner;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -46,9 +42,8 @@ public class DeploymentUpdateService {
     private final ContainerRegistryClient containerRegistryClient;
     private final DeploymentsConfigurationProvider configurationProvider;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final ProcessRunner processRunner;
     private final DeploymentUpdateRepository deploymentUpdateRepository;
-    private final SecretService secretService;
+    private final DeploymentsService deploymentsService;
 
 
     @Value("${dirigent.updates.disabled:false}")
@@ -58,18 +53,13 @@ public class DeploymentUpdateService {
     private String composeCommand;
     
     @Async
-    public void updateDeployment(DeploymentUpdateDto deploymentUpdate) {
+    public void runDeploymentUpdate(DeploymentUpdateDto deploymentUpdate) {
 
         List<DeploymentUpdateEntity> entities = markAsRunning(deploymentUpdate);
 
         try {
-            File deploymentDir = new File("deployments/" + deploymentUpdate.deploymentName());
-
             String upCommand = composeCommand + " up --pull always --force-recreate --remove-orphans -d " + deploymentUpdate.service();
-
-            Map<String, String> environmentVars = secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deploymentUpdate.deploymentName());
-
-            processRunner.executeCommand(Arrays.asList(upCommand.split(" ")), deploymentDir, environmentVars);
+            deploymentsService.runCommandForDeployment(deploymentUpdate.deploymentName(), List.of(upCommand.split(" ")));
 
             this.applicationEventPublisher.publishEvent(
                 new DeploymentServiceImageUpdatedEvent(this, deploymentUpdate.deploymentName(), deploymentUpdate.service(), deploymentUpdate.image())

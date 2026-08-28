@@ -24,7 +24,7 @@ public class DeploymentUpdateController {
 
     @PostMapping("run")
     public void postDeploymentUpdate(@RequestBody DeploymentUpdateDto deploymentUpdate) {
-        deploymentUpdateService.updateDeployment(deploymentUpdate);
+        deploymentUpdateService.runDeploymentUpdate(deploymentUpdate);
     }
 
     @PostMapping("check") 

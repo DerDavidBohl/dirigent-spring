@@ -170,12 +170,34 @@ public class DeploymentsService {
         deployListOfDeployments(deployments, false);
     }
 
-    private void deploy(Deployment deployment, boolean forceRecreate) {
-        logger.info("Deploying {}", deployment.name());
+    /***
+     * Runs a command in a configured deployments dir and env
+     * 
+     * @param deploymentName
+     */
+    public ProcessResult runCommandForDeployment(String deploymentName, List<String> commandArgs) {
 
-        File deploymentDir = new File("deployments/" + deployment.name());
+        logger.info("Running command '{}' for deployment '{}'", String.join(" ", commandArgs), deploymentName);
+
+        Map<String, String> environmentVariables = secretService
+                .getAllSecretsAsEnvironmentVariableMapByDeployment(deploymentName);
+        environmentVariables.put("DIRIGENT_DEPLOYMENT_DIR", getDirigentDeploymentDirOnHost(deploymentName));
+
+        File deploymentDir = new File("deployments/" + deploymentName);
+
+        return processRunner.executeCommand(commandArgs,
+                deploymentDir,
+                environmentVariables);
+
+    }
+
+    private void deploy(Deployment deployment, boolean forceRecreate) {
 
         try {
+
+            logger.info("Deploying {}", deployment.name());
+
+            File deploymentDir = new File("deployments/" + deployment.name());
 
             String rev = deployment.ref() != null ? deployment.ref() : "HEAD";
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath(), rev);
@@ -214,34 +236,7 @@ public class DeploymentsService {
 
             logger.info("Upping Compose for {}", deployment.name());
 
-            Map<String, String> environmentVariables = secretService.getAllSecretsAsEnvironmentVariableMapByDeployment(deployment.name());
-
-            if(dirigentHostDeploymentsDir != "" && dirigentHostDeploymentsDir != null){
-                environmentVariables.put("DIRIGENT_DEPLOYMENT_DIR", dirigentHostDeploymentsDir);
-            } else {
-
-                DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
-
-                DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
-                        .dockerHost(config.getDockerHost())
-                        .sslConfig(config.getSSLConfig())
-                        .maxConnections(100)
-                        .connectionTimeout(Duration.ofSeconds(30))
-                        .responseTimeout(Duration.ofSeconds(45))
-                        .build();
-
-                DockerClient dockerClient = DockerClientImpl.getInstance(config, httpClient);
-
-                String dockerRootDir = dockerClient.infoCmd().exec().getDockerRootDir();
-
-                String defaultDirigentHostDeploymentsDir = Path.of(dockerRootDir, "volumes", "dirigent_deployments", "_data", deployment.name()).toString();
-        
-                environmentVariables.put("DIRIGENT_DEPLOYMENT_DIR", defaultDirigentHostDeploymentsDir);
-            }
-
-            ProcessResult composeUp = processRunner.executeCommand(commandArgs,
-                    deploymentDir,
-                    environmentVariables);
+            ProcessResult composeUp = runCommandForDeployment(deployment.name(), commandArgs);
 
             if ((composeUp.exitCode() != 0)) {
 
@@ -260,6 +255,28 @@ public class DeploymentsService {
         applicationEventPublisher
                 .publishEvent(new DeploymentStateEvent(this, deployment.name(), DeploymentStateEntity.State.RUNNING,
                         "Deployment '%s' successfully started".formatted(deployment.name())));
+    }
+
+    public String getDirigentDeploymentDirOnHost(String deploymentSubDir) {
+
+        if (dirigentHostDeploymentsDir != "" && dirigentHostDeploymentsDir != null)
+            return Path.of(dirigentHostDeploymentsDir, deploymentSubDir).toString();
+
+        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+
+        DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
+                .dockerHost(config.getDockerHost())
+                .sslConfig(config.getSSLConfig())
+                .maxConnections(100)
+                .connectionTimeout(Duration.ofSeconds(30))
+                .responseTimeout(Duration.ofSeconds(45))
+                .build();
+
+        DockerClient dockerClient = DockerClientImpl.getInstance(config, httpClient);
+
+        String dockerRootDir = dockerClient.infoCmd().exec().getDockerRootDir();
+
+        return Path.of(dockerRootDir, "volumes", "dirigent_deployments", "_data", deploymentSubDir).toString();
     }
 
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
