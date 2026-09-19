@@ -1,5 +1,6 @@
 package org.davidbohl.dirigent;
 
+import org.davidbohl.dirigent.deployments.updates.RegistryAuthProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -9,7 +10,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 
 @SpringBootApplication
-@EnableConfigurationProperties
+@EnableConfigurationProperties(RegistryAuthProperties.class)
 public class DirigentApplication {
 
 	static Logger logger = LoggerFactory.getLogger(DirigentApplication.class);
