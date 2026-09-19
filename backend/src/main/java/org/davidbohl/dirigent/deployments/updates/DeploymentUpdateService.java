@@ -171,12 +171,13 @@ public class DeploymentUpdateService {
         deploymentUpdateRepository.deleteAllByIsRunning(true);
     }
 
-    private DockerImage parseDockerImage(String imageRef) {
+    DockerImage parseDockerImage(String imageRef) {
 
-        // Parse image reference (e.g., "quay.io/prometheus/node-exporter:latest")
         String[] parts = imageRef.split("/", 2);
-        String registryDomain = parts.length > 1 && parts[0].contains(".") ? parts[0] : "docker.io";
-        String remainder = parts.length > 1 && parts[0].contains(".") ? parts[1] : imageRef;
+        boolean hasRegistry = parts.length > 1
+                && (parts[0].contains(".") || parts[0].contains(":") || parts[0].equals("localhost"));
+        String registryDomain = hasRegistry ? parts[0] : "docker.io";
+        String remainder = hasRegistry ? parts[1] : imageRef;
 
         // Normalize registry URL (docker.io → registry-1.docker.io)
         String registryUrl = normalizeRegistryUrl(registryDomain);
@@ -193,16 +194,33 @@ public class DeploymentUpdateService {
     }
 
     private String normalizeImagePath(String remainder, boolean isDockerHub) {
-        String[] parts = remainder.split(":");
-        String path = parts[0];
+        String path = imagePathWithoutTag(remainder);
         if (isDockerHub && !path.contains("/")) {
-            return "library/" + path; // Docker Hub defaults to "library/" for official images
+            return "library/" + path;
         }
         return path;
     }
 
     private String extractTag(String remainder) {
-        return remainder.contains(":") ? remainder.split(":")[1] : "latest";
+        int digestSeparator = remainder.indexOf('@');
+        if (digestSeparator >= 0) {
+            return remainder.substring(digestSeparator + 1);
+        }
+
+        int tagSeparator = remainder.lastIndexOf(':');
+        return tagSeparator > remainder.lastIndexOf('/')
+                ? remainder.substring(tagSeparator + 1)
+                : "latest";
+    }
+
+    private String imagePathWithoutTag(String imageRef) {
+        int digestSeparator = imageRef.indexOf('@');
+        String pathAndTag = digestSeparator >= 0 ? imageRef.substring(0, digestSeparator) : imageRef;
+
+        int tagSeparator = pathAndTag.lastIndexOf(':');
+        return tagSeparator > pathAndTag.lastIndexOf('/')
+                ? pathAndTag.substring(0, tagSeparator)
+                : pathAndTag;
     }
 
     public List<DeploymentUpdateDto> getDeploymentUpdates() {
