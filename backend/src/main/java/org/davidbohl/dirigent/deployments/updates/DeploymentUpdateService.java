@@ -135,7 +135,7 @@ public class DeploymentUpdateService {
 
             Optional<DockerImage> parsedImage = resolveDockerImage(dockerClient, container);
             if (parsedImage.isEmpty()) {
-                log.debug("Skipping container {} because no repository image reference could be resolved", container.getId());
+                log.warn("Skipping container {} because no repository image reference could be resolved", container.getId());
                 continue;
             }
 
