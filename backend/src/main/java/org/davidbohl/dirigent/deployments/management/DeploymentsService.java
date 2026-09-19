@@ -27,6 +27,7 @@ import org.davidbohl.dirigent.deployments.management.exception.DeploymentNameNot
 import org.davidbohl.dirigent.deployments.management.exception.DeploymentsDirCouldNotBeCreatedException;
 import org.davidbohl.dirigent.deployments.state.DeploymentStatePersistingService;
 import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity;
+import org.davidbohl.dirigent.deployments.updates.DockerRegistryAuthService;
 import org.davidbohl.dirigent.sercrets.SecretService;
 import org.davidbohl.dirigent.utility.git.GitService;
 import org.davidbohl.dirigent.utility.process.ProcessResult;
@@ -60,6 +61,7 @@ public class DeploymentsService {
     private final DeploymentStatePersistingService deploymentStatePersistingService;
     private final SecretService secretService;
     private final ProcessRunner processRunner;
+    private final DockerRegistryAuthService dockerRegistryAuthService;
 
     @Value("${dirigent.host.deployments.dir:}")
     private String dirigentHostDeploymentsDir;
@@ -233,6 +235,8 @@ public class DeploymentsService {
             if (forceRecreate || updated) {
                 commandArgs.add("--force-recreate");
             }
+
+            dockerRegistryAuthService.loginToConfiguredRegistries();
 
             logger.info("Upping Compose for {}", deployment.name());
 
