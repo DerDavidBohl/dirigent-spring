@@ -2,6 +2,7 @@ package org.davidbohl.dirigent.deployments.updates;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.davidbohl.dirigent.deployments.config.DeploymentsConfigurationProvider;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
@@ -131,7 +133,13 @@ public class DeploymentUpdateService {
 
         for (Container container : containers) {
 
-            DockerImage image = parseDockerImage(container.getImage());
+            Optional<DockerImage> parsedImage = resolveDockerImage(dockerClient, container);
+            if (parsedImage.isEmpty()) {
+                log.debug("Skipping container {} because no repository image reference could be resolved", container.getId());
+                continue;
+            }
+
+            DockerImage image = parsedImage.get();
 
             try {
                 String registryDigest = this.containerRegistryClient.getRegistryDigest(image.registryEndpoint(),
@@ -164,6 +172,21 @@ public class DeploymentUpdateService {
         }
     }
 
+    private Optional<DockerImage> resolveDockerImage(DockerClient dockerClient, Container container) {
+        if (!isImageId(container.getImage())) {
+            return parseDockerImage(container.getImage());
+        }
+
+        InspectImageResponse image = dockerClient.inspectImageCmd(container.getImageId()).exec();
+        if (image.getRepoTags() != null && !image.getRepoTags().isEmpty()) {
+            return parseDockerImage(image.getRepoTags().get(0));
+        }
+        if (image.getRepoDigests() != null && !image.getRepoDigests().isEmpty()) {
+            return parseDockerImage(image.getRepoDigests().get(0));
+        }
+        return Optional.empty();
+    }
+
     @EventListener
     @Transactional
     public void deleteAllUpdatesFromDatabseOnStrtUp(ContextRefreshedEvent event) {
@@ -171,7 +194,11 @@ public class DeploymentUpdateService {
         deploymentUpdateRepository.deleteAllByIsRunning(true);
     }
 
-    DockerImage parseDockerImage(String imageRef) {
+    Optional<DockerImage> parseDockerImage(String imageRef) {
+
+        if (isImageId(imageRef)) {
+            return Optional.empty();
+        }
 
         String[] parts = imageRef.split("/", 2);
         boolean hasRegistry = parts.length > 1
@@ -184,7 +211,11 @@ public class DeploymentUpdateService {
         String imagePath = normalizeImagePath(remainder, registryDomain.equals("docker.io"));
         String tag = extractTag(remainder);
 
-        return new DockerImage(registryUrl, imagePath, tag);
+        return Optional.of(new DockerImage(registryUrl, imagePath, tag));
+    }
+
+    private boolean isImageId(String imageRef) {
+        return imageRef != null && imageRef.matches("sha256:[0-9a-fA-F]{64}");
     }
 
     private String normalizeRegistryUrl(String registryDomain) {
