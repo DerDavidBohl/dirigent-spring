@@ -158,7 +158,7 @@ public class DeploymentUpdateService {
                         .save(new DeploymentUpdateEntity(null, deployment.name(), service, container.getImage(), false));
 
             } catch (CouldNotGetManifestDigestFromRegistryFailedException e) {
-                log.warn("[Deployment: {}] Could not get digest from registry for image {}", deployment.name(), image, e);
+                log.warn("[Deployment: {}] Could not get digest from registry for image {}", deployment.name(), image.image(), e);
             }
 
         }
