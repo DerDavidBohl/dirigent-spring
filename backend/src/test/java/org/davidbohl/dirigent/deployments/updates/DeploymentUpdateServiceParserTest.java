@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 class DeploymentUpdateServiceParserTest {
 
-    private final DeploymentUpdateService service = new DeploymentUpdateService(null, null, null, null, null);
+    private final DeploymentUpdateService service = new DeploymentUpdateService(null, null, null, null, null, null);
 
     @Test
     void parsesDockerHubOfficialImageWithTag() {

@@ -3,9 +3,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Duration;
 
 import org.davidbohl.dirigent.deployments.updates.ContainerRegistryClient;
+import org.davidbohl.dirigent.deployments.updates.RegistryAuthProperties;
 import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -16,6 +18,7 @@ import com.github.dockerjava.transport.DockerHttpClient.Request;
 import com.github.dockerjava.transport.DockerHttpClient.Response;
 
 @SpringBootTest(classes = ContainerRegistryClient.class)
+@EnableConfigurationProperties(RegistryAuthProperties.class)
 public class ContainerRegistryClientTest {
 
 @Autowired

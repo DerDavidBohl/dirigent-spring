@@ -46,6 +46,7 @@ public class DeploymentUpdateService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final DeploymentUpdateRepository deploymentUpdateRepository;
     private final DeploymentsService deploymentsService;
+    private final DockerRegistryAuthService dockerRegistryAuthService;
 
 
     @Value("${dirigent.updates.disabled:false}")
@@ -60,6 +61,8 @@ public class DeploymentUpdateService {
         List<DeploymentUpdateEntity> entities = markAsRunning(deploymentUpdate);
 
         try {
+            dockerRegistryAuthService.loginToConfiguredRegistries();
+
             String upCommand = composeCommand + " up --pull always --force-recreate --remove-orphans -d " + deploymentUpdate.service();
             deploymentsService.runCommandForDeployment(deploymentUpdate.deploymentName(), List.of(upCommand.split(" ")));
 

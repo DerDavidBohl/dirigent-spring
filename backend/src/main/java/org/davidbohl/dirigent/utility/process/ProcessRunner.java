@@ -19,26 +19,30 @@ import lombok.extern.slf4j.Slf4j;
 public class ProcessRunner {
 
     public ProcessResult executeCommand(List<String> commandParts, long timeoutMs, Map<String, String> env) {
-        return executeInternal(commandParts, new File(System.getProperty("user.dir")), timeoutMs, env);
+        return executeInternal(commandParts, new File(System.getProperty("user.dir")), timeoutMs, env, null);
     }
 
     public ProcessResult executeCommand(List<String> commandParts) {
-        return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, Map.of());
+        return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, Map.of(), null);
     }
 
     public ProcessResult executeCommand(List<String> commandParts, Map<String, String> env) {
-        return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, env);
+        return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, env, null);
     }
 
     public ProcessResult executeCommand(List<String> commandParts, File workingDirectory) {
-        return executeInternal(commandParts, workingDirectory, 0, Map.of());
+        return executeInternal(commandParts, workingDirectory, 0, Map.of(), null);
     }
 
     public ProcessResult executeCommand(List<String> commandParts, File workingDirectory, Map<String, String> env) {
-        return executeInternal(commandParts, workingDirectory, 0, env);
+        return executeInternal(commandParts, workingDirectory, 0, env, null);
     }
 
-    private ProcessResult executeInternal(List<String> commandParts, File workingDirectory, long timeoutMs, Map<String, String> env) {
+    public ProcessResult executeCommandWithStdin(List<String> commandParts, String stdin) {
+        return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, Map.of(), stdin);
+    }
+
+    private ProcessResult executeInternal(List<String> commandParts, File workingDirectory, long timeoutMs, Map<String, String> env, String stdin) {
     Map<String, String> finalEnv = new HashMap<>();
     finalEnv.putAll(System.getenv());
     if (env != null && !env.isEmpty()) {
@@ -58,7 +62,14 @@ public class ProcessRunner {
 
     try {
         process = processBuilder.start();
-        
+
+        if (stdin != null) {
+            try (java.io.OutputStream os = process.getOutputStream()) {
+                os.write(stdin.getBytes(StandardCharsets.UTF_8));
+                os.flush();
+            }
+        }
+
         // Read stdout
         Thread stdoutReader = readStream(process.getInputStream(), stdout);
         // Read stderr

@@ -1,9 +1,13 @@
 package org.davidbohl.dirigent.deployments.updates;
 
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,11 +26,15 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class ContainerRegistryClient {
+
+    private final RegistryAuthProperties registryAuthProperties;
 
     private final RestTemplate rest = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -38,49 +46,65 @@ public class ContainerRegistryClient {
 
         if(!registryEndpoint.endsWith("/v2") && !registryEndpoint.endsWith("/v2/"))
             registryEndpoint = registryEndpoint + "/v2";
-        
-        String token = getToken(registryEndpoint, name);
+
+        Optional<RegistryAuthProperties.Registry> credentials = registryAuthProperties
+            .findByHost(URI.create(registryEndpoint).getAuthority());
+
+        String authorizationHeader = getAuthorizationHeader(registryEndpoint, name, credentials);
         try {
-            return getManifestDigest(registryEndpoint, name, tag, token);
+            return getManifestDigest(registryEndpoint, name, tag, authorizationHeader);
         } catch (Throwable e) {
             log.warn("Could not Get Manifest Digest from Registry: {}:{}", name, tag);
             throw new CouldNotGetManifestDigestFromRegistryFailedException(e);
         }
     }
 
-    private String getToken(String registryEndpoint, String name) {
+    private String getAuthorizationHeader(String registryEndpoint, String name, Optional<RegistryAuthProperties.Registry> credentials) {
 
         try {
 
-            rest.exchange(registryEndpoint + "/", HttpMethod.GET, null, String.class);
+            HttpHeaders h = new HttpHeaders();
+            credentials.ifPresent(c -> h.setBasicAuth(c.getUsername(), c.getPassword()));
+            rest.exchange(registryEndpoint + "/", HttpMethod.GET, new HttpEntity<>(h), String.class);
 
         } catch (HttpClientErrorException rce) {
 
             if (rce.getStatusCode() == HttpStatus.UNAUTHORIZED) {
                 String authHeader = rce.getResponseHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE);
-                return authenticate(registryEndpoint, authHeader, name);
+
+                if (authHeader != null && authHeader.toLowerCase().startsWith("basic"))
+                    return credentials.map(this::basicAuthHeader).orElse(null);
+
+                return authenticate(authHeader, name, credentials);
             }
         }
 
-        return ""; // no auth required
+        return credentials.map(this::basicAuthHeader).orElse(null); // no bearer challenge, fall back to basic auth if configured
     }
 
-    private String authenticate(String registryEndpoint, String header, String name) {
+    private String basicAuthHeader(RegistryAuthProperties.Registry credentials) {
+        String raw = credentials.getUsername() + ":" + credentials.getPassword();
+        return "Basic " + Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String authenticate(String header, String name, Optional<RegistryAuthProperties.Registry> credentials) {
         String realm = extractValueFromRegistryHeader(header, "realm");
         String service = extractValueFromRegistryHeader(header, "service");
         String scope = "repository:" + name + ":pull";
 
         String url = "%s?service=%s&scope=%s".formatted(realm, service, scope);
         HttpHeaders h = new HttpHeaders();
+        credentials.ifPresent(c -> h.setBasicAuth(c.getUsername(), c.getPassword()));
         HttpEntity<Void> req = new HttpEntity<>(h);
         TokenResponse token = rest.exchange(url, HttpMethod.GET, req, TokenResponse.class).getBody();
-        return token.token();
+        return "Bearer " + token.token();
     }
 
-    private String getManifestDigest(String registryEndpoint, String name, String tag, String token)
+    private String getManifestDigest(String registryEndpoint, String name, String tag, String authorizationHeader)
             throws JsonMappingException, JsonProcessingException {
         HttpHeaders h = new HttpHeaders();
-        h.setBearerAuth(token);
+        if (authorizationHeader != null)
+            h.set(HttpHeaders.AUTHORIZATION, authorizationHeader);
         h.setAccept(MediaType.parseMediaTypes(List.of(
                 "application/vnd.docker.distribution.manifest.v2+json",
                 "application/vnd.oci.image.manifest.v1+json",
@@ -113,7 +137,7 @@ public class ContainerRegistryClient {
                 String osInManifest = dataset.get("platform").get("os").asText();
 
                 if (arch.equals(archInManifest) && os.equals(osInManifest)) {
-                    return getManifestDigest(registryEndpoint, name, dataset.get("digest").asText(), token);
+                    return getManifestDigest(registryEndpoint, name, dataset.get("digest").asText(), authorizationHeader);
                 }
 
             }
