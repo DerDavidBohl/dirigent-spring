@@ -88,6 +88,10 @@ services:
       - DIRIGENT_GOTIFY_TOKEN= # optional
       - DIRIGENT_INSTANCENAME= # optional but recommended
       - DIRIGENT_UPDATES_DISABLED= # optional
+      # Optional private registry credentials. Repeat with index 1, 2, ... for more registries.
+      - DIRIGENT_REGISTRIES_0_HOST= # registry hostname, e.g. gitea.example.com
+      - DIRIGENT_REGISTRIES_0_USERNAME= # registry username
+      - DIRIGENT_REGISTRIES_0_PASSWORD= # registry token or password
       - DIRIGENT_HOST_DEPLOYMENTS_DIR= # optional. Needed, if you mount your config volume to a diffrent place on you root system. Defaults do <docker-root>/volumes/dirigent_deployments/_data
     ports:
       - 8080:8080
@@ -151,6 +155,40 @@ docker run -d \
 | DIRIGENT_INSTANCENAME                 | Name of your Instance (will be shown in Web UI)                                                       |                  |
 | DIRIGENT_UPDATES_DISABLED             | Disable Update Feature                                                                                |`false`           |
 | DIRIGENT_HOST_DEPLOYMENTS_DIR             | Needed, if you mount your config volume to a diffrent place on you root system.                                                                                | Defaults do `<docker-root>/volumes/dirigent_deployments/_data`          |
+| DIRIGENT_REGISTRIES_0_HOST             | Hostname of the first private Docker registry                                                          |                  |
+| DIRIGENT_REGISTRIES_0_USERNAME         | Username for the first private Docker registry                                                        |                  |
+| DIRIGENT_REGISTRIES_0_PASSWORD         | Token or password for the first private Docker registry                                               |                  |
+
+#### Private Docker registries
+
+Dirigent supports different credentials for different Docker registries. Configure each registry with the same index:
+
+```yaml
+services:
+  app:
+    environment:
+      - DIRIGENT_REGISTRIES_0_HOST=gitea.example.com
+      - DIRIGENT_REGISTRIES_0_USERNAME=deploy-user
+      - DIRIGENT_REGISTRIES_0_PASSWORD=your-gitea-token
+      - DIRIGENT_REGISTRIES_1_HOST=ghcr.io
+      - DIRIGENT_REGISTRIES_1_USERNAME=your-github-user
+      - DIRIGENT_REGISTRIES_1_PASSWORD=your-ghcr-token
+```
+
+The registry host must match the hostname used in the image reference. For example:
+
+```yaml
+services:
+  private-service:
+    image: gitea.example.com/my-org/private-service:latest
+```
+
+Dirigent uses these credentials in two places:
+
+- To authenticate when checking registry digests for available updates.
+- To run `docker login` before `docker compose up`, including update-triggered deployments.
+
+Registry entries are indexed from zero, so additional registries use `DIRIGENT_REGISTRIES_2_*`, `DIRIGENT_REGISTRIES_3_*`, and so on. Keep tokens in deployment secrets or an environment management system rather than committing them to this file. The password is passed to `docker login` through standard input and is not added to the command arguments.
 
 ### deployments.yml
 
