@@ -29,16 +29,17 @@ public class DockerRegistryAuthService {
 
     private void login(RegistryAuthProperties.Registry registry) {
         if (registry.getHost() == null || registry.getUsername() == null || registry.getPassword() == null) {
-            log.warn("Skipping incomplete registry credentials for host {}", registry.getHost());
-            return;
+            throw new RegistryAuthenticationException("Incomplete credentials for registry " + registry.getHost());
         }
 
         List<String> commandArgs = List.of("docker", "login", registry.getHost(), "-u", registry.getUsername(), "--password-stdin");
         ProcessResult result = processRunner.executeCommandWithStdin(commandArgs, registry.getPassword());
 
-        if (result.exitCode() != 0)
-            log.warn("Failed to login to registry {}: {}", registry.getHost(), result.stderr());
-        else
+        if (result.exitCode() != 0) {
+            throw new RegistryAuthenticationException(
+                    "Failed to login to registry " + registry.getHost() + ": " + result.stderr());
+        } else {
             log.info("Logged in to registry {}", registry.getHost());
+        }
     }
 }

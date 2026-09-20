@@ -28,6 +28,7 @@ import org.davidbohl.dirigent.deployments.management.exception.DeploymentsDirCou
 import org.davidbohl.dirigent.deployments.state.DeploymentStatePersistingService;
 import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity;
 import org.davidbohl.dirigent.deployments.updates.DockerRegistryAuthService;
+import org.davidbohl.dirigent.deployments.updates.RegistryAuthenticationException;
 import org.davidbohl.dirigent.sercrets.SecretService;
 import org.davidbohl.dirigent.utility.git.GitService;
 import org.davidbohl.dirigent.utility.process.ProcessResult;
@@ -250,7 +251,7 @@ public class DeploymentsService {
                         DeploymentStateEntity.State.FAILED, composeUp.stderr()));
                 return;
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | RegistryAuthenticationException e) {
             applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deployment.name(),
                     DeploymentStateEntity.State.FAILED, e.getMessage()));
             return;

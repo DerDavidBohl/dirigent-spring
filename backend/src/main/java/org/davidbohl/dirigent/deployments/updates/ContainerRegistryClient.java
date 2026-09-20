@@ -47,7 +47,8 @@ public class ContainerRegistryClient {
         if(!registryEndpoint.endsWith("/v2") && !registryEndpoint.endsWith("/v2/"))
             registryEndpoint = registryEndpoint + "/v2";
 
-        Optional<RegistryAuthProperties.Registry> credentials = registryAuthProperties.findByHost(URI.create(registryEndpoint).getHost());
+        Optional<RegistryAuthProperties.Registry> credentials = registryAuthProperties
+            .findByHost(URI.create(registryEndpoint).getAuthority());
 
         String authorizationHeader = getAuthorizationHeader(registryEndpoint, name, credentials);
         try {
