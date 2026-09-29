@@ -33,7 +33,7 @@
     "@angular/build": "^22.0.0",
     "@angular/cli": "^22.0.0",
     "@angular/compiler-cli": "^22.0.0",
-    "@types/jasmine": "~6.0.0",
+    "@types/jasmine": "~7.0.0",
     "@types/node": "^24.0.0",
     "jasmine-core": "~7.0.0",
     "karma": "~6.4.0",
