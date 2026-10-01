@@ -8,11 +8,11 @@ The system should behave predictably when handling deployment lifecycle actions,
 
 **Rationale:** Deployment automation depends on correctness and predictable handling; unclear or flaky behavior undermines self-hosted operations.
 
-**Constraints:** Reliability is constrained by the external Docker environment, host configuration, and network access to registries.
+**Constraints:** Reliability is constrained by the external Docker environment, host configuration, and network access to registries. A configured registry that is unreachable or misconfigured must not block the start of a deployment that does not depend on it; such a registry login failure is reported as a warning rather than a start failure.
 
 **Dependencies:** REQ-001, REQ-002, ADR-001
 
-**Verification expectation:** Operational and automated tests validate lifecycle actions, state reporting, and the supported failure scenarios relevant to the system.
+**Verification expectation:** Operational and automated tests validate lifecycle actions, state reporting, and the supported failure scenarios relevant to the system, including that an unreachable or misconfigured registry degrades to a warning instead of failing unrelated deployment starts.
 
 ### Secret and registry handling must minimize accidental exposure
 

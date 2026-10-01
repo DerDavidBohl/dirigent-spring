@@ -23,7 +23,12 @@ public class DockerRegistryAuthService {
 
     public void loginToConfiguredRegistries() {
         for (RegistryAuthProperties.Registry registry : registryAuthProperties.getRegistries()) {
-            login(registry);
+            try {
+                login(registry);
+            } catch (RegistryAuthenticationException e) {
+                // An unreachable or misconfigured registry must not block deployments that don't use it.
+                log.warn(e.getMessage());
+            }
         }
     }
 

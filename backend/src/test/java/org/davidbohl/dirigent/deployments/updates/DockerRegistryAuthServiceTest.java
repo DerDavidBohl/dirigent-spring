@@ -1,7 +1,7 @@
 package org.davidbohl.dirigent.deployments.updates;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,57 +56,51 @@ class DockerRegistryAuthServiceTest {
     }
 
     @Test
-    void throwsWhenDockerLoginFails() {
+    void doesNotThrowWhenDockerLoginFails() {
         RegistryAuthProperties.Registry registry = registry("gitea.example.com", "user", "token");
         RegistryAuthProperties properties = properties(registry);
         when(processRunner.executeCommandWithStdin(anyList(), anyString()))
                 .thenReturn(new ProcessResult(1, "", "unauthorized"));
 
-        RegistryAuthenticationException exception = assertThrows(
-                RegistryAuthenticationException.class,
+        assertDoesNotThrow(
                 () -> new DockerRegistryAuthService(properties, processRunner).loginToConfiguredRegistries());
-
-        assertEquals("Failed to login to registry gitea.example.com: unauthorized", exception.getMessage());
     }
 
     @Test
-    void stopsAfterFirstFailedLogin() {
+    void continuesWithRemainingRegistriesAfterFailedLogin() {
         RegistryAuthProperties properties = properties(
                 registry("first.example.com", "user", "bad-token"),
                 registry("second.example.com", "user", "token"));
         when(processRunner.executeCommandWithStdin(anyList(), anyString()))
-                .thenReturn(new ProcessResult(1, "", "unauthorized"));
+                .thenReturn(new ProcessResult(1, "", "unauthorized"))
+                .thenReturn(new ProcessResult(0, "Login Succeeded", ""));
 
-        assertThrows(RegistryAuthenticationException.class,
-                () -> new DockerRegistryAuthService(properties, processRunner).loginToConfiguredRegistries());
+        new DockerRegistryAuthService(properties, processRunner).loginToConfiguredRegistries();
 
         verify(processRunner).executeCommandWithStdin(anyList(), eq("bad-token"));
-        verifyNoMoreInteractions(processRunner);
+        verify(processRunner).executeCommandWithStdin(anyList(), eq("token"));
     }
 
     @Test
-    void throwsForMissingHost() {
-        assertThrowsForIncompleteRegistry(null, "user", "token", "null");
+    void doesNotThrowForMissingHost() {
+        assertDoesNotThrowForIncompleteRegistry(null, "user", "token");
     }
 
     @Test
-    void throwsForMissingUsername() {
-        assertThrowsForIncompleteRegistry("registry.example.com", null, "token", "registry.example.com");
+    void doesNotThrowForMissingUsername() {
+        assertDoesNotThrowForIncompleteRegistry("registry.example.com", null, "token");
     }
 
     @Test
-    void throwsForMissingPassword() {
-        assertThrowsForIncompleteRegistry("registry.example.com", "user", null, "registry.example.com");
+    void doesNotThrowForMissingPassword() {
+        assertDoesNotThrowForIncompleteRegistry("registry.example.com", "user", null);
     }
 
-    private void assertThrowsForIncompleteRegistry(String host, String username, String password, String messageHost) {
+    private void assertDoesNotThrowForIncompleteRegistry(String host, String username, String password) {
         RegistryAuthProperties properties = properties(registry(host, username, password));
 
-        RegistryAuthenticationException exception = assertThrows(
-                RegistryAuthenticationException.class,
+        assertDoesNotThrow(
                 () -> new DockerRegistryAuthService(properties, processRunner).loginToConfiguredRegistries());
-
-        assertEquals("Incomplete credentials for registry " + messageHost, exception.getMessage());
     }
 
     private RegistryAuthProperties properties(RegistryAuthProperties.Registry... registries) {
