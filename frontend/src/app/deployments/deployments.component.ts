@@ -60,6 +60,7 @@ import { StartDialogComponent } from './start-dialog/start-dialog.component';
 ],
   templateUrl: './deployments.component.html'
 })
+// UX-001, UX-002: Present deployment state and explicit lifecycle actions.
 export class DeploymentsComponent implements OnInit {
 
   selectedFilterValues$ = new ReplaySubject<Array<string>>(1);

@@ -42,6 +42,7 @@ public class ProcessRunner {
         return executeInternal(commandParts, new File(System.getProperty("user.dir")), 0, Map.of(), stdin);
     }
 
+    // COD-002: Centralize external command execution for explicit, testable operation flows.
     private ProcessResult executeInternal(List<String> commandParts, File workingDirectory, long timeoutMs, Map<String, String> env, String stdin) {
     Map<String, String> finalEnv = new HashMap<>();
     finalEnv.putAll(System.getenv());

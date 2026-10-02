@@ -9,6 +9,7 @@ import { DeploymentUpdate } from './deployment-update';
 @Injectable({
   providedIn: 'root'
 })
+// COD-001: Route operator actions and state requests through the backend API.
 export class ApiService {
 
   private _deploymentStates: ReplaySubject<Array<DeploymentState>> = new ReplaySubject<Array<DeploymentState>>(1);

@@ -25,6 +25,7 @@ public class NotificationService {
 
     @EventListener(DeploymentStateChangedEvent.class)
     @Async
+    // UX-004: Send state-change notices only through the optional configured channel.
     public void onDeploymentStateChanged(DeploymentStateChangedEvent event) {
         String title = "%s: \"%s\"".formatted(event.getState(), event.getDeploymentName());
         String context = event.getContext();

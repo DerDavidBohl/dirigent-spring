@@ -23,6 +23,7 @@ public class DeploymentStatePersistingService {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
+    // REQ-002: Persist and publish state changes for operator visibility.
     @EventListener(DeploymentStateEvent.class)
     public void handleDeploymentStateChangedEvent(DeploymentStateEvent event) {
 

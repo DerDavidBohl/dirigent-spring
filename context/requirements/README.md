@@ -9,9 +9,11 @@ Repository requirements cover the product purpose, operating model, deployment l
 ## Related records
 
 - [Operational needs](operational-needs.md)
+- [API contracts](api-contracts.md)
 - [Template](TEMPLATE.md)
 
 ## Navigation
 
 - Review the operational requirements first for the core GitOps workflow.
+- Use the API contract records for the supported public resources and operations.
 - Use them as the normative basis for architecture, security, quality, and UX decisions.

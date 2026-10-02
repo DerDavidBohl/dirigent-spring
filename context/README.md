@@ -10,6 +10,7 @@ This directory records the normative specifications for the Dirigent project. It
 - [User Experience](user-experience/README.md)
 - [Quality](quality/README.md)
 - [Coding](coding/README.md)
+- [Clarification register](clarifications.md)
 
 ## Scope
 
@@ -21,9 +22,4 @@ The repository is a self-hosted GitOps helper for Docker Compose deployments. It
 - Follow the architecture records for the system decomposition and operational model.
 - Use the security and quality records to evaluate changes with risk and reliability in mind.
 - Apply the coding records for implementation conventions and maintainability standards.
-
-## Open assumptions and clarifications
-
-- The repository is intended for self-hosted deployment management rather than multi-tenant SaaS operation.
-- Ownership and formal approval workflows are not currently defined in the repository; this onboarding reflects the observed product intent and documented operational needs.
-- Deployment behavior assumes a trusted operator is managing the host and Docker socket access.
+- Review the clarification register before making decisions in areas whose intended behavior is not yet specified.

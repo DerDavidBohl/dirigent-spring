@@ -18,6 +18,7 @@ public class DeploymentStatesController {
     }
 
     @GetMapping
+    // REQ-002: Expose current deployment state to the operator interface.
     public List<DeploymentStateEntity> getDeploymentStates() {
         return deploymentStatePersistingService.getDeploymentStates();
     }

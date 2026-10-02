@@ -24,6 +24,7 @@ import {FormsModule} from '@angular/forms';
   templateUrl: './start-dialog.component.html',
   styleUrl: './start-dialog.component.css'
 })
+// UX-002: Keep forced recreation an explicit operator choice.
 export class StartDialogComponent {
   readonly dialogRef = inject(MatDialogRef<StartDialogComponent>);
   force: boolean = false;

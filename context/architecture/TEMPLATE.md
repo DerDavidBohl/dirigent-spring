@@ -10,6 +10,8 @@ Use this template for architecture decisions, component boundaries, or integrati
 
 **Status:** Proposed.
 
+**Basis:** Identify the stakeholder input or upstream context records that justify this decision. Do not infer an intended decision from implementation behavior alone.
+
 The architecture decision states the intended system boundary, component responsibility, or integration approach.
 
 **Rationale:** Explain why this is the chosen design and what alternatives it balances.

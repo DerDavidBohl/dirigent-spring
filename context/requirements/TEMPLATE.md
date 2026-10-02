@@ -10,6 +10,8 @@ Use this template to add new stakeholder or product requirements.
 
 **Status:** Proposed.
 
+**Basis:** Identify the stakeholder input or existing context record that justifies this requirement. Do not use observed implementation behavior as its normative basis.
+
 The requirement states the intended behavior or acceptance expectation in plain language.
 
 **Rationale:** Explain why the requirement matters to the stakeholders and the operational goal.

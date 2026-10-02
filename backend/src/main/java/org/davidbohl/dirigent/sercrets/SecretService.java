@@ -82,6 +82,7 @@ public class SecretService {
         return result;
     }
 
+    // QUA-002, UX-003: Standard secret listings omit stored values.
     public List<SecretDto> getAllSecretsWithoutValues() {
         return secretRepository.findAll().stream().map(
                 s -> new SecretDto(s.getKey(), s.getEnvironmentVariable(), null, s.getDeployments())
@@ -102,6 +103,7 @@ public class SecretService {
             applicationEventPublisher.publishEvent(new MultipleNamedDeploymentsStartRequestedEvent(this, secret.getDeployments(), true));
     }
 
+    // SEC-001: Encrypt stored values and decrypt them only for deployment runtime injection.
     private String encrypt(String value) throws Exception {
         SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), ALGORITHM);
         Cipher cipher = Cipher.getInstance(ALGORITHM);

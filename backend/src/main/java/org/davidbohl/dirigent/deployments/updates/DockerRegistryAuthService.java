@@ -26,12 +26,13 @@ public class DockerRegistryAuthService {
             try {
                 login(registry);
             } catch (RegistryAuthenticationException e) {
-                // An unreachable or misconfigured registry must not block deployments that don't use it.
+                // QUA-001: Registry authentication failures are warnings, not unrelated start failures.
                 log.warn(e.getMessage());
             }
         }
     }
 
+    // SEC-002: Scope credentials to the configured registry host and send the password on stdin.
     private void login(RegistryAuthProperties.Registry registry) {
         if (registry.getHost() == null || registry.getUsername() == null || registry.getPassword() == null) {
             throw new RegistryAuthenticationException("Incomplete credentials for registry " + registry.getHost());

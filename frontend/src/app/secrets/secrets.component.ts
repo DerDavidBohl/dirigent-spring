@@ -43,6 +43,7 @@ import {EditSecretDialogComponent} from './edit-secret-dialog/edit-secret-dialog
   styleUrl: './secrets.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
+// UX-003: Manage secret metadata without displaying existing values.
 export class SecretsComponent {
 
   secrets$: Observable<Array<Secret>>;

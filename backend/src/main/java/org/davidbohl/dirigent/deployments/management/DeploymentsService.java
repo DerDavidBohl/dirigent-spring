@@ -351,6 +351,7 @@ public class DeploymentsService {
         Map<Integer, List<Deployment>> deploymentsByOrder = deployments.stream()
                 .collect(Collectors.groupingBy(Deployment::order));
 
+        // ADR-003: Process deployment order groups in ascending order.
         TreeMap<Integer, List<Deployment>> sortedDeployments = new TreeMap<>(deploymentsByOrder);
 
         // try (ExecutorService executorService =

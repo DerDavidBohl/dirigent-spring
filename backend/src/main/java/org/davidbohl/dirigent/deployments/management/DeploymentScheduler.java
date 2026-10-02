@@ -29,6 +29,7 @@ public class DeploymentScheduler {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
+    // REQ-005: Recurring reconciliation is an operator-configurable trigger.
     @Scheduled(cron = "${dirigent.delpoyments.schedule.cron}")
     void runScheduledDeployments() {
         if(enabled) {

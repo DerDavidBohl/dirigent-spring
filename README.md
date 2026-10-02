@@ -214,6 +214,13 @@ deployments:
 | /app/data            | Data directory containing the database |
 | /var/run/docker.sock | Docker socket for Dirigent             |
 
+### Security considerations
+
+- Access to the Docker socket grants broad control over the host's containers; run Dirigent only in an environment trusted with that authority.
+- Gitea webhook requests are not authenticated by an application signature. Restrict the webhook endpoint to trusted Gitea systems using the deployment network boundary.
+- The dashboard and REST API do not currently authenticate users. Restrict their network reachability to trusted users and systems; application-level authentication is a possible future improvement, not a current capability.
+- Keep registry and Git credentials in an environment-management system and restrict access to the Dirigent host and its configuration.
+
 ### Step by Step (Gitea)
 
 #### Setup Deployments Repo

@@ -10,6 +10,8 @@ Use this template for operator journeys, interaction expectations, or accessibil
 
 **Status:** Proposed.
 
+**Basis:** Identify the stakeholder input or existing context records that justify this experience expectation. Do not infer intended UX from implementation behavior alone.
+
 The record describes the intended user interaction or goal in plain language.
 
 **Rationale:** Explain why the interaction matters to the user and how it supports operations.

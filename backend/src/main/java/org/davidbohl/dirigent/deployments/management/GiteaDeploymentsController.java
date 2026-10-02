@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController()
 @RequestMapping("/api/v1/gitea")
+// SEC-004: Webhook trust is enforced by the deployment network boundary.
 public class GiteaDeploymentsController {
 
     private final ApplicationEventPublisher applicationEventPublisher;
@@ -23,6 +24,7 @@ public class GiteaDeploymentsController {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
+    // REQ-004: Route configured repository events into deployment reconciliation.
     @PostMapping()
     public void webHook(@RequestBody GiteaRequestBody body) {
 

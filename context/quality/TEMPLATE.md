@@ -10,6 +10,8 @@ Use this template for measurable quality attributes, scenarios, or verification 
 
 **Status:** Proposed.
 
+**Basis:** Identify the stakeholder input or existing context records that justify this quality goal. Do not use current implementation behavior as its normative basis.
+
 The quality record states the intended quality target or scenario.
 
 **Rationale:** Explain why the quality attribute matters to the system and its operators.
