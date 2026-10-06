@@ -50,6 +50,8 @@ The repository currently has six backend test classes covering process invocatio
 
 **Rationale:** Independent reconstruction and change review require evidence that behavior works across component boundaries, not only that individual utilities compile.
 
+**Additional evidence:** Auto-update selection (REQ-014) is covered by `DeploymentUpdateServiceAutoUpdateTest`.
+
 **Constraints:** There is no documented release gate requiring a particular test/build/security sequence. Backend test execution includes environment-dependent Docker and Spring-context tests; frontend production build is available. No numerical availability, latency, or recovery promise is defined.
 
 **Dependencies:** QUA-001, QUA-002, QUA-003, COD-002, SEC-006

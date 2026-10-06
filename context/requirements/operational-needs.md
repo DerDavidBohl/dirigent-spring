@@ -8,7 +8,7 @@ Dirigent manages Docker Compose deployments from a repository-backed deployment 
 
 **Rationale:** The project’s purpose is to simplify deployment coordination for self-hosted infrastructure by changing infrastructure state through Git-driven configuration.
 
-**Constraints:** Repository definitions are read from YAML with `deployments` entries containing `name`, `source`, `order`, and optional `ref`. The implementation does not validate required/non-empty fields or duplicate names. An omitted numeric `order` is zero; a null `ref` is passed as `HEAD`. Configuration read/parse failures are propagated; no last-known-good fallback is provided. Host-specific actions are still required for Docker runtime access and local secrets.
+**Constraints:** Repository definitions are read from YAML with `deployments` entries containing `name`, `source`, `order`, and optional `ref`. The implementation does not validate required/non-empty fields or duplicate names. An omitted numeric `order` is zero; a null `ref` is passed as `HEAD`. Configuration read/parse failures are propagated; no last-known-good fallback is provided. Host-specific actions are still required for Docker runtime access and local secrets. Each entry may also set the optional boolean `autoUpdate` (see REQ-014); when omitted it is `false`.
 
 **Dependencies:** ADR-001, ADR-002
 
@@ -84,6 +84,8 @@ The system checks images used by running Compose services for available updates,
 
 **Dependencies:** REQ-001, REQ-002, SEC-002, UX-004, QUA-001
 
+**Additional constraints:** Deployments with `autoUpdate` enabled are exempt from the explicit-operator-action rule; see REQ-014. A discovered update that already has an update row no longer ends the scan of the remaining containers of that deployment.
+
 **Verification expectation:** Existing behavior can be checked by exercising container listing, registry lookup, row creation, selected-service Compose invocation, and update-row cleanup. Current tests primarily cover image-reference parsing and registry client/authentication behavior; they do not establish the full discovery/apply contract or operator-visible failure outcomes.
 
 ### Removed deployments are reconciled only after stop succeeds
@@ -99,3 +101,17 @@ When a deployment is removed from the configuration, reconciliation invokes Comp
 **Dependencies:** REQ-001, REQ-002, ADR-003, QUA-001
 
 **Verification expectation:** Current behavior can be checked by verifying that command invocation precedes deletion and by comparing thrown process errors with non-zero process results; there is no dedicated removal-flow test coverage.
+
+### Deployments can opt in to automatic image updates
+
+**ID: REQ-014**
+
+Operators can set a boolean `autoUpdate` flag per deployment in the deployment configuration. For a deployment with the flag enabled, an image update found by discovery is applied automatically without a further operator action. Without the flag, behavior is unchanged and updates are applied only on explicit operator request (REQ-006).
+
+**Rationale:** Operators of low-risk deployments want to stay current without manual steps, while keeping manual control for others.
+
+**Constraints:** The flag defaults to `false` when omitted. It is evaluated only by the update discovery (scheduled or requested check) and respects `dirigent.updates.disabled`. Automatic application uses the same apply path, update row lifecycle, events, and notifications as a manual apply, including the unchecked Compose exit code. An update row for the same deployment/service/image that is already running prevents a second automatic apply. A failed automatic apply is retried at the next discovery. No per-service or schedule-window control, rollback, or flag toggle through the API/UI is provided; the flag is changed only in the repository-backed configuration.
+
+**Dependencies:** REQ-001, REQ-006, REQ-005, SEC-007, UX-001
+
+**Verification expectation:** Automated tests verify that discovery of an update triggers the apply path only when `autoUpdate` is true, that the default configuration value is false, and that a running update is not applied twice.

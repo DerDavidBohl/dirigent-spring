@@ -70,6 +70,7 @@ public class DeploymentsController {
                             deployment.name(),
                             deployment.source(),
                             deployment.order(),
+                            deployment.autoUpdate(),
                             state.isPresent() ? state.get().getState() : DeploymentStateEntity.State.UNKNOWN,
                             state.isPresent() ? state.get().getMessage() : ""
                     );

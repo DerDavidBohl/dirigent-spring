@@ -4,11 +4,11 @@
 
 **ID: UX-001**
 
-The dashboard lists configured deployments with source, order, state, and message. Operators can search by deployment name, filter by state, sort table columns, and open source links.
+The dashboard lists configured deployments with source, order, state, and message, and shows whether automatic updates (REQ-014) are enabled for each deployment. Operators can search by deployment name, filter by state, sort table columns, and open source links.
 
 **Rationale:** Self-hosted operational tools depend on readable and actionable views so administrators can quickly assess and act on infrastructure state.
 
-**Constraints:** The interface must remain focused on operational clarity and not become a general-purpose configuration editor.
+**Constraints:** The interface must remain focused on operational clarity and not become a general-purpose configuration editor. The auto-update indicator is read-only; the flag is changed in the repository-backed configuration.
 
 **Dependencies:** REQ-002, ADR-002
 

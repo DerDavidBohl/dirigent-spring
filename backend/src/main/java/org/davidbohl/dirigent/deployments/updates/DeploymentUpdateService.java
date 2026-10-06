@@ -159,20 +159,27 @@ public class DeploymentUpdateService {
                         .publishEvent(
                                 new ImageUpdateAvailableEvent(this, deployment.name(), container.getImage(), service));
 
-                List<DeploymentUpdateEntity> deploymentUpdates = deploymentUpdateRepository
-                        .findAllByDeploymentNameAndServiceAndImage(deployment.name(), service, container.getImage());
-
-                if (deploymentUpdates.size() > 0)
-                    return;
-
-                deploymentUpdateRepository
-                        .save(new DeploymentUpdateEntity(null, deployment.name(), service, container.getImage(), false));
+                handleDiscoveredUpdate(deployment, service, container.getImage());
 
             } catch (CouldNotGetManifestDigestFromRegistryFailedException e) {
                 log.warn("[Deployment: {}] Could not get digest from registry for image {}", deployment.name(), image.image(), e);
             }
 
         }
+    }
+
+    // REQ-014: apply immediately only when the deployment opted in and no apply is already running.
+    void handleDiscoveredUpdate(Deployment deployment, String service, String image) {
+        List<DeploymentUpdateEntity> existing = deploymentUpdateRepository
+                .findAllByDeploymentNameAndServiceAndImage(deployment.name(), service, image);
+
+        if (existing.isEmpty())
+            deploymentUpdateRepository.save(new DeploymentUpdateEntity(null, deployment.name(), service, image, false));
+        else if (existing.stream().anyMatch(DeploymentUpdateEntity::isRunning))
+            return;
+
+        if (deployment.autoUpdate())
+            runDeploymentUpdate(new DeploymentUpdateDto(deployment.name(), service, image, false));
     }
 
     private Optional<DockerImage> resolveDockerImage(DockerClient dockerClient, Container container) {

@@ -14,7 +14,7 @@ public class DeploymentUpdateServiceTest {
     @Test
     void testUpdates() {
 
-        updateService.checkIfImageUpdatesExistForDeployment(new Deployment("test1", "", 0, ""));
+        updateService.checkIfImageUpdatesExistForDeployment(new Deployment("test1", "", 0, "", false));
     }
 
 }

@@ -56,6 +56,12 @@
     </ng-container>
 
     <!-- Symbol Column -->
+    <ng-container matColumnDef="autoUpdate">
+      <th *matHeaderCellDef mat-header-cell mat-sort-header> Auto-Update</th>
+      <td *matCellDef="let element" mat-cell> {{ element.autoUpdate ? 'On' : 'Off' }}</td>
+    </ng-container>
+
+    <!-- Symbol Column -->
     <ng-container matColumnDef="message">
       <th *matHeaderCellDef mat-header-cell mat-sort-header> Message</th>
       <td *matCellDef="let element" mat-cell> {{ element.message }}</td>

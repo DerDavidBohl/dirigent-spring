@@ -70,6 +70,20 @@ The current dashboard and REST API do not provide application-level authenticati
 
 **Verification expectation:** Operator-facing deployment guidance states the current absence of application authentication and the requirement to restrict network reachability.
 
+### Automatic updates extend trust to the image publisher
+
+**ID: SEC-007**
+
+Enabling `autoUpdate` for a deployment (REQ-014) lets the registry's current image for each tag be pulled and run with Docker socket privileges without operator review.
+
+**Rationale:** Automatic application removes the human check that REQ-006 otherwise provides, so a compromised or faulty upstream tag would be deployed unattended.
+
+**Constraints:** The flag is opt-in per deployment and changeable only through the version-controlled deployment configuration, not through the unauthenticated API (SEC-005). Operators should enable it only for images they trust and should pin tags otherwise. Digest comparison does not verify image signatures.
+
+**Dependencies:** REQ-014, SEC-002, SEC-003, SEC-005
+
+**Verification expectation:** Operator guidance states the opt-in nature and risk; tests verify that the default is disabled.
+
 ### Sensitive values and credentials are excluded from diagnostics
 
 **ID: SEC-006**

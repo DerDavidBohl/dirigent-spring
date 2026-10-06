@@ -72,7 +72,7 @@ export class DeploymentsComponent implements OnInit {
   filterValues$: Observable<string[]>;
   systemInformation$: Observable<SystemInformation>;
 
-  displayedColumns = ['actions', 'name', 'state', 'message'];
+  displayedColumns = ['actions', 'name', 'state', 'autoUpdate', 'message'];
 
   readonly dialog = inject(MatDialog);
 

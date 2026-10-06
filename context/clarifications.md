@@ -69,6 +69,16 @@ Resolved against the current code by REQ-003, REQ-010, UX-003, and SEC-001. The 
 
 Secret associations may refer to names that are not currently configured. The path key identifies the stored record; the request body's key field is not used by the controller.
 
+### Automatic update scope and control
+
+**ID: CLR-008**
+
+Resolved by REQ-014 and SEC-007. Auto-update is a per-deployment flag in the deployment YAML, default false, applied at discovery time through the existing apply path. No per-service flag, UI/API toggle, schedule window, or rollback is provided.
+
+**Status:** Resolved.
+
+**Dependencies:** REQ-014, SEC-007, REQ-006
+
 ### Image-update discovery and application rules
 
 **ID: CLR-007**

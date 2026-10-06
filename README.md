@@ -192,7 +192,7 @@ Registry entries are indexed from zero, so additional registries use `DIRIGENT_R
 
 ### deployments.yml
 
-The deployments.yml contains the list of repos you want to deploy. Every deployment needs a name and a source. You can optionally define an order, if one deployment depends on another deployment.  
+The deployments.yml contains the list of repos you want to deploy. Every deployment needs a name and a source. You can optionally define an order, if one deployment depends on another deployment. Set `autoUpdate: true` to apply newly discovered image updates for that deployment automatically (default `false`). This pulls and runs new images without operator review, so enable it only for images you trust.  
   
 Here is an example of a `deployments.yml`:
 
@@ -200,6 +200,7 @@ Here is an example of a `deployments.yml`:
 deployments:
   - name: test1
     source: https://github.com/url/tomyrepo1.git
+    autoUpdate: true # optional, default false
   - name: test2
     source: https://github.com//url/tomyrepo2.git
     order: 10

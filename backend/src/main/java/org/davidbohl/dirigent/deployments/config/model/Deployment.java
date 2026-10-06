@@ -4,6 +4,7 @@ public record Deployment (
         String name, // ToDo: Validate name is not "all", cause its used in controller
         String source,
         int order,
-        String ref
+        String ref,
+        boolean autoUpdate // REQ-014
 ) {
 }

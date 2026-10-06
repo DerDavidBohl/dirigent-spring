@@ -5,5 +5,6 @@ export interface DeploymentState {
   state: string;
   message: string;
   source: string;
+  autoUpdate: boolean;
 }
 
