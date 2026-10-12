@@ -4,6 +4,8 @@ import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatChipsModule} from '@angular/material/chips';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import {provideNativeDateAdapter} from '@angular/material/core';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatTableModule} from '@angular/material/table';
@@ -11,7 +13,8 @@ import {AuthService, CreatedMachineToken, MachineToken} from '../api/auth.servic
 
 @Component({
   selector: 'app-machine-tokens',
-  imports: [CommonModule, FormsModule, MatButtonModule, MatCheckboxModule, MatChipsModule, MatIconModule, MatInputModule, MatTableModule, DatePipe],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatCheckboxModule, MatChipsModule, MatDatepickerModule, MatIconModule, MatInputModule, MatTableModule, DatePipe],
+  providers: [provideNativeDateAdapter()],
   templateUrl: './machine-tokens.component.html',
 })
 export class MachineTokensComponent implements OnInit {
@@ -30,7 +33,7 @@ export class MachineTokensComponent implements OnInit {
 
   tokens: MachineToken[] = [];
   name = '';
-  expiry = '';
+  expiry: Date | null = null;
   selectedPermissions = new Set<string>();
   issuedToken: CreatedMachineToken | null = null;
   error = '';
@@ -61,12 +64,14 @@ export class MachineTokensComponent implements OnInit {
   create(): void {
     this.busy = true;
     this.error = '';
-    const expiresAt = this.expiry ? new Date(this.expiry).toISOString() : null;
+    const expiresAt = this.expiry
+      ? new Date(Date.UTC(this.expiry.getFullYear(), this.expiry.getMonth(), this.expiry.getDate())).toISOString()
+      : null;
     this.authService.createToken(this.name.trim(), [...this.selectedPermissions], expiresAt).subscribe({
       next: token => {
         this.issuedToken = token;
         this.name = '';
-        this.expiry = '';
+        this.expiry = null;
         this.selectedPermissions = new Set<string>();
         this.busy = false;
         this.cdr.detectChanges();

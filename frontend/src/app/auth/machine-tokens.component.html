@@ -14,7 +14,10 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Expires</mat-label>
-      <input matInput name="expiry" type="datetime-local" [(ngModel)]="expiry" required>
+      <input matInput name="expiry" [matDatepicker]="expiryPicker" [(ngModel)]="expiry" required>
+      <mat-hint>Expires at 00:00 UTC</mat-hint>
+      <mat-datepicker-toggle matIconSuffix [for]="expiryPicker"></mat-datepicker-toggle>
+      <mat-datepicker #expiryPicker></mat-datepicker>
     </mat-form-field>
 
     <fieldset class="col-span-full m-0 border-0 p-0">
@@ -76,7 +79,7 @@
 
       <ng-container matColumnDef="expiresAt">
         <th mat-header-cell *matHeaderCellDef>Expiry</th>
-        <td mat-cell *matCellDef="let token" class="[overflow-wrap:anywhere]">{{ token.expiresAt ? (token.expiresAt | date:'mediumDate') : 'Never' }}</td>
+        <td mat-cell *matCellDef="let token" class="[overflow-wrap:anywhere]">{{ token.expiresAt ? (token.expiresAt | date:'mediumDate':'UTC') : 'Never' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="status">

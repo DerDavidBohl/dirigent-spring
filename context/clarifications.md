@@ -134,3 +134,13 @@ Resolved against the current code by COD-004. Request and YAML validation mostly
 **Status:** Resolved at the normative convention level.
 
 **Dependencies:** COD-001, COD-002, COD-003, ADR-001, ADR-002, QUA-001
+
+### Initial frontend bundle size
+
+**ID: CLR-013**
+
+The initial frontend bundle exceeds the 500 kB warning budget and, with the Material date picker for machine token expiry (UX-006), reached 1.06 MB. The initial error budget was raised from 1 MB to 1.2 MB as a quick fix. Open: lazy-load rarely used views, such as machine tokens and secrets, so the initial bundle shrinks and the error budget can return to 1 MB or lower.
+
+**Status:** Open.
+
+**Dependencies:** UX-006
