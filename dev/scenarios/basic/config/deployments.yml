@@ -1,0 +1,7 @@
+deployments:
+  - name: web
+    source: "@REPOS@/web"
+    order: 10
+  - name: cache
+    source: "@REPOS@/cache"
+    order: 20

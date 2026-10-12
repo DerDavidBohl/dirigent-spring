@@ -6,3 +6,6 @@ backend/data
 backend/deployments
 backend/config
 backend/src/main/resources/application-local.properties
+
+dev
+Makefile

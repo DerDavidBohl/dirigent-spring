@@ -83,3 +83,39 @@ README setup, configuration, security, and usage guidance must describe capabili
 **Dependencies:** COD-006, COD-004, ADR-001, ADR-002, SEC-005
 
 **Verification expectation:** Review confirms documented environment variables, defaults, CLI commands, API authentication, and deployment examples correspond to the implementation; test commands or example snippets syntactically where practical.
+
+### A manual test environment runs the current code with authentication
+
+**ID: QUA-007**
+
+**Status:** Proposed.
+
+**Basis:** Maintainer request for a professional, repeatable manual test setup that runs the current code locally; QUA-004; QUA-005.
+
+A maintainer can start the backend and the web dashboard from the working tree with one documented command and sign in with a non-production test account, without preparing a database, encryption key, or operator account by hand. The environment exercises the same authentication and authorization behavior as production (REQ-014, SEC-004), is clearly distinguishable from a production deployment, and never touches real deployments, operator data, or production configuration.
+
+**Rationale:** Manual testing of authentication-protected workflows is otherwise slow and error-prone, and unrepeatable setups weaken release evidence.
+
+**Constraints:** The environment runs as host processes of the working tree and uses the toolchain and Docker/Compose the project already requires. It reports a clear message when a prerequisite is missing. Test credentials follow SEC-012.
+
+**Dependencies:** QUA-004, QUA-005, QUA-006, SEC-012, REQ-014, COD-007
+
+**Verification expectation:** From a clean checkout, the documented start command yields a reachable dashboard where the test account can sign in and anonymous API access is denied.
+
+### Manual test scenarios and data reset are repeatable
+
+**ID: QUA-008**
+
+**Status:** Proposed.
+
+**Basis:** Maintainer request for quick test scenarios and data wiping; QUA-001; QUA-004.
+
+The manual test environment provides named, self-contained scenarios (for example a deployments configuration with several sample deployments) that need no external Git hosting or credentials, and loads one with a single documented command. The environment always has a scenario available: starting it without a loaded scenario loads the default one. A single documented command resets the environment to an empty state, removing all state the environment created (database, secrets, tokens, cloned configuration and deployments, scenario data) and leaving committed files and anything outside the environment untouched. Resetting and reloading a scenario always yields the same starting state.
+
+**Rationale:** A deterministic starting state is needed to reproduce defects and to judge lifecycle, secret, token, and webhook behavior.
+
+**Constraints:** Reset affects only the test environment's own state and refuses to run while the environment is running. Scenarios contain no real credentials or secrets.
+
+**Dependencies:** QUA-007, QUA-001, SEC-012, COD-007
+
+**Verification expectation:** After reset the dashboard shows no deployments, secrets, or tokens and the test account is recreated on next start; after loading a scenario its documented deployments appear.

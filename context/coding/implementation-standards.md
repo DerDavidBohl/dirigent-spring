@@ -83,3 +83,21 @@ When a change affects user-visible behavior, supported configuration, CLI operat
 **Dependencies:** COD-004, ADR-001, ADR-002, QUA-006
 
 **Verification expectation:** For affected changes, review README examples and claims against the current runtime configuration, CLI, API, and security behavior; validate commands/examples where practical.
+
+### The Makefile is the single entry point for local development and testing
+
+**ID: COD-007**
+
+**Status:** Proposed.
+
+**Basis:** QUA-007, QUA-008, and the maintainer request for a professional manual test setup that is easy to start and use.
+
+The repository root `Makefile` is the only supported entry point for local development and test workflows, and `make help` lists its commands. `make dev` starts the backend and the dashboard together, streams the output of both with a per-service prefix, and loads the default scenario when none is loaded. `make scenario SCENARIO=<name>` loads the named scenario from `dev/scenarios/<name>`. `make reset` erases the environment's state and refuses to run while the backend is running. `make test` runs the backend tests and the frontend production build. Environment state lives only in `dev/.state`, which is excluded from version control and from build contexts. New local workflows are added as Makefile targets with a help description rather than as separate scripts.
+
+**Rationale:** One discoverable, documented entry point keeps manual testing repeatable and avoids divergent ad-hoc scripts.
+
+**Constraints:** The Makefile does not add production behavior. Test-only code and configuration live in test sources (SEC-012). Scenario content contains no real credentials. The toolchain version follows the project build configuration.
+
+**Dependencies:** QUA-007, QUA-008, SEC-011, SEC-012, COD-006
+
+**Verification expectation:** `make help` lists the commands above; running `make reset` then `make dev` yields a reachable dashboard with the default scenario loaded; the README section on the manual test environment matches these commands.

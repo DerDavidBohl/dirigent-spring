@@ -153,3 +153,21 @@ Local development configuration, credentials, encryption keys, databases, and ot
 **Dependencies:** SEC-001, SEC-006, ADR-001, ADR-005
 
 **Verification expectation:** Build review confirms local-only files are excluded, and an image/JAR inspection finds no local credentials or encryption keys.
+
+### Test credentials exist only in the non-production test environment
+
+**ID: SEC-012**
+
+**Status:** Proposed.
+
+**Basis:** QUA-007 and the maintainer request for a ready-to-use test account; SEC-007 and SEC-011 are the controls it must not weaken.
+
+The manual test environment may create a fixed, well-known local administrator account and a throwaway encryption key so that testing needs no manual setup. This is the only exception to creating local accounts solely through the operator CLI (SEC-007). It applies only when an explicit test-environment mode is enabled, is never active in production configuration or the production image, and is reachable from the local machine only.
+
+**Rationale:** Convenience credentials are acceptable for disposable local data only if they cannot be activated or reached in a real deployment.
+
+**Constraints:** Test-environment configuration, databases, and tooling are excluded from distributable artifacts (SEC-011). Production startup never creates accounts automatically.
+
+**Dependencies:** SEC-007, SEC-011, QUA-005, QUA-007
+
+**Verification expectation:** Tests or review show that without the test-environment mode no account is created automatically, and that the production image and run configuration do not enable it.

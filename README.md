@@ -26,7 +26,7 @@ Tool to manage your docker compose deployments via git.
       - [Deployment by name](#deployment-by-name-1)
     - [State](#state)
 - [Develop](#develop)
-  - [Setup for local Tests](#setup-for-local-tests)
+  - [Manual test environment](#manual-test-environment)
 - [Roadmap](#roadmap)
 
 ## Screenshots
@@ -378,11 +378,24 @@ Gitea must send `Authorization: Bearer <token>` with a token granted the `webhoo
 
 ## Develop
 
-### Setup for local Tests
+### Manual test environment
 
-1. copy `src/test/resources/application-local.properties.template` to `src/test/resources/application-local.properties`
-2. fill in your test repository url and auth token
-3. Done ;)
+Runs the current working tree locally with authentication, isolated from real data. Requires Java, Maven, Node/npm, `make`, Git, and Docker with Compose (for deployments).
+
+| Command         | Purpose                                                                              |
+|-----------------|--------------------------------------------------------------------------------------|
+| `make dev`      | Start backend (`127.0.0.1:8080`) and dashboard (`http://localhost:4200`); loads the `basic` scenario if none is loaded |
+| `make scenario` | Load a test scenario (default `basic`, see `dev/scenarios`); then restart `make dev` |
+| `make reset`    | Erase all local test data; refuses to run while the backend is running               |
+| `make test`     | Run backend tests and the frontend production build                                  |
+
+- Sign in with `admin` / `admin`. This account exists only in this environment (`dev` profile, test sources) and is never part of the production image.
+- All state (database, secrets, tokens, cloned configuration and deployments) lives in `dev/.state` and is git-ignored. `make reset` deletes it; containers already started by a scenario are not removed.
+- Scenarios are local Git repositories built from `dev/scenarios/<name>`: `config/deployments.yml` plus one folder per deployment under `repos/`. Add a folder there to create a new scenario, then run `make scenario SCENARIO=<name>`.
+- Backend tests that need Docker fail when Docker is not running.
+- Requires JDK 25 (see `java.version` in `backend/pom.xml`).
+
+Fresh start: stop `make dev`, then `make reset dev`.
 
 ## Roadmap
 
