@@ -69,3 +69,17 @@ New and modified Angular component-specific layout and presentation should use T
 **Dependencies:** ADR-002, UX-005, UX-006
 
 **Verification expectation:** Review confirms new component presentation is expressed with Tailwind utilities, component-specific stylesheets are not introduced for new work, and the Angular production build passes.
+
+### README operator guidance stays aligned with the implementation
+
+**ID: COD-006**
+
+When a change affects user-visible behavior, supported configuration, CLI operations, API contracts, security controls, or deployment/setup instructions, update the README in the same change. Keep commands, variable names, defaults, examples, and security guidance consistent with the implemented behavior; remove superseded instructions rather than leaving conflicting alternatives.
+
+**Rationale:** The README is the primary operator-facing setup and usage reference. Stale commands or configuration examples can cause failed deployments or unsafe security settings even when the implementation is correct.
+
+**Constraints:** Document supported behavior and stable operational guidance, not source-code details. When the README intentionally describes a future capability or limitation, label it clearly rather than implying it is implemented.
+
+**Dependencies:** COD-004, ADR-001, ADR-002, QUA-006
+
+**Verification expectation:** For affected changes, review README examples and claims against the current runtime configuration, CLI, API, and security behavior; validate commands/examples where practical.

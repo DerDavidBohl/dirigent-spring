@@ -98,9 +98,6 @@ services:
       - DIRIGENT_OIDC_SCOPE=openid,profile,email
       - DIRIGENT_OIDC_REQUIRED_GROUP= # optional provider group gate
       - DIRIGENT_OIDC_GROUPS_CLAIM=groups # optional claim name override
-      # Optional group gate. Provider must emit the configured claim.
-      - DIRIGENT_OIDC_REQUIRED_GROUP=
-      - DIRIGENT_OIDC_GROUPS_CLAIM=groups
       # Optional private registry credentials. Repeat with index 1, 2, ... for more registries.
       - DIRIGENT_REGISTRIES_0_HOST= # registry hostname, e.g. gitea.example.com
       - DIRIGENT_REGISTRIES_0_USERNAME= # registry username
@@ -121,30 +118,25 @@ services:
 docker run -d \
   --name=dirigent \
   -e DIRIGENT_DEPLOYMENTS_GIT_URL= \
-  -e DIRIGENT_SECRETS_ENCRYPTION_KEY= \ # Has to be 16 Chars. Can be generated with `openssl rand -base64 12`
-  #optional
+  -e DIRIGENT_SECRETS_ENCRYPTION_KEY= \
   -e DIRIGENT_COMPOSE_COMMAND= \
-  #optional
   -e DIRIGENT_GIT_AUTHTOKEN= \
-  #optional
-  -e DIRIGENT_STARTALL_ON_STARTUP= \
-  #optional
+  -e DIRIGENT_START_ALL_ON_STARTUP= \
   -e DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED= \
-  #optional
   -e DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON= \
-  #optional
   -e DIRIGENT_GOTIFY_BASEURL= \
-  #optional
   -e DIRIGENT_GOTIFY_TOKEN= \
-  #optional but recommended
   -e DIRIGENT_INSTANCENAME= \
-  #optional
   -e DIRIGENT_UPDATES_DISABLED= \
-
-  # optional. Needed, if you mount your config volume to a diffrent place on you root system. Defaults do <docker-root>/volumes/dirigent_deployments/_data
+  -e DIRIGENT_AUTH_COOKIE_SECURE=true \
+  -e DIRIGENT_OIDC_ENABLED=false \
+  -e DIRIGENT_OIDC_CLIENT_ID= \
+  -e DIRIGENT_OIDC_CLIENT_SECRET= \
+  -e DIRIGENT_OIDC_ISSUER_URI= \
+  -e DIRIGENT_OIDC_SCOPE=openid,profile,email \
+  -e DIRIGENT_OIDC_REQUIRED_GROUP= \
+  -e DIRIGENT_OIDC_GROUPS_CLAIM=groups \
   -e DIRIGENT_HOST_DEPLOYMENTS_DIR=/path/to/deployments \
-
-
   -v /path/to/config:/app/config \
   -v /path/to/deployments:/app/deployments \
   -v /path/to/data:/app/data \
@@ -161,12 +153,20 @@ docker run -d \
 | DIRIGENT_COMPOSE_COMMAND              | Command to run your docker-compose files                                                              | `docker compose` |
 | DIRIGENT_GIT_AUTHTOKEN                | Auth token with access to your repos                                                                  |                  |
 | DIRIGENT_START_ALL_ON_STARTUP         | Start all deployments on startup                                                                      | `true`           |
-| DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED | enable scheduled start of all deployments                                                             | `true`           |
-| DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON    | cron expression for scheduled start of all deployments (second minute hour day(month) month day(week) | `* */5 * * * *`  |
+| DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED | Enable scheduled deployment reconciliation                                               | `true`           |
+| DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON    | Cron expression (second minute hour day(month) month day(week))                          | `0 */5 * * * *`  |
 | DIRIGENT_GOTIFY_BASEURL               | Gotify Base URL for Notification, when deployments fail                                               |                  |
 | DIRIGENT_GOTIFY_TOKEN                 | Gotify Token for Notification, when deployments fail                                                  |                  |
 | DIRIGENT_INSTANCENAME                 | Name of your Instance (will be shown in Web UI)                                                       |                  |
 | DIRIGENT_UPDATES_DISABLED             | Disable Update Feature                                                                                |`false`           |
+| DIRIGENT_AUTH_COOKIE_SECURE           | Set Secure on session and CSRF cookies; use HTTPS in production                                       | `true`           |
+| DIRIGENT_OIDC_ENABLED                 | Enable OIDC login                                                                                    | `false`          |
+| DIRIGENT_OIDC_CLIENT_ID               | OIDC client identifier (required when enabled)                                                       |                  |
+| DIRIGENT_OIDC_CLIENT_SECRET           | OIDC client secret (required when enabled)                                                           |                  |
+| DIRIGENT_OIDC_ISSUER_URI              | HTTPS issuer URL (required when enabled)                                                             |                  |
+| DIRIGENT_OIDC_SCOPE                   | OIDC scopes requested                                                                                | `openid,profile,email` |
+| DIRIGENT_OIDC_REQUIRED_GROUP          | Optional group required for OIDC access                                                              |                  |
+| DIRIGENT_OIDC_GROUPS_CLAIM            | Claim containing provider group membership                                                           | `groups`         |
 | DIRIGENT_HOST_DEPLOYMENTS_DIR             | Needed, if you mount your config volume to a diffrent place on you root system.                                                                                | Defaults do `<docker-root>/volumes/dirigent_deployments/_data`          |
 | DIRIGENT_REGISTRIES_0_HOST             | Hostname of the first private Docker registry                                                          |                  |
 | DIRIGENT_REGISTRIES_0_USERNAME         | Username for the first private Docker registry                                                        |                  |

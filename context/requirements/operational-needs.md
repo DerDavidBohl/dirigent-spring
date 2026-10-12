@@ -66,7 +66,7 @@ Operators can configure whether managed deployments are synchronized at applicat
 
 **Rationale:** Self-hosted operators need a way to reconcile deployment state after restart and at a cadence appropriate to their environment.
 
-**Constraints:** Startup synchronization is controlled by `dirigent.start.all.on.startup` (default true in the packaged properties). Recurring synchronization is controlled by `dirigent.delpoyments.schedule.enabled` and `dirigent.delpoyments.schedule.cron` (both spelled `delpoyments`; defaults true and every five minutes in packaged properties). These settings are separate from `startAllOnStartup` in the parsed YAML configuration, which is not the property used by the scheduler.
+**Constraints:** Startup synchronization is controlled by `dirigent.start.all.on.startup` (default true in the packaged properties). Recurring synchronization is controlled by `dirigent.deployments.schedule.enabled` and `dirigent.deployments.schedule.cron` (defaults true and every five minutes in packaged properties). These settings are separate from `startAllOnStartup` in the parsed YAML configuration, which is not the property used by the scheduler.
 
 **Dependencies:** ADR-001, ADR-004, QUA-001
 

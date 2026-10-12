@@ -69,3 +69,17 @@ Authentication changes must include focused backend tests for local login, OIDC 
 **Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010
 
 **Verification expectation:** The focused backend and frontend checks cover both allowed and denied cases; failures must not be accepted as a passing authentication verification.
+
+### Operator documentation matches supported runtime behavior
+
+**ID: QUA-006**
+
+README setup, configuration, security, and usage guidance must describe capabilities and defaults that match the supported implementation. Changes affecting those areas require a documentation consistency review as part of verification.
+
+**Rationale:** Operators rely on the README to configure and secure a self-hosted deployment; stale guidance can undermine otherwise correct implementation and security controls.
+
+**Constraints:** Documentation review complements executable tests and does not replace behavior tests for security-sensitive changes. The README should not promise behavior that depends on unverified deployment-specific configuration.
+
+**Dependencies:** COD-006, COD-004, ADR-001, ADR-002, SEC-005
+
+**Verification expectation:** Review confirms documented environment variables, defaults, CLI commands, API authentication, and deployment examples correspond to the implementation; test commands or example snippets syntactically where practical.

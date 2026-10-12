@@ -140,7 +140,7 @@ public class DirigentApplication {
 		java.util.List<String> arguments = new java.util.ArrayList<>(java.util.List.of(springArguments));
 		arguments.add("--spring.main.web-application-type=none");
 		arguments.add("--dirigent.start.all.on.startup=false");
-		arguments.add("--dirigent.delpoyments.schedule.enabled=false");
+		arguments.add("--dirigent.deployments.schedule.enabled=false");
 		return arguments.toArray(String[]::new);
 	}
 

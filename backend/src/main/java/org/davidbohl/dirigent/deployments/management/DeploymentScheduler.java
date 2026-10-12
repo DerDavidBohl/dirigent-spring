@@ -19,7 +19,7 @@ public class DeploymentScheduler {
 
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    @Value("${dirigent.delpoyments.schedule.enabled}")
+    @Value("${dirigent.deployments.schedule.enabled}")
     boolean enabled;
 
     @Value("${dirigent.start.all.on.startup}")
@@ -30,7 +30,7 @@ public class DeploymentScheduler {
     }
 
     // REQ-005: Recurring reconciliation is an operator-configurable trigger.
-    @Scheduled(cron = "${dirigent.delpoyments.schedule.cron}")
+    @Scheduled(cron = "${dirigent.deployments.schedule.cron}")
     void runScheduledDeployments() {
         if(enabled) {
             logger.info("Starting all deployments scheduled");
