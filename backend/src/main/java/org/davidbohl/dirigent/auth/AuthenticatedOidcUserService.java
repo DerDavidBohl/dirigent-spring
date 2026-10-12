@@ -2,6 +2,7 @@ package org.davidbohl.dirigent.auth;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
@@ -32,8 +33,19 @@ public class AuthenticatedOidcUserService {
                     new OAuth2Error("insufficient_group", "This identity is not in the required OIDC group", null));
         }
 
+        String nameAttribute = displayNameClaim(oidcUser.getClaims());
         return new DefaultOidcUser(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")),
-                oidcUser.getIdToken(), oidcUser.getUserInfo());
+                oidcUser.getIdToken(), oidcUser.getUserInfo(), nameAttribute);
+    }
+
+    private String displayNameClaim(Map<String, Object> claims) {
+        for (String claimName : List.of("preferred_username", "name", "email", "sub")) {
+            Object value = claims.get(claimName);
+            if (value instanceof String name && !name.isBlank()) {
+                return claimName;
+            }
+        }
+        return "sub";
     }
 
     private boolean containsRequiredGroup(Object claim, String requiredGroup) {

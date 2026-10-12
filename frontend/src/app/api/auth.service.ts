@@ -58,7 +58,11 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    return this.http.post<void>('api/v1/auth/logout', {});
+    return this.http.post<void>('api/v1/auth/logout', {}).pipe(
+      tap(() => this.user.set(null)),
+      switchMap(() => this.http.get<string>('api/v1/auth/csrf', {responseType: 'text' as 'json'}).pipe(catchError(() => of('')))),
+      map(() => void 0)
+    );
   }
 
   listTokens(): Observable<MachineToken[]> {

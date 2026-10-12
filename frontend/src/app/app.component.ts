@@ -29,6 +29,8 @@ import {MachineTokensComponent} from './auth/machine-tokens.component';
 export class AppComponent implements OnInit {
   checkingAuthentication = signal(true);
   loginPending = signal(false);
+  logoutPending = signal(false);
+  logoutError = signal('');
   username = '';
   password = '';
   loginError = signal('');
@@ -55,9 +57,17 @@ export class AppComponent implements OnInit {
   }
 
   logout(): void {
+    this.logoutPending.set(true);
+    this.logoutError.set('');
     this.authService.logout().subscribe({
-      next: () => this.refreshAuthentication(),
-      error: () => this.refreshAuthentication()
+      next: () => {
+        this.logoutPending.set(false);
+        this.refreshAuthentication();
+      },
+      error: () => {
+        this.logoutPending.set(false);
+        this.logoutError.set('Sign out failed. Please try again.');
+      }
     });
   }
 

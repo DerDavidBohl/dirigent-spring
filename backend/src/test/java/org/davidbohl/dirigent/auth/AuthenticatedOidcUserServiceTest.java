@@ -67,6 +67,34 @@ class AuthenticatedOidcUserServiceTest {
         assertEquals("operator-123", result.getSubject());
     }
 
+        @Test
+        void usesKeycloakPreferredUsernameForDisplayNameInsteadOfSubjectUuid() {
+        OidcClientProperties properties = new OidcClientProperties();
+        when(delegate.loadUser(request)).thenReturn(oidcUser(Map.of(
+            "preferred_username", "david", "name", "David Bohl", "email", "david@example.test")));
+
+        OidcUser result = new AuthenticatedOidcUserService(delegate, properties).loadUser(request);
+
+        assertEquals("david", result.getName());
+        assertEquals("operator-123", result.getSubject());
+        }
+
+        @Test
+        void fallsBackToNameThenEmailThenSubject() {
+        OidcClientProperties properties = new OidcClientProperties();
+        when(delegate.loadUser(request)).thenReturn(oidcUser(Map.of("name", "David Bohl")));
+        assertEquals("David Bohl", new AuthenticatedOidcUserService(delegate, properties)
+            .loadUser(request).getName());
+
+        when(delegate.loadUser(request)).thenReturn(oidcUser(Map.of("email", "david@example.test")));
+        assertEquals("david@example.test", new AuthenticatedOidcUserService(delegate, properties)
+            .loadUser(request).getName());
+
+        when(delegate.loadUser(request)).thenReturn(oidcUser(Map.of()));
+        assertEquals("operator-123", new AuthenticatedOidcUserService(delegate, properties)
+            .loadUser(request).getName());
+        }
+
     private OidcUser oidcUser(Map<String, Object> additionalClaims) {
         Instant issuedAt = Instant.now();
         Map<String, Object> claims = new java.util.HashMap<>(additionalClaims);

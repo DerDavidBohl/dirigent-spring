@@ -2,14 +2,21 @@ package org.davidbohl.dirigent.auth;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import jakarta.servlet.http.Cookie;
+
+import org.davidbohl.dirigent.auth.dto.MachineTokenCreatedResponse;
 
 import org.davidbohl.dirigent.deployments.management.GiteaDeploymentsController;
 import org.springframework.context.ApplicationEventPublisher;
@@ -141,6 +148,38 @@ class SecurityAuthorizationTest {
                         .contentType("application/json")
                         .content(payload))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void allowsOidcAdministratorToCreateTokensWithAngularCookieCsrfHeader() throws Exception {
+        Cookie csrfCookie = mockMvc.perform(get("/api/v1/auth/csrf"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getCookie("XSRF-TOKEN");
+        Instant expiresAt = Instant.now().plusSeconds(86_400);
+        when(tokenService.create(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(new MachineTokenCreatedResponse(1L, "Keycloak automation", "dgt_once",
+                        Set.of("deployments:read"), Instant.now(), expiresAt));
+
+        mockMvc.perform(post("/api/v1/auth/tokens")
+                        .with(oidcLogin().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Keycloak automation\",\"permissions\":[\"deployments:read\"],\"expiresAt\":\"" + expiresAt + "\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void allowsOidcAdministratorToSignOutWithAngularCookieCsrfHeader() throws Exception {
+        Cookie csrfCookie = mockMvc.perform(get("/api/v1/auth/csrf"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getCookie("XSRF-TOKEN");
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .with(oidcLogin().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNoContent());
     }
 
     @Test

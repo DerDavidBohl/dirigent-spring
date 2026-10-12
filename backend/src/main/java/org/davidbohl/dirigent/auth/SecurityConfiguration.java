@@ -17,10 +17,19 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.function.Supplier;
+
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
+import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.util.StringUtils;
 
 @Configuration
 @EnableWebSecurity
@@ -60,6 +69,7 @@ public class SecurityConfiguration {
                                             SecurityContextRepository securityContextRepository) throws Exception {
         http
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                         .ignoringRequestMatchers((RequestMatcher) request -> {
                             String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
                             return authorization != null && authorization.startsWith("Bearer ");
@@ -90,6 +100,7 @@ public class SecurityConfiguration {
                             }))
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
+                        .deleteCookies("JSESSIONID")
                         .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)));
 
         if (oidcClientProperties.isEnabled()) {
@@ -101,5 +112,24 @@ public class SecurityConfiguration {
         http.oauth2ResourceServer(resourceServer -> resourceServer.opaqueToken(opaque -> opaque.introspector(tokenIntrospector)));
         http.addFilterBefore(new LoginRateLimitFilter(loginAttemptRateLimiter), UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    private static final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
+        private final CsrfTokenRequestHandler plain = new CsrfTokenRequestAttributeHandler();
+        private final CsrfTokenRequestHandler xor = new XorCsrfTokenRequestAttributeHandler();
+
+        @Override
+        public void handle(HttpServletRequest request, HttpServletResponse response,
+                           Supplier<CsrfToken> csrfToken) {
+            xor.handle(request, response, csrfToken);
+        }
+
+        @Override
+        public String resolveCsrfTokenValue(HttpServletRequest request, CsrfToken csrfToken) {
+            String headerValue = request.getHeader(csrfToken.getHeaderName());
+            return StringUtils.hasText(headerValue)
+                    ? plain.resolveCsrfTokenValue(request, csrfToken)
+                    : xor.resolveCsrfTokenValue(request, csrfToken);
+        }
     }
 }
