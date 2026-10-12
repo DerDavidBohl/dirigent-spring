@@ -4,7 +4,7 @@ This area records the intended security model, trust boundaries, and operational
 
 ## Scope
 
-Security records cover secrets management, deployment trust, registry access, Docker boundary assumptions, and residual security expectations for self-hosted use.
+Security records cover operator authentication and authorization, machine credentials, login abuse controls, OIDC transport, build-artifact secret exclusion, webhook trust, secrets management, deployment trust, registry access, Docker boundary assumptions, and residual security expectations for self-hosted use.
 
 ## Related records
 

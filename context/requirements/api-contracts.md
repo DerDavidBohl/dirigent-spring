@@ -58,10 +58,66 @@ These records define the current versioned JSON API resource surface used by the
 
 **ID: REQ-013**
 
-`POST /api/v1/gitea` accepts a JSON body with a `ref` string and a `repository` object containing `clone_url` and optional `ssh_url`. The endpoint does not inspect `X-Gitea-Event` or require a signature. If `clone_url` exactly matches the configured deployment-list Git URL, it requests full reconciliation; otherwise it publishes a source/ref start request, which only acts when a configured deployment matches. The endpoint has no response body on acknowledgment; clients observe deployment state through `GET /api/v1/deployments`. Each accepted request publishes a new event; no deduplication is performed. Network trust is described in SEC-004.
+`POST /api/v1/gitea` accepts a JSON body with a `ref` string and a `repository` object containing `clone_url` and optional `ssh_url`. It requires an opaque machine bearer token with the dedicated `webhooks:trigger` permission before processing the request. If `clone_url` exactly matches the configured deployment-list Git URL, it requests full reconciliation; otherwise it publishes a source/ref start request, which only acts when a configured deployment matches. The endpoint has no response body on acknowledgment; clients observe deployment state through `GET /api/v1/deployments`. Each accepted request publishes a new event; no deduplication is performed. Network trust is described in SEC-004.
 
-**Constraints:** The current payload contract does not require application-level signature fields.
+**Constraints:** The token is sent in `Authorization: Bearer <token>` and must be issued with only the dedicated `webhooks:trigger` permission where possible. No Gitea HMAC signature or shared webhook secret is required. Token expiry and revocation follow REQ-015.
 
 **Dependencies:** REQ-004, ADR-004, SEC-004
 
-**Verification expectation:** Contract tests should cover deployment-list URL matching, source/ref matching, arbitrary event headers, repeated requests, malformed bodies, and empty acknowledgment responses. Current tests do not cover this controller contract.
+**Verification expectation:** Contract tests should cover anonymous and wrong-scope denial, valid webhook-token acceptance, deployment-list URL matching, source/ref matching, arbitrary event headers, repeated requests, malformed bodies, and empty acknowledgment responses.
+
+### Browser authentication and administrator accounts
+
+**ID: REQ-014**
+
+Dirigent supports browser authentication through either a configured OpenID Connect provider or a locally managed username and password. There is no public self-registration. Every identity successfully authenticated by the configured OIDC issuer receives administrator access without per-user CLI provisioning. Operators may optionally configure a required provider group and group-claim name; when configured, only authenticated identities whose claim contains that group receive access. Authenticated human accounts have administrator access. Browser sessions must be revocable by logging out and protected against cross-site request forgery for state-changing requests. When no local administrator has been provisioned, operators must be able to create one through the server-side CLI without supplying the password as a command-line argument.
+
+**Rationale:** Dirigent controls privileged host deployments and secrets, so operator access must be explicit and manageable even when an external identity provider is unavailable.
+
+**Constraints:** OIDC configuration is optional because local accounts provide standalone operation. OIDC is enabled explicitly and its client ID, client secret, issuer URI, optional scopes, optional required group, and group-claim name are supplied through Dirigent-prefixed configuration values. The issuer must use HTTPS. If no required group is configured, all successfully authenticated identities from the configured issuer are accepted. Local account creation is not available through public registration. Authentication failures must not reveal whether a local username exists.
+
+**Dependencies:** SEC-005, SEC-007, ADR-007, UX-006
+
+**Verification expectation:** Tests verify local login, configured OIDC login without per-user provisioning, optional group acceptance and rejection, logout/session invalidation, unauthenticated access denial, and CLI local-account creation with interactive secret input.
+
+### Service API tokens
+
+**ID: REQ-015**
+
+An administrator can issue, list, and revoke machine API tokens. A token is displayed only once when created, must expire within 366 days, and is granted explicitly selected permissions. Token listings expose metadata and permissions but never the token value. Tokens authenticate API clients without creating browser sessions.
+
+**Rationale:** Automation needs non-interactive access without sharing a human password or an administrator browser session.
+
+**Constraints:** Tokens are revocable and scoped to supported API operations, including the dedicated `webhooks:trigger` permission. Every token must have an expiry no more than 366 days after creation; non-expiring tokens are not issued. Tokens do not authenticate interactive browser sessions. Webhook callers should not receive unrelated API permissions.
+
+**Dependencies:** SEC-008, ADR-007, UX-006
+
+**Verification expectation:** Tests verify one-time token disclosure, stored-token non-disclosure, permission enforcement, mandatory bounded expiry, expiration, and revocation.
+
+### Server-side account provisioning command
+
+**ID: REQ-016**
+
+An operator with server access can invoke a CLI command to create a local administrator account. The command accepts the account name and obtains its password through a protected interactive prompt, not a command-line argument. It fails clearly if the account already exists and does not start the web server for this operation.
+
+**Rationale:** Operators need a secure bootstrap and recovery path that does not depend on an already-authenticated dashboard or an available OIDC provider.
+
+**Constraints:** The command requires access to the same persistent application database used by the running service. It must not create a default credential or print the entered password.
+
+**Dependencies:** REQ-014, SEC-007, ADR-007
+
+**Verification expectation:** CLI tests verify successful creation, duplicate rejection, password prompt handling, and that CLI mode exits without starting the HTTP server.
+
+### Local administrator password reset and account deletion
+
+**ID: REQ-017**
+
+An operator with server access can reset a local administrator password through a CLI command that prompts for and confirms the new password without echoing or accepting it as a command-line argument. The CLI can delete a local account only after explicit interactive confirmation. Password reset and deletion apply only to local accounts, never OIDC-only identities. Deletion must not remove the final enabled local administrator account. These operations use the persistent application database and do not start the web server.
+
+**Rationale:** Operators need a controlled recovery and deprovisioning path independent of browser login and external identity-provider availability.
+
+**Constraints:** Passwords must meet the local password policy and are stored only as a password hash. Confirmation input must not be logged. OIDC identities are managed through their provisioning records rather than local password reset.
+
+**Dependencies:** REQ-014, SEC-007, ADR-007
+
+**Verification expectation:** Tests verify reset changes the password hash and enables login only with the replacement password, OIDC-only accounts cannot be reset/deleted through these commands, deletion requires confirmation, the last local administrator cannot be deleted, and CLI operations do not start HTTP serving.

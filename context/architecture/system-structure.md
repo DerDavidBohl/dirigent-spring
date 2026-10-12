@@ -24,7 +24,7 @@ The frontend is a lightweight Angular interface that surfaces deployment state, 
 
 **Constraints:** The frontend is a presentation layer and must rely on the backend API for authoritative state and actions.
 
-**Dependencies:** REQ-002, UX-001
+**Dependencies:** REQ-002, REQ-014, REQ-015, UX-001, UX-006
 
 **Verification expectation:** Acceptance review confirms the frontend presents a coherent operational view without performing privileged actions beyond the API contract.
 
@@ -83,3 +83,17 @@ Deployment reconciliation can be requested again after an interrupted operation,
 **Dependencies:** REQ-002, REQ-004, REQ-005, QUA-001
 
 **Verification expectation:** Current retryability is established by repeated event/manual requests; no failure-injection suite demonstrates transactional recovery or duplicate-side-effect prevention.
+
+### Authentication separates browser sessions, machine tokens, and webhooks
+
+**ID: ADR-007**
+
+The Spring backend is the authority for authentication and authorization. Browser users authenticate through local credentials or an optional OIDC provider and use server-managed sessions. Any identity successfully authenticated by the configured OIDC issuer is authorized unless an optional provider group restriction is configured. Local accounts are operator-managed through the server-side CLI. Machine clients use separately issued opaque API tokens with explicit permissions. The Gitea webhook uses a machine token granted the dedicated `webhooks:trigger` permission and does not use a browser session or require a separate payload-signature secret. Local account state and tokens are persisted with the application data.
+
+**Rationale:** These callers have different lifecycle and security needs: interactive operators need browser login, OIDC delegates identity proof to a configured issuer with optional group authorization, local credentials provide standalone recovery, automation needs revocable least-privilege credentials, and webhook calls need a dedicated token permission distinct from ordinary API access.
+
+**Constraints:** There is no public local-account registration. Human accounts are administrators in the initial access model. OIDC access is issuer-wide unless a required group is configured. At least one local administrator must be creatable and recoverable from the server-side CLI. Authentication controls must not weaken the Docker host trust boundary in ADR-001 and ADR-005.
+
+**Dependencies:** REQ-004, REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010, SEC-011
+
+**Verification expectation:** Architecture review confirms session, API-token, and webhook authentication remain separate and each protected route has an explicit authorization policy.

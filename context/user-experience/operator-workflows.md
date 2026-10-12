@@ -69,3 +69,17 @@ The deployment dashboard shows state and message and polls every two seconds. Th
 **Dependencies:** UX-001, UX-002, UX-003, REQ-002, REQ-006
 
 **Verification expectation:** Manual inspection describes the visible states and action confirmations. Automated frontend workflow/accessibility tests are not currently present.
+
+### Operators authenticate and manage integration access explicitly
+
+**ID: UX-006**
+
+Operators can sign in with a local account or the configured OIDC provider without a separate per-user provisioning step. If an optional OIDC group restriction is configured, only members of that provider group can sign in. There is no public local-account registration. Operators manage local account recovery through the server-side CLI and machine tokens through the dashboard. A newly created machine token is shown once with its selected permissions and required expiration, while later listings show metadata only. Operators can revoke tokens and end their browser session.
+
+**Rationale:** Authentication must fit both standalone self-hosting and existing identity-provider setups while making privileged access and one-time credentials understandable.
+
+**Constraints:** All human accounts are administrators initially. Local account creation, password reset, and deletion are operator-controlled through server-side CLI operations; the final local administrator cannot be deleted. OIDC authorization follows the configured issuer and optional group restriction without per-user CLI provisioning. Gitea is configured with a machine token carrying the dedicated `webhooks:trigger` permission; that token is separate from interactive login and should not carry unrelated API permissions.
+
+**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, SEC-005, SEC-007, SEC-008, ADR-007
+
+**Verification expectation:** Manual or automated checks cover local and OIDC login without per-user provisioning, optional group acceptance/rejection, logout, local account recovery, token creation/revocation, and one-time token presentation without exposing credentials in list views.

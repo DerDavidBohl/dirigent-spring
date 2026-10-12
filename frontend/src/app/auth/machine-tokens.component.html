@@ -1,0 +1,85 @@
+<section class="mx-auto block max-w-[1120px]">
+  <header>
+    <div>
+      <h2 class="m-0 text-[1.15rem]">Service tokens</h2>
+      <p class="mt-[0.35rem] text-[#5b6267]">Issue credentials for integrations and revoke them when access is no longer needed.</p>
+    </div>
+  </header>
+
+  <form class="grid grid-cols-1 gap-x-5 gap-y-3 border-b border-[#d5d9da] py-5 min-[761px]:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)]" (ngSubmit)="create()">
+    <mat-form-field appearance="outline">
+      <mat-label>Token name</mat-label>
+      <input matInput name="name" [(ngModel)]="name" maxlength="96" required autocomplete="off">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Expires</mat-label>
+      <input matInput name="expiry" type="datetime-local" [(ngModel)]="expiry" required>
+    </mat-form-field>
+
+    <fieldset class="col-span-full m-0 border-0 p-0">
+      <legend class="mb-2 font-semibold">Permissions</legend>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-x-[14px] gap-y-1.5">
+        @for (permission of availablePermissions; track permission.value) {
+          <mat-checkbox [checked]="hasPermission(permission.value)"
+                        (change)="setPermission(permission.value, $event.checked)">
+            {{ permission.label }}
+          </mat-checkbox>
+        }
+      </div>
+    </fieldset>
+
+    <button mat-flat-button color="primary" type="submit" class="justify-self-start min-[761px]:col-span-2"
+          [disabled]="busy || !name.trim() || !expiry || selectedPermissions.size === 0">
+      <mat-icon>add</mat-icon>
+      Create token
+    </button>
+  </form>
+
+  @if (error) {
+    <p class="text-[#a32920]" role="alert">{{ error }}</p>
+  }
+
+  @if (issuedToken) {
+    <section class="mt-4 grid grid-cols-1 items-center gap-3 border-l-4 border-[#187a72] bg-[#e8f3f1] p-4 text-[#102b2a] min-[761px]:grid-cols-[1fr_auto]" aria-live="polite">
+      <div>
+        <h3 class="m-0 text-[1.15rem]">Copy this token now</h3>
+        <p class="mt-[0.35rem] text-[#5b6267]">It will not be shown again.</p>
+      </div>
+      <code class="[overflow-wrap:anywhere] text-[0.9rem] min-[761px]:col-start-1">{{ issuedToken.token }}</code>
+      <div class="flex items-center min-[761px]:col-start-2 min-[761px]:row-span-2 min-[761px]:row-start-1">
+        <button mat-icon-button type="button" aria-label="Copy token" title="Copy token" (click)="copyIssuedToken()">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+        <button mat-button type="button" (click)="dismissIssuedToken()">Done</button>
+      </div>
+    </section>
+  }
+
+  <div class="mt-[22px]" role="table" aria-label="Service tokens">
+    <div class="grid min-h-10 grid-cols-[minmax(100px,1fr)_minmax(90px,0.8fr)_48px] items-center gap-3 border-b border-[#d5d9da] px-1 text-[0.8rem] font-semibold text-[#566066] min-[761px]:grid-cols-[minmax(120px,1fr)_minmax(220px,2fr)_minmax(120px,1fr)_minmax(90px,0.7fr)_64px] min-[761px]:px-3" role="row">
+      <span role="columnheader">Name</span>
+      <span class="hidden min-[761px]:block" role="columnheader">Permissions</span>
+      <span class="hidden min-[761px]:block" role="columnheader">Expiry</span>
+      <span role="columnheader">Status</span>
+      <span role="columnheader">Actions</span>
+    </div>
+    @for (token of tokens; track token.id) {
+      <div class="grid min-h-[54px] grid-cols-[minmax(100px,1fr)_minmax(90px,0.8fr)_48px] items-center gap-3 border-b border-[#d5d9da] px-1 py-2.5 min-[761px]:grid-cols-[minmax(120px,1fr)_minmax(220px,2fr)_minmax(120px,1fr)_minmax(90px,0.7fr)_64px] min-[761px]:px-3 min-[761px]:py-0" role="row">
+        <strong class="[overflow-wrap:anywhere]" role="cell">{{ token.name }}</strong>
+        <span class="hidden [overflow-wrap:anywhere] min-[761px]:block" role="cell">{{ token.permissions.join(', ') }}</span>
+        <span class="hidden [overflow-wrap:anywhere] min-[761px]:block" role="cell">{{ token.expiresAt ? (token.expiresAt | date:'mediumDate') : 'Never' }}</span>
+        <span class="[overflow-wrap:anywhere]" role="cell">{{ tokenStatus(token) }}</span>
+        <span role="cell">
+          @if (!token.revokedAt) {
+            <button mat-icon-button type="button" aria-label="Revoke token" title="Revoke token" (click)="revoke(token)">
+              <mat-icon>block</mat-icon>
+            </button>
+          }
+        </span>
+      </div>
+    } @empty {
+      <p class="p-3 text-[#5b6267]">No service tokens have been created.</p>
+    }
+  </div>
+</section>

@@ -1,5 +1,6 @@
 package org.davidbohl.dirigent.deployments.state;
 
+import org.springframework.security.access.annotation.Secured;
 import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,7 @@ public class DeploymentStatesController {
     }
 
     @GetMapping
+    @Secured({"ROLE_ADMIN", "SCOPE_deployments:read"})
     // REQ-002: Expose current deployment state to the operator interface.
     public List<DeploymentStateEntity> getDeploymentStates() {
         return deploymentStatePersistingService.getDeploymentStates();

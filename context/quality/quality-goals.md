@@ -46,7 +46,7 @@ Failure or absence of a Gotify destination does not prevent deployment lifecycle
 
 **ID: QUA-004**
 
-The repository currently has six backend test classes covering process invocation, registry authentication/properties/client behavior, image-reference parsing, and a minimal update-service scenario. Dedicated tests are not present for secret encryption/lifecycle, deployment configuration validation, webhook handling, deployment start/stop/reconciliation, controller contracts, or frontend components. The frontend defines a test script, but no frontend component tests are present in the reviewed source.
+The backend suite covers process invocation, registry authentication/properties/client behavior, image-reference parsing, update parsing, local-account and machine-token services, authorization-filter/method-security behavior, webhook-signature verification, and a minimal update-service scenario. Dedicated tests are not present for secret encryption/lifecycle, deployment configuration validation, the Gitea webhook controller contract, deployment start/stop/reconciliation, general API controller contracts, or frontend components. The frontend defines a test script, but no frontend component tests are present in the reviewed source.
 
 **Rationale:** Independent reconstruction and change review require evidence that behavior works across component boundaries, not only that individual utilities compile.
 
@@ -55,3 +55,17 @@ The repository currently has six backend test classes covering process invocatio
 **Dependencies:** QUA-001, QUA-002, QUA-003, COD-002, SEC-006
 
 **Verification expectation:** Current evidence is the test suite and build commands run by maintainers; no automated enforcement of this release evidence is specified here.
+
+### Authentication and authorization behavior is covered by focused tests
+
+**ID: QUA-005**
+
+Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, and local-account CLI lifecycle operations. The Angular production build and tests for login/token interaction must pass for frontend changes.
+
+**Rationale:** Authentication is a security boundary around privileged deployment and secret operations; compilation alone cannot demonstrate correct access policy.
+
+**Constraints:** External OIDC tests must use a deterministic local test provider or mocked protocol responses and must not depend on a live identity service. Test credentials are non-production and must not be committed as reusable secrets.
+
+**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010
+
+**Verification expectation:** The focused backend and frontend checks cover both allowed and denied cases; failures must not be accepted as a passing authentication verification.

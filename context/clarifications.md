@@ -16,11 +16,11 @@ Resolved against the current code by REQ-002. The implementation exposes the lis
 
 **ID: CLR-002**
 
-Resolved by SEC-005. Application-level authentication is not currently provided; operators must restrict network access to trusted users and systems. Future application authentication remains a suggested improvement, not an approved current or future delivery requirement.
+Resolved by REQ-014 through REQ-017, SEC-004, SEC-005, SEC-007 through SEC-011, ADR-007, and UX-006. The approved model supports local accounts and optional HTTPS-only OIDC; all successfully authenticated users from the configured issuer are authorized unless an optional provider group restriction is configured. Local accounts use CLI password reset and deletion with final-local-admin protection. Machine tokens require expiry, login is rate limited, local build secrets are excluded from artifacts, and Gitea webhooks use the dedicated `webhooks:trigger` token permission.
 
 **Status:** Resolved for the current access model.
 
-**Dependencies:** SEC-005, ADR-001, ADR-002
+**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010, SEC-011, ADR-007, UX-006
 
 ### Quantitative service-quality targets
 

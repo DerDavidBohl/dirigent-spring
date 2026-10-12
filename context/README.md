@@ -14,7 +14,7 @@ This directory records the normative specifications for the Dirigent project. It
 
 ## Scope
 
-The repository is a self-hosted GitOps helper for Docker Compose deployments. It supports repository-driven deployment management, secret handling, registry authentication, update checks, and a lightweight web dashboard for operators.
+The repository is a self-hosted GitOps helper for Docker Compose deployments. It supports repository-driven deployment management, secret handling, registry authentication, update checks, operator authentication and authorization, and a web dashboard for operators.
 
 ## Navigation
 

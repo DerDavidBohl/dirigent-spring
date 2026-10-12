@@ -50,11 +50,11 @@ When an operator configures a repository webhook, a change event for a managed d
 
 **Rationale:** Repository-driven triggers reduce manual deployment steps while preserving version-controlled configuration as the source of changes.
 
-**Constraints:** Webhook use is optional. The receiver accepts a JSON body containing `ref` and a repository object with `clone_url`; it does not check the event-type header or an application signature. A clone URL equal to the configured deployment-list repository URL requests full reconciliation. Other clone URLs publish a source/ref start request; the orchestration service acts only on configured source/ref matches. Requests rely on externally managed network restriction as described by SEC-004.
+**Constraints:** Webhook use is optional. The receiver accepts a JSON body containing `ref` and a repository object with `clone_url`; it requires a machine bearer token granted the dedicated `webhooks:trigger` permission before processing the body. A clone URL equal to the configured deployment-list repository URL requests full reconciliation. Other clone URLs publish a source/ref start request; the orchestration service acts only on configured source/ref matches. HTTPS and network restriction remain defense in depth. Payload HMAC signatures are not required.
 
 **Dependencies:** REQ-001, ADR-001, ADR-004, SEC-004
 
-**Verification expectation:** Current behavior can be checked by posting a compatible body whose clone URL matches the configured deployment-list repository or a configured deployment source/ref. The receiver does not validate event type, and there is no dedicated webhook controller test.
+**Verification expectation:** Tests verify rejection of anonymous and wrong-scope callers, acceptance of a `webhooks:trigger` token, deployment-list URL matching, source/ref matching, arbitrary event headers, repeated requests, malformed bodies, and empty acknowledgment responses.
 
 **Additional constraints:** The receiver does not distinguish push events from other request types. Repeated requests publish repeated events; there is no explicit deduplication or idempotency key.
 
