@@ -101,3 +101,21 @@ The repository root `Makefile` is the only supported entry point for local devel
 **Dependencies:** QUA-007, QUA-008, SEC-011, SEC-012, COD-006
 
 **Verification expectation:** `make help` lists the commands above; running `make reset` then `make dev` yields a reachable dashboard with the default scenario loaded; the README section on the manual test environment matches these commands.
+
+### Python is not used for repository tooling
+
+**ID: COD-008**
+
+**Status:** Proposed.
+
+**Basis:** Maintainer decision that Python is not wanted in this repository or its working tooling.
+
+Repository scripts, build and test tooling, and one-off maintenance or automation steps performed for the repository do not use Python. They use the project's existing toolchain (Make, shell utilities, Maven, npm) or the editing facilities of the development environment. The repository contains no Python source files.
+
+**Rationale:** The project is a Spring Boot and Angular codebase; adding a further language runtime increases the toolchain contributors must install and maintain.
+
+**Constraints:** This applies to files committed to the repository and to tooling that the repository documents or depends on. It does not restrict tools that third-party components bring along internally.
+
+**Dependencies:** COD-007
+
+**Verification expectation:** Review confirms no `.py` files are tracked and that documented commands and Makefile targets do not invoke a Python interpreter.

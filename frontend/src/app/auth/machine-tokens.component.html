@@ -1,5 +1,5 @@
 <section class="mx-auto block max-w-[1120px]">
-  <header>
+  <header class="mb-4">
     <div>
       <h2 class="m-0 text-[1.15rem]">Service tokens</h2>
       <p class="mt-[0.35rem] text-[#5b6267]">Issue credentials for integrations and revoke them when access is no longer needed.</p>
@@ -30,56 +30,77 @@
     </fieldset>
 
     <button mat-flat-button color="primary" type="submit" class="justify-self-start min-[761px]:col-span-2"
-          [disabled]="busy || !name.trim() || !expiry || selectedPermissions.size === 0">
+            [disabled]="busy || !name.trim() || !expiry || selectedPermissions.size === 0">
       <mat-icon>add</mat-icon>
       Create token
     </button>
   </form>
 
   @if (error) {
-    <p class="text-[#a32920]" role="alert">{{ error }}</p>
+    <p class="mt-3 text-[#a32920]" role="alert">{{ error }}</p>
   }
 
   @if (issuedToken) {
-    <section class="mt-4 grid grid-cols-1 items-center gap-3 border-l-4 border-[#187a72] bg-[#e8f3f1] p-4 text-[#102b2a] min-[761px]:grid-cols-[1fr_auto]" aria-live="polite">
+    <section class="mt-4 grid grid-cols-1 gap-3 border-l-4 border-[#187a72] bg-[#e8f3f1] p-4 text-[#102b2a] min-[761px]:grid-cols-[1fr_auto]" aria-live="polite">
       <div>
         <h3 class="m-0 text-[1.15rem]">Copy this token now</h3>
         <p class="mt-[0.35rem] text-[#5b6267]">It will not be shown again.</p>
       </div>
-      <code class="[overflow-wrap:anywhere] text-[0.9rem] min-[761px]:col-start-1">{{ issuedToken.token }}</code>
-      <div class="flex items-center min-[761px]:col-start-2 min-[761px]:row-span-2 min-[761px]:row-start-1">
+      <div class="flex items-center gap-2 min-[761px]:col-start-2 min-[761px]:row-span-2 min-[761px]:row-start-1">
         <button mat-icon-button type="button" aria-label="Copy token" title="Copy token" (click)="copyIssuedToken()">
           <mat-icon>content_copy</mat-icon>
         </button>
         <button mat-button type="button" (click)="dismissIssuedToken()">Done</button>
       </div>
+      <code class="[overflow-wrap:anywhere] text-[0.9rem] min-[761px]:col-start-1">{{ issuedToken.token }}</code>
     </section>
   }
 
-  <div class="mt-[22px]" role="table" aria-label="Service tokens">
-    <div class="grid min-h-10 grid-cols-[minmax(100px,1fr)_minmax(90px,0.8fr)_48px] items-center gap-3 border-b border-[#d5d9da] px-1 text-[0.8rem] font-semibold text-[#566066] min-[761px]:grid-cols-[minmax(120px,1fr)_minmax(220px,2fr)_minmax(120px,1fr)_minmax(90px,0.7fr)_64px] min-[761px]:px-3" role="row">
-      <span role="columnheader">Name</span>
-      <span class="hidden min-[761px]:block" role="columnheader">Permissions</span>
-      <span class="hidden min-[761px]:block" role="columnheader">Expiry</span>
-      <span role="columnheader">Status</span>
-      <span role="columnheader">Actions</span>
-    </div>
-    @for (token of tokens; track token.id) {
-      <div class="grid min-h-[54px] grid-cols-[minmax(100px,1fr)_minmax(90px,0.8fr)_48px] items-center gap-3 border-b border-[#d5d9da] px-1 py-2.5 min-[761px]:grid-cols-[minmax(120px,1fr)_minmax(220px,2fr)_minmax(120px,1fr)_minmax(90px,0.7fr)_64px] min-[761px]:px-3 min-[761px]:py-0" role="row">
-        <strong class="[overflow-wrap:anywhere]" role="cell">{{ token.name }}</strong>
-        <span class="hidden [overflow-wrap:anywhere] min-[761px]:block" role="cell">{{ token.permissions.join(', ') }}</span>
-        <span class="hidden [overflow-wrap:anywhere] min-[761px]:block" role="cell">{{ token.expiresAt ? (token.expiresAt | date:'mediumDate') : 'Never' }}</span>
-        <span class="[overflow-wrap:anywhere]" role="cell">{{ tokenStatus(token) }}</span>
-        <span role="cell">
+  <div class="mt-6 overflow-hidden rounded-md border border-[#d5d9da]">
+    <table mat-table [dataSource]="tokens" class="w-full" aria-label="Service tokens">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let token" class="[overflow-wrap:anywhere]">{{ token.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="permissions">
+        <th mat-header-cell *matHeaderCellDef>Permissions</th>
+        <td mat-cell *matCellDef="let token">
+          <mat-chip-set aria-label="Token permissions">
+            @for (permission of token.permissions; track permission) {
+              <mat-chip>{{ permission }}</mat-chip>
+            }
+          </mat-chip-set>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="expiresAt">
+        <th mat-header-cell *matHeaderCellDef>Expiry</th>
+        <td mat-cell *matCellDef="let token" class="[overflow-wrap:anywhere]">{{ token.expiresAt ? (token.expiresAt | date:'mediumDate') : 'Never' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let token" class="[overflow-wrap:anywhere]">{{ tokenStatus(token) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let token">
           @if (!token.revokedAt) {
             <button mat-icon-button type="button" aria-label="Revoke token" title="Revoke token" (click)="revoke(token)">
               <mat-icon>block</mat-icon>
             </button>
           }
-        </span>
-      </div>
-    } @empty {
-      <p class="p-3 text-[#5b6267]">No service tokens have been created.</p>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    @if (tokens.length === 0) {
+      <p class="p-4 text-[#5b6267]">No service tokens have been created.</p>
     }
   </div>
 </section>

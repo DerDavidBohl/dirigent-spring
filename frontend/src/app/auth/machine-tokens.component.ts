@@ -1,15 +1,17 @@
-import {Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {CommonModule, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatChipsModule} from '@angular/material/chips';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
-import {DatePipe} from '@angular/common';
+import {MatTableModule} from '@angular/material/table';
 import {AuthService, CreatedMachineToken, MachineToken} from '../api/auth.service';
 
 @Component({
   selector: 'app-machine-tokens',
-  imports: [FormsModule, MatButtonModule, MatCheckboxModule, MatIconModule, MatInputModule, DatePipe],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatCheckboxModule, MatChipsModule, MatIconModule, MatInputModule, MatTableModule, DatePipe],
   templateUrl: './machine-tokens.component.html',
 })
 export class MachineTokensComponent implements OnInit {
@@ -24,6 +26,8 @@ export class MachineTokensComponent implements OnInit {
     {value: 'webhooks:trigger', label: 'Trigger repository webhooks'}
   ];
 
+  readonly displayedColumns = ['name', 'permissions', 'expiresAt', 'status', 'actions'];
+
   tokens: MachineToken[] = [];
   name = '';
   expiry = '';
@@ -32,7 +36,7 @@ export class MachineTokensComponent implements OnInit {
   error = '';
   busy = false;
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.reload();
@@ -64,12 +68,14 @@ export class MachineTokensComponent implements OnInit {
         this.name = '';
         this.expiry = '';
         this.selectedPermissions = new Set<string>();
-        this.reload();
         this.busy = false;
+        this.cdr.detectChanges();
+        this.reload();
       },
       error: () => {
         this.error = 'The token could not be created. Check its name, permissions, and expiry.';
         this.busy = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -93,7 +99,10 @@ export class MachineTokensComponent implements OnInit {
 
   private reload(): void {
     this.authService.listTokens().subscribe({
-      next: tokens => this.tokens = tokens,
+      next: tokens => {
+        this.tokens = tokens;
+        this.cdr.markForCheck();
+      },
       error: () => this.error = 'Token information could not be loaded.'
     });
   }

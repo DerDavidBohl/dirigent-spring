@@ -60,7 +60,7 @@ The backend suite covers process invocation, registry authentication/properties/
 
 **ID: QUA-005**
 
-Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, OIDC administrator access to token management, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, and local-account CLI lifecycle operations. Frontend verification covers readable identity display, logout success/failure states, responsive login presentation, and a successful Angular production build.
+Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, OIDC administrator access to token management, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, and local-account CLI lifecycle operations. Frontend verification covers readable identity display, logout success/failure states, responsive login presentation, token creation dialog and immediate Material table presentation, and a successful Angular production build.
 
 **Rationale:** Authentication is a security boundary around privileged deployment and secret operations; compilation alone cannot demonstrate correct access policy.
 
