@@ -99,3 +99,17 @@ When a deployment is removed from the configuration, reconciliation invokes Comp
 **Dependencies:** REQ-001, REQ-002, ADR-003, QUA-001
 
 **Verification expectation:** Current behavior can be checked by verifying that command invocation precedes deletion and by comparing thrown process errors with non-zero process results; there is no dedicated removal-flow test coverage.
+
+### Breaking releases must explain changes and upgrades
+
+**ID: REQ-018**
+
+For a release that changes an existing operator workflow or public integration contract incompatibly, release documentation must include a concise changelog entry identifying the breaking changes and a migration guide with ordered actions to upgrade and verify the installation.
+
+**Rationale:** Operators and API consumers need to understand both what changed and what they must do to keep existing installations and integrations working.
+
+**Constraints:** Upgrade guidance must distinguish existing installations from fresh setup and cover required account, configuration, API-client, and integration changes, along with any known data or rollback considerations. It must not imply compatibility or migration automation that the product does not provide.
+
+**Dependencies:** REQ-004, REQ-013, REQ-014, REQ-015, SEC-005
+
+**Verification expectation:** A breaking release has a changelog entry that explicitly marks incompatible behavior, and a linked migration guide provides a complete ordered checklist with a way to verify access and integrations after upgrade.

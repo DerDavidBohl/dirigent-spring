@@ -3,6 +3,8 @@
 # <img src="https://raw.githubusercontent.com/DerDavidBohl/dirigent-spring/latest/assets/icon-background.svg" width="80px"></img> Dirigent
 Tool to manage your docker compose deployments via git.
 
+See the [changelog](CHANGELOG.md) for release notes and the [1.x to 2.0 upgrade guide](docs/upgrading-to-2.0.md) for existing installations.
+
 ## Table of Contents
 
 - [Screenshots](#screenshots)
