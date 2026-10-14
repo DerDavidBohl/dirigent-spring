@@ -46,7 +46,7 @@ Failure or absence of a Gotify destination does not prevent deployment lifecycle
 
 **ID: QUA-004**
 
-The backend suite covers process invocation, registry authentication/properties/client behavior, image-reference parsing, update parsing, local-account and machine-token services, authorization-filter/method-security behavior, webhook-signature verification, and a minimal update-service scenario. Dedicated tests are not present for secret encryption/lifecycle, deployment configuration validation, the Gitea webhook controller contract, deployment start/stop/reconciliation, general API controller contracts, or frontend components. The frontend defines a test script, but no frontend component tests are present in the reviewed source.
+The backend suite covers process invocation, registry authentication/properties/client behavior, image-reference parsing, update parsing, local-account and machine-token services, authorization-filter/method-security behavior, webhook-signature verification, and a minimal update-service scenario. Dedicated tests are not present for secret encryption/lifecycle, deployment configuration validation, the Gitea webhook controller contract, deployment start/stop/reconciliation, or general API controller contracts. Frontend services, guard, routing, theme handling, and pages are covered by test-first Vitest tests (COD-010).
 
 **Rationale:** Independent reconstruction and change review require evidence that behavior works across component boundaries, not only that individual utilities compile.
 
@@ -60,7 +60,7 @@ The backend suite covers process invocation, registry authentication/properties/
 
 **ID: QUA-005**
 
-Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, OIDC administrator access to token management, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, and local-account CLI lifecycle operations. Frontend verification covers readable identity display, logout success/failure states, responsive login presentation, token creation dialog and immediate Material table presentation, and a successful Angular production build.
+Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, OIDC administrator access to token management, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, and local-account CLI lifecycle operations. Frontend verification covers readable identity display, logout success/failure states, responsive login presentation, token creation dialog and immediate token table presentation, and a successful Angular production build.
 
 **Rationale:** Authentication is a security boundary around privileged deployment and secret operations; compilation alone cannot demonstrate correct access policy.
 

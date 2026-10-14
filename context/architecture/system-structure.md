@@ -18,7 +18,7 @@ The system runtime is centered on a Spring Boot backend that reads deployment co
 
 **ID: ADR-002**
 
-The frontend is a lightweight Angular interface that surfaces deployment state, secrets management, and operational actions for the operator.
+The frontend is an Angular single-page application styled exclusively with Tailwind CSS. It is organized as lazy-loaded routes, one chunk per feature area: login, dashboard (start page), deployments, updates, secrets, and machine tokens. It surfaces deployment state, secrets management, and operational actions for the operator and consumes the unchanged backend API contract.
 
 **Rationale:** A web dashboard reduces the need for shell-based operations and supports a more controlled operational workflow for self-hosted administrators.
 

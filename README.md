@@ -193,7 +193,7 @@ docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=pro
 
 Password reset prompts twice without echo. Deletion requires typing the account name and refuses to remove the final local administrator. These operations cannot change OIDC-only identities.
 
-Use the dashboard's **Service tokens** tab to create scoped, revocable tokens for automation. The full token is displayed only once. Send it as `Authorization: Bearer <token>`; never put it in a URL or commit it to a repository. Every token must expire within 366 days; renew integrations by creating a replacement token before expiry. Existing tokens without an expiry are rejected and must be replaced. Human browser sessions remain cookie-based and protected by CSRF tokens.
+Use the dashboard's **Machine tokens** page (`/settings/tokens`) to create scoped, revocable tokens for automation. The full token is displayed only once. Send it as `Authorization: Bearer <token>`; never put it in a URL or commit it to a repository. Every token must expire within 366 days; renew integrations by creating a replacement token before expiry. Existing tokens without an expiry are rejected and must be replaced. Human browser sessions remain cookie-based and protected by CSRF tokens.
 
 Failed local-login attempts are rate limited per source peer and normalized username. When running behind a reverse proxy, restrict direct application access and configure rate limiting at that trusted proxy too; Dirigent does not trust arbitrary forwarded-IP headers.
 
@@ -387,7 +387,7 @@ Runs the current working tree locally with authentication, isolated from real da
 | `make dev`      | Start backend (`127.0.0.1:8080`) and dashboard (`http://localhost:4200`); loads the `basic` scenario if none is loaded |
 | `make scenario` | Load a test scenario (default `basic`, see `dev/scenarios`); then restart `make dev` |
 | `make reset`    | Erase all local test data; refuses to run while the backend is running               |
-| `make test`     | Run backend tests and the frontend production build                                  |
+| `make test`     | Run backend tests, frontend lint and tests, and the frontend production build                                |
 
 - Sign in with `admin` / `admin`. This account exists only in this environment (`dev` profile, test sources) and is never part of the production image.
 - All state (database, secrets, tokens, cloned configuration and deployments) lives in `dev/.state` and is git-ignored. `make reset` deletes it; containers already started by a scenario are not removed.

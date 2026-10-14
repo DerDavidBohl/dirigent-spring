@@ -37,6 +37,6 @@ reset: ## Erase all local test data (database, secrets, tokens, scenario). Stop 
 	@rm -rf $(STATE)
 	@echo "Test environment reset."
 
-test: check ## Run backend tests and the frontend production build
+test: check ## Run backend tests, frontend lint and tests, and the frontend production build
 	@cd backend && mvn -q test
-	@cd frontend && { [ -d node_modules ] || npm install; } && npm run build
+	@cd frontend && { [ -d node_modules ] || npm install; } && npm run lint && npm test && npm run build

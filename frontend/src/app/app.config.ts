@@ -1,15 +1,15 @@
-import {ApplicationConfig, provideZoneChangeDetection} from '@angular/core';
-import {provideRouter} from '@angular/router';
-
+import {ApplicationConfig} from '@angular/core';
+import {provideRouter, withComponentInputBinding} from '@angular/router';
+import {provideHttpClient, withInterceptors, withXsrfConfiguration} from '@angular/common/http';
 import {routes} from './app.routes';
-import {provideHttpClient, withXsrfConfiguration} from '@angular/common/http';
-import {MAT_DIALOG_DEFAULT_OPTIONS} from '@angular/material/dialog';
+import {unauthorizedInterceptor} from './core/auth/unauthorized.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    {provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: {hasBackdrop: true}},
-    provideHttpClient(withXsrfConfiguration({cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN'})),
-    provideZoneChangeDetection({eventCoalescing: true}),
-    provideRouter(routes)
+    provideHttpClient(
+      withXsrfConfiguration({cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN'}),
+      withInterceptors([unauthorizedInterceptor])
+    ),
+    provideRouter(routes, withComponentInputBinding())
   ]
 };

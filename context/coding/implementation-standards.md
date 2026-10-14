@@ -56,19 +56,47 @@ Request-body deserialization and field validation currently use Spring/Jackson d
 
 **Verification expectation:** Current controller contract and error behavior are partly covered by code inspection only; there are no dedicated controller contract tests, migration tests, or concurrency tests for orchestration.
 
-### Angular component-specific styling uses Tailwind utilities
+### Angular frontend styling uses only Tailwind CSS
 
 **ID: COD-005**
 
-New and modified Angular component-specific layout and presentation should use Tailwind utility classes in templates rather than adding or extending component stylesheet rules. Shared base styles and narrowly scoped overrides for global or third-party components may remain in global stylesheets. When modifying an existing component stylesheet, migrate the touched component-specific rules to utilities while preserving established visual behavior and responsive states.
+All frontend layout and presentation is expressed with Tailwind utility classes in templates. Component stylesheets and component-library themes (such as Angular Material) are not used. The single global stylesheet contains only the Tailwind import, the theme tokens derived from the project logo (blue, cyan, and orange-red accents), the dark-mode variant, and base element defaults. Angular CDK may be used for behavior and accessibility primitives such as dialogs and focus handling, never for visual styling.
 
-**Rationale:** A consistent utility-based styling convention keeps new operator UI changes colocated with their markup and avoids growing parallel component CSS patterns.
+**Rationale:** One styling mechanism keeps operator UI changes colocated with their markup, makes theming consistent, and prevents parallel CSS systems from accumulating.
 
-**Constraints:** This standard does not require a repository-wide rewrite of existing component styles. It does not permit removing responsive, theme, focus, or state styling without preserving the corresponding behavior.
+**Constraints:** Responsive, dark-theme, focus, and state styling is part of every component. The ESLint configuration and production build must fail on component `styles`/`styleUrl` usage.
 
-**Dependencies:** ADR-002, UX-005, UX-006
+**Dependencies:** ADR-002, UX-005, UX-006, UX-008, COD-009
 
-**Verification expectation:** Review confirms new component presentation is expressed with Tailwind utilities, component-specific stylesheets are not introduced for new work, and the Angular production build passes.
+**Verification expectation:** Lint and the Angular production build pass; review confirms no component stylesheets or Material imports exist.
+
+### Angular frontend structure is standalone, lazy, and linted
+
+**ID: COD-009**
+
+The frontend uses standalone components and a route table in which every feature area is loaded lazily as its own chunk. Access to feature routes is protected by a functional authentication guard that redirects unauthenticated operators to the login route. API access is confined to dedicated API services (COD-001). The frontend is linted with `angular-eslint`, and lint is part of `make test`.
+
+**Rationale:** Small per-route chunks keep the initial load light, and automated rules keep the structure and styling conventions enforced rather than aspirational.
+
+**Constraints:** The route structure is `/login`, `/` (dashboard), `/deployments`, `/updates`, `/secrets`, and `/settings/tokens`. Unknown paths redirect to the dashboard.
+
+**Dependencies:** ADR-002, COD-001, COD-005, UX-007, QUA-004
+
+**Verification expectation:** The production build output shows a separate chunk per feature route; route and guard tests pass; lint passes.
+
+### Frontend features are developed test-first
+
+**ID: COD-010**
+
+Frontend behavior is specified by Vitest tests (Angular unit-test builder, jsdom) written before the implementation: API services, the authentication guard, routing, the theme service, and each page's states and operator interactions.
+
+**Rationale:** The frontend previously had no tests, so its operator workflows were unprotected during change.
+
+**Constraints:** Tests do not depend on a live backend or a locally installed browser; HTTP is mocked. Frontend dependencies track the latest stable releases compatible with the Angular version in use.
+
+**Dependencies:** QUA-004, COD-009
+
+**Verification expectation:** `npm test` runs without watch mode and passes, and each feature route has at least one test of its main states.
 
 ### README operator guidance stays aligned with the implementation
 
@@ -92,7 +120,7 @@ When a change affects user-visible behavior, supported configuration, CLI operat
 
 **Basis:** QUA-007, QUA-008, and the maintainer request for a professional manual test setup that is easy to start and use.
 
-The repository root `Makefile` is the only supported entry point for local development and test workflows, and `make help` lists its commands. `make dev` starts the backend and the dashboard together, streams the output of both with a per-service prefix, and loads the default scenario when none is loaded. `make scenario SCENARIO=<name>` loads the named scenario from `dev/scenarios/<name>`. `make reset` erases the environment's state and refuses to run while the backend is running. `make test` runs the backend tests and the frontend production build. Environment state lives only in `dev/.state`, which is excluded from version control and from build contexts. New local workflows are added as Makefile targets with a help description rather than as separate scripts.
+The repository root `Makefile` is the only supported entry point for local development and test workflows, and `make help` lists its commands. `make dev` starts the backend and the dashboard together, streams the output of both with a per-service prefix, and loads the default scenario when none is loaded. `make scenario SCENARIO=<name>` loads the named scenario from `dev/scenarios/<name>`. `make reset` erases the environment's state and refuses to run while the backend is running. `make test` runs the backend tests, the frontend lint, the frontend tests, and the frontend production build. Environment state lives only in `dev/.state`, which is excluded from version control and from build contexts. New local workflows are added as Makefile targets with a help description rather than as separate scripts.
 
 **Rationale:** One discoverable, documented entry point keeps manual testing repeatable and avoids divergent ad-hoc scripts.
 
