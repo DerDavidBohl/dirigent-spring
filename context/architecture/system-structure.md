@@ -22,11 +22,11 @@ The frontend is an Angular single-page application styled exclusively with Tailw
 
 **Rationale:** A web dashboard reduces the need for shell-based operations and supports a more controlled operational workflow for self-hosted administrators.
 
-**Constraints:** The frontend is a presentation layer and must rely on the backend API for authoritative state and actions.
+**Constraints:** The frontend is a presentation layer and must rely on the backend API for authoritative state and actions. When the backend hosts the frontend, requests for client-side routes (including page reloads and direct links to subroutes) must serve the application entry page; `/api/**` and existing static assets keep their normal behavior, and unknown API paths must not return the entry page.
 
 **Dependencies:** REQ-002, REQ-014, REQ-015, UX-001, UX-006
 
-**Verification expectation:** Acceptance review confirms the frontend presents a coherent operational view without performing privileged actions beyond the API contract.
+**Verification expectation:** Acceptance review confirms the frontend presents a coherent operational view without performing privileged actions beyond the API contract. Reloading a subroute such as `/deployments` on the backend-hosted frontend shows the application rather than an error page.
 
 ### Deployment configuration is repository-based and ordered by dependency
 
