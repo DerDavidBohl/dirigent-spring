@@ -33,7 +33,7 @@ See the [changelog](CHANGELOG.md) for release notes and the [1.x to 2.0 upgrade 
 
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/2e0ab3e1-d702-4cc2-9c05-055dc41136ff)
+![image](/assets/screenshots/dashboard.png)
 
 ## Why Dirigent?
 
