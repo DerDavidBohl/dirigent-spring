@@ -58,10 +58,16 @@ export type SecretEditorResult =
         <div class="relative mt-2">
           <input name="dep-search" type="text" autocomplete="off" placeholder="Search deployments" aria-label="Add deployment"
                  class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950"
-                 [ngModel]="query()" (ngModelChange)="query.set($event); open.set(true)" (focus)="open.set(true)"
-                 (keydown.enter)="$event.preventDefault(); addFirst()" (keydown.escape)="closeList($event)">
-          @if (open() && suggestions().length > 0) {
-            <ul class="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-900" data-testid="suggestions">
+                 [ngModel]="query()" (ngModelChange)="query.set($event); open.set(true)" (focus)="open.set(true)" (blur)="open.set(false)"
+                 (keydown.enter)="$event.preventDefault(); addTyped()" (keydown.escape)="closeList($event)">
+          @if (open() && (suggestions().length > 0 || freeText())) {
+            <ul class="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-900" data-testid="suggestions"
+                (mousedown)="$event.preventDefault()">
+              @if (freeText(); as text) {
+                <li>
+                  <button type="button" class="w-full px-3 py-1.5 text-left text-sm italic hover:bg-slate-100 dark:hover:bg-slate-800" data-testid="add-free" (click)="add(text)">Add &quot;{{ text }}&quot;</button>
+                </li>
+              }
               @for (name of suggestions(); track name) {
                 <li>
                   <button type="button" class="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800" (click)="add(name)">{{ name }}</button>
@@ -112,6 +118,12 @@ export class SecretEditor {
   protected readonly open = signal(false);
   // Associations may reference deployments that no longer exist; keep them visible.
   protected readonly selectedList = computed(() => [...this.selected()].sort());
+  // Typed text that matches no known or selected deployment can be added as-is (future deployments).
+  protected readonly freeText = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    const taken = [...this.data.deployments, ...this.selected()].some(n => n.toLowerCase() === q);
+    return q === '' || taken ? null : this.query().trim();
+  });
   protected readonly suggestions = computed(() => {
     const q = this.query().trim().toLowerCase();
     return this.data.deployments.filter(n => !this.selected().has(n) && n.toLowerCase().includes(q));
@@ -130,11 +142,13 @@ export class SecretEditor {
     this.query.set('');
   }
 
-  protected addFirst(): void {
-    const first = this.suggestions()[0];
-    if (first && this.query().trim() !== '') {
-      this.add(first);
+  protected addTyped(): void {
+    const q = this.query().trim();
+    if (q === '') {
+      return;
     }
+    const known = this.data.deployments.find(n => n.toLowerCase() === q.toLowerCase());
+    this.add(known ?? q);
   }
 
   protected closeList(event: Event): void {

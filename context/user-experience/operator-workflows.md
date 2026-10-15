@@ -36,7 +36,7 @@ Operators can create, update, associate, and remove deployment secrets. The inte
 
 **Rationale:** Operators need to manage runtime configuration while reducing accidental disclosure during routine review.
 
-**Constraints:** Secret list responses do not include stored values. The editor displays a password field labelled “Value” with a hint that a blank value keeps the stored value. Deployments are associated through an autocomplete text box that filters the available deployment names as the operator types; selected deployments are shown as removable chips, so the dialog stays compact with many deployments. Restarting associated deployments is an optional checkbox. Deletion requires a second confirmation click in the same dialog.
+**Constraints:** Secret list responses do not include stored values. The editor displays a password field labelled “Value” with a hint that a blank value keeps the stored value. Deployments are associated through an autocomplete text box that filters the available deployment names as the operator types; selected deployments are shown as removable chips, so the dialog stays compact with many deployments. The suggestion list closes when the box loses focus, and a name that matches no known deployment can be added as free text, so secrets can be associated with deployments that do not exist yet. Restarting associated deployments is an optional checkbox. Deletion requires a second confirmation click in the same dialog.
 
 **Dependencies:** REQ-003, SEC-001, QUA-002
 

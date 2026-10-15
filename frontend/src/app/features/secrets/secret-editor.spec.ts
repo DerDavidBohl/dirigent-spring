@@ -56,7 +56,7 @@ describe('SecretEditor', () => {
     await fixture.whenStable();
     type(el, 'dep-search', 'br');
     fixture.detectChanges();
-    const items = [...el.querySelectorAll('[data-testid=suggestions] button')] as HTMLButtonElement[];
+    const items = [...el.querySelectorAll('[data-testid=suggestions] li:not(:has([data-testid=add-free])) button')] as HTMLButtonElement[];
     expect(items.map(i => i.textContent?.trim())).toEqual(['bravo']);
     items[0].click();
     fixture.detectChanges();
@@ -71,6 +71,23 @@ describe('SecretEditor', () => {
     fixture.detectChanges();
     (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
     expect(close.mock.calls[0][0].secret.deployments).toEqual([]);
+  });
+
+  it('adds free-text deployments on Enter and hides the list on blur', async () => {
+    const {fixture, el} = render({secret: existing, deployments: ['a', 'beta']});
+    await fixture.whenStable();
+    const input = el.querySelector('[name=dep-search]') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+    type(el, 'dep-search', 'future');
+    fixture.detectChanges();
+    expect(el.querySelector('[data-testid=suggestions]')).not.toBeNull();
+    input.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(el.querySelector('[data-testid=suggestions]')).toBeNull();
+    input.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+    fixture.detectChanges();
+    (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    expect(close.mock.calls[0][0].secret.deployments.sort()).toEqual(['a', 'future']);
   });
 
   it('requires a second click to delete', async () => {
