@@ -88,7 +88,7 @@ Operators can sign in with a local account or the configured OIDC provider witho
 
 **ID: UX-007**
 
-After sign-in, operators land on a dashboard at `/`. It shows, from top to bottom: a tile per deployment state with its count, each linking to the deployments page filtered by that state; a "Needs attention" panel listing failed deployments with their latest messages; a "Pending updates" panel listing available image updates with a "Check for updates" button; and the instance name and Git source. The dashboard offers no start, stop, or other lifecycle actions. Each panel shows its own loading, error, and last-refreshed state.
+After sign-in, operators land on a dashboard at `/`. It shows, from top to bottom: a tile for each deployment state that currently has one or more deployments, each showing its count and linking to the deployments page filtered by that state; a "Needs attention" panel listing failed deployments with their latest messages; a "Pending updates" panel listing available image updates with a "Check for updates" button; and the instance name and Git source, with the Git source presented as an external link. The dashboard offers no start, stop, or other lifecycle actions. Each panel shows its own loading, error, and last-refreshed state.
 
 **Rationale:** Operators need an at-a-glance health overview before drilling into a specific deployment, without risking accidental actions.
 
@@ -96,7 +96,7 @@ After sign-in, operators land on a dashboard at `/`. It shows, from top to botto
 
 **Dependencies:** UX-001, UX-005, UX-006, REQ-002, ADR-002, COD-009
 
-**Verification expectation:** Tests confirm the state counts, filter links, attention list, pending updates, absence of lifecycle actions, and the per-panel loading and error states.
+**Verification expectation:** Tests confirm only nonzero state counts are shown, their filter links are correct, the Git source is linked, and the attention list, pending updates, absence of lifecycle actions, and per-panel loading and error states are correct.
 
 ### The interface follows the logo palette and supports light and dark themes
 

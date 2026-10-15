@@ -37,13 +37,15 @@ describe('Dashboard', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  it('counts deployments per state and links tiles to the filtered deployments page', () => {
+  it('shows nonzero deployment counts and links tiles to the filtered deployments page', () => {
     const {el} = render([dep('a', 'RUNNING'), dep('b', 'RUNNING'), dep('c', 'FAILED', 'boom')]);
     const tiles = Array.from(el.querySelectorAll('[data-testid=state-tile]'));
-    expect(tiles.length).toBe(8);
+    expect(tiles.length).toBe(2);
     const running = tiles.find(t => t.textContent?.includes('RUNNING'))!;
     expect(running.querySelector('[data-testid=tile-count]')?.textContent?.trim()).toBe('2');
     expect(running.getAttribute('href')).toBe('/deployments?state=RUNNING');
+    expect(tiles.find(t => t.textContent?.includes('FAILED'))?.getAttribute('href')).toBe('/deployments?state=FAILED');
+    expect(tiles.some(t => t.textContent?.includes('STOPPED'))).toBe(false);
   });
 
   it('lists failed deployments with their message', () => {
@@ -63,6 +65,10 @@ describe('Dashboard', () => {
     expect(el.querySelector('[data-testid=update-item]')?.textContent).toContain('nginx:1');
     expect(el.querySelector('[data-testid=instance-name]')?.textContent).toBe('home-lab');
     expect(el.querySelector('[data-testid=git-url]')?.textContent).toContain('git.example');
+    const gitLink = el.querySelector('[data-testid=git-url] a');
+    expect(gitLink?.getAttribute('href')).toBe('https://git.example/repo.git');
+    expect(gitLink?.getAttribute('target')).toBe('_blank');
+    expect(gitLink?.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
   it('offers no lifecycle actions', () => {

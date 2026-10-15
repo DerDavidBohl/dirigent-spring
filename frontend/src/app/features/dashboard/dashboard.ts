@@ -83,7 +83,7 @@ import {StatusLine} from '../../ui/status-line';
           <dt class="font-medium">Instance</dt>
           <dd data-testid="instance-name">{{ info.instanceName }}</dd>
           <dt class="font-medium">Git source</dt>
-          <dd class="break-all" data-testid="git-url">{{ info.gitUrl }}</dd>
+          <dd class="break-all" data-testid="git-url"><a href="{{ info.gitUrl }}" target="_blank" rel="noopener noreferrer">{{ info.gitUrl }}</a></dd>
         </dl>
       }
       <app-status-line [loading]="system.loading()" [error]="system.error()" [lastUpdated]="system.lastUpdated()" />
@@ -101,7 +101,7 @@ export class Dashboard {
 
   protected readonly tiles = computed(() => {
     const list = this.deployments.data() ?? [];
-    return DEPLOYMENT_STATES.map(state => ({state, count: list.filter(d => d.state === state).length}));
+    return DEPLOYMENT_STATES.map(state => ({state, count: list.filter(d => d.state === state).length})).filter(item => item.count > 0);
   });
   protected readonly failed = computed(() => (this.deployments.data() ?? []).filter(d => d.state === 'FAILED'));
 
