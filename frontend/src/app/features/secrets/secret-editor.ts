@@ -45,12 +45,29 @@ export type SecretEditorResult =
 
       <fieldset class="mt-4">
         <legend class="text-sm font-medium">Deployments</legend>
-        <div class="mt-1 flex flex-col gap-1">
-          @for (name of data.deployments; track name) {
-            <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" class="size-4 accent-brand-600" [name]="'dep-' + name" [checked]="selected().has(name)" (change)="toggle(name)">
-              {{ name }}
-            </label>
+        @if (selected().size > 0) {
+          <ul class="mt-1 flex flex-wrap gap-1" data-testid="chips">
+            @for (name of selectedList(); track name) {
+              <li class="flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pl-3 pr-1 text-sm dark:bg-slate-800">
+                {{ name }}
+                <button type="button" class="size-5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700" [attr.aria-label]="'Remove ' + name" (click)="toggle(name)">&times;</button>
+              </li>
+            }
+          </ul>
+        }
+        <div class="relative mt-2">
+          <input name="dep-search" type="text" autocomplete="off" placeholder="Search deployments" aria-label="Add deployment"
+                 class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950"
+                 [ngModel]="query()" (ngModelChange)="query.set($event); open.set(true)" (focus)="open.set(true)"
+                 (keydown.enter)="$event.preventDefault(); addFirst()" (keydown.escape)="closeList($event)">
+          @if (open() && suggestions().length > 0) {
+            <ul class="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-900" data-testid="suggestions">
+              @for (name of suggestions(); track name) {
+                <li>
+                  <button type="button" class="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800" (click)="add(name)">{{ name }}</button>
+                </li>
+              }
+            </ul>
           }
         </div>
       </fieldset>
@@ -91,12 +108,40 @@ export class SecretEditor {
   protected readonly valid = computed(() =>
     this.key().trim() !== '' && this.env().trim() !== '' && (this.existing || this.value() !== ''));
 
+  protected readonly query = signal('');
+  protected readonly open = signal(false);
+  // Associations may reference deployments that no longer exist; keep them visible.
+  protected readonly selectedList = computed(() => [...this.selected()].sort());
+  protected readonly suggestions = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    return this.data.deployments.filter(n => !this.selected().has(n) && n.toLowerCase().includes(q));
+  });
+
   protected toggle(name: string): void {
     const next = new Set(this.selected());
     if (!next.delete(name)) {
       next.add(name);
     }
     this.selected.set(next);
+  }
+
+  protected add(name: string): void {
+    this.selected.set(new Set(this.selected()).add(name));
+    this.query.set('');
+  }
+
+  protected addFirst(): void {
+    const first = this.suggestions()[0];
+    if (first && this.query().trim() !== '') {
+      this.add(first);
+    }
+  }
+
+  protected closeList(event: Event): void {
+    if (this.open()) {
+      event.stopPropagation();
+      this.open.set(false);
+    }
   }
 
   protected save(): void {

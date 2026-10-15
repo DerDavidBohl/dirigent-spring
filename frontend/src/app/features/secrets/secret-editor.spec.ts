@@ -51,6 +51,28 @@ describe('SecretEditor', () => {
     expect((el.querySelector('button[type=submit]') as HTMLButtonElement).disabled).toBe(false);
   });
 
+  it('adds deployments via filtered autocomplete and removes them via chips', async () => {
+    const {fixture, el} = render({secret: existing, deployments: ['a', 'beta', 'bravo']});
+    await fixture.whenStable();
+    type(el, 'dep-search', 'br');
+    fixture.detectChanges();
+    const items = [...el.querySelectorAll('[data-testid=suggestions] button')] as HTMLButtonElement[];
+    expect(items.map(i => i.textContent?.trim())).toEqual(['bravo']);
+    items[0].click();
+    fixture.detectChanges();
+    (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    expect(close.mock.calls[0][0].secret.deployments.sort()).toEqual(['a', 'bravo']);
+  });
+
+  it('removes a deployment with its chip button', async () => {
+    const {fixture, el} = render({secret: existing, deployments: ['a']});
+    await fixture.whenStable();
+    (el.querySelector('[data-testid=chips] button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    expect(close.mock.calls[0][0].secret.deployments).toEqual([]);
+  });
+
   it('requires a second click to delete', async () => {
     const {fixture, el} = render({secret: existing, deployments: ['a']});
     await fixture.whenStable();
