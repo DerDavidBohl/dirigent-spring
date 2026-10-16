@@ -50,11 +50,11 @@ The backend suite covers process invocation, registry authentication/properties/
 
 **Rationale:** Independent reconstruction and change review require evidence that behavior works across component boundaries, not only that individual utilities compile.
 
-**Constraints:** There is no documented release gate requiring a particular test/build/security sequence. Backend test execution includes environment-dependent Docker and Spring-context tests; frontend production build is available. No numerical availability, latency, or recovery promise is defined.
+**Constraints:** Backend tests in the required `make test` suite must not depend on public registries or a locally running Docker daemon; integration tests that need external services must manage their own fixtures or remain outside the default gate. Spring-context tests should use only the application configuration needed for the behavior under test. Frontend production build is available. Pull requests and image builds must pass the repository's `make test` suite for the exact ref being built. The manual release workflow must pass the same suite before changing versions or creating a release tag, and image publication must wait for the applicable test gate. No numerical availability, latency, or recovery promise is defined.
 
 **Dependencies:** QUA-001, QUA-002, QUA-003, COD-002, SEC-006
 
-**Verification expectation:** Current evidence is the test suite and build commands run by maintainers; no automated enforcement of this release evidence is specified here.
+**Verification expectation:** Pull-request and image-build workflows run `make test` against the same resolved ref that is built; the image job depends on successful tests. The manual publish job runs `make test` before committing version changes or creating a tag. The default suite passes without public registry access or a local Docker daemon. Existing test-coverage gaps listed above remain explicit limitations.
 
 ### Authentication and authorization behavior is covered by focused tests
 

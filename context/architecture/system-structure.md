@@ -97,3 +97,17 @@ The Spring backend is the authority for authentication and authorization. Browse
 **Dependencies:** REQ-004, REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010, SEC-011
 
 **Verification expectation:** Architecture review confirms session, API-token, and webhook authentication remain separate and each protected route has an explicit authorization policy.
+
+### Main-to-dev synchronization has one merge-based owner
+
+**ID: ADR-008**
+
+Changes to `main` are propagated to `dev` by one automated merge-based synchronization flow. Release publication does not independently update `dev`; this avoids competing branch writers and preserves commits already present on `dev`.
+
+**Rationale:** A single synchronization owner makes branch history predictable and avoids races between merge and rebase workflows during a release.
+
+**Constraints:** The synchronization flow requires permission to update `dev` and must not rewrite its existing history. Branch protection must permit the configured automation or the synchronization must be adapted to the repository's approved review process.
+
+**Dependencies:** QUA-004, SEC-013
+
+**Verification expectation:** A main-branch update results in a merge of the latest `main` into `dev`; repeated or concurrent synchronization requests do not create competing updates or rewrite `dev` history.

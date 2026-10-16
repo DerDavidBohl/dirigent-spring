@@ -171,3 +171,17 @@ The manual test environment may create a fixed, well-known local administrator a
 **Dependencies:** SEC-007, SEC-011, QUA-005, QUA-007
 
 **Verification expectation:** Tests or review show that without the test-environment mode no account is created automatically, and that the production image and run configuration do not enable it.
+
+### CI workflow inputs and publication permissions are constrained
+
+**ID: SEC-013**
+
+Workflow dispatch inputs and repository-dispatch payloads are untrusted data. They must not be interpreted as shell source, and values used as release versions or Git references must be validated against their allowed format before use. Workflow jobs receive only the permissions required for their task; package publication and branch updates are restricted to the jobs that perform those operations. Secrets and write-capable credentials are not exposed to pull-request code.
+
+**Rationale:** CI workflows can hold repository write credentials, signing material, and package-publishing access. Unsafe input handling or unnecessarily broad permissions can turn a workflow trigger into credential exposure or unauthorized publication.
+
+**Constraints:** Repository settings and branch protections remain part of the trust boundary. Pull-request validation must remain available without write-capable credentials. Release credentials are maintained as protected repository secrets and must be scoped to the repository operations they require.
+
+**Dependencies:** SEC-006, SEC-011, QUA-004
+
+**Verification expectation:** Review confirms untrusted values are validated before use, are not interpolated into shell programs, and write permissions are limited to publishing or branch-synchronization jobs. Pull-request jobs have read-only repository permissions and no publication credentials.

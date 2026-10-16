@@ -118,7 +118,7 @@ Resolved against the current architecture by ADR-005 and ADR-006. The service ex
 
 **ID: CLR-011**
 
-Resolved against the current test setup by QUA-004. Backend tests cover process invocation and selected registry/image parsing/authentication paths. Dedicated secret, config-validation, webhook, lifecycle-controller, frontend, and accessibility tests are absent. No enforced release gate or numeric service target is established.
+Resolved by QUA-004. Backend tests cover process invocation and selected registry/image parsing/authentication paths. Dedicated secret, config-validation, webhook, lifecycle-controller, frontend, and accessibility tests remain absent. Pull-request and image-build workflows run `make test`, and manual publishing passes that gate before version changes and tagging. No numeric service target is established.
 
 **Status:** Resolved for the current verification policy.
 

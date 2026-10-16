@@ -2,7 +2,7 @@ name: Build Docker Image
 on:
   workflow_dispatch:
   repository_dispatch:
-    types: [tag-created, branch-updated]
+    types: [branch-updated]
   pull_request:
     types: [opened, reopened, synchronize]
   push:
@@ -16,44 +16,114 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push-image:
+  resolve-ref:
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      ref: ${{ steps.refs.outputs.ref }}
+    steps:
+      - name: Resolve checkout ref
+        id: refs
+        env:
+          DISPATCH_TAG: ${{ github.event.client_payload.tag }}
+          DISPATCH_BRANCH: ${{ github.event.client_payload.branch }}
+        run: |
+          REF="${GITHUB_REF}"
+          if [ "${GITHUB_EVENT_NAME}" = "repository_dispatch" ]; then
+            if [ -n "$DISPATCH_TAG" ]; then
+              REF="refs/tags/$DISPATCH_TAG"
+            elif [ -n "$DISPATCH_BRANCH" ]; then
+              REF="refs/heads/$DISPATCH_BRANCH"
+            fi
+          fi
+
+          if ! git check-ref-format "$REF"; then
+            printf 'Invalid checkout ref: %s\n' "$REF" >&2
+            exit 1
+          fi
+
+          printf 'ref=%s\n' "$REF" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: resolve-ref
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.resolve-ref.outputs.ref }}
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Run test suite
+        run: make test
+
+  build-pull-request:
+    if: github.event_name == 'pull_request'
+    needs: [resolve-ref, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.resolve-ref.outputs.ref }}
+          persist-credentials: false
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          context: git
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - name: Build Docker image without publishing
+        uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  publish-image:
+    if: github.event_name != 'pull_request'
+    needs: [resolve-ref, test]
     runs-on: 
       - ubuntu-latest
       
     permissions:
       contents: read
       packages: write
-      attestations: write
-      id-token: write
       
     steps:
-      - name: Set REF and NAME based on event
-        id: refs
-        run: |
-          REF="${GITHUB_REF}"
-          NAME=""
-          
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            if [ -n "${{ github.event.client_payload.tag }}" ]; then
-              NAME="${{ github.event.client_payload.tag }}"
-              REF="refs/tags/${NAME}"
-            elif [ -n "${{ github.event.client_payload.branch }}" ]; then
-              NAME="${{ github.event.client_payload.branch }}"
-              REF="refs/heads/${NAME}"
-            fi
-          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            NAME="${GITHUB_REF#refs/tags/}"
-          elif [[ "${GITHUB_REF}" == refs/heads/* ]]; then
-            NAME="${GITHUB_REF#refs/heads/}"
-          fi
-          
-          echo "REF=$REF" >> $GITHUB_ENV
-          echo "NAME=$NAME" >> $GITHUB_ENV
-
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.NAME != '' && env.REF || '' }}
+          ref: ${{ needs.resolve-ref.outputs.ref }}
+          persist-credentials: false
 
       - name: Log in to the Container registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
@@ -81,6 +151,6 @@ jobs:
         uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

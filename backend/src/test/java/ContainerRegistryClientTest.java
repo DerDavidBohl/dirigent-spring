@@ -1,70 +1,54 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.Duration;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.davidbohl.dirigent.deployments.updates.ContainerRegistryClient;
 import org.davidbohl.dirigent.deployments.updates.RegistryAuthProperties;
-import org.davidbohl.dirigent.deployments.updates.exception.CouldNotGetManifestDigestFromRegistryFailedException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.context.SpringBootTest;
 
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient.Request;
-import com.github.dockerjava.transport.DockerHttpClient.Response;
+import com.sun.net.httpserver.HttpServer;
 
-@SpringBootTest(classes = ContainerRegistryClient.class)
-@EnableConfigurationProperties(RegistryAuthProperties.class)
-public class ContainerRegistryClientTest {
+class ContainerRegistryClientTest {
 
-@Autowired
-private ContainerRegistryClient client;
+    private HttpServer server;
 
-    @Test
-    void checkGhcrIoRegistry() throws CouldNotGetManifestDigestFromRegistryFailedException  {
-        client.getRegistryDigest("ghcr.io", "derdavidbohl/dirigent-spring", "latest");
-    }
-    
-    @Test
-    void checkDockerImage() throws CouldNotGetManifestDigestFromRegistryFailedException {
-        client.getRegistryDigest("https://registry-1.docker.io", "mcp/slack", "latest");
+    @AfterEach
+    void stopServer() {
+        if (server != null) {
+            server.stop(0);
+        }
     }
 
     @Test
-    void checkOs() {
-        String arch = System.getProperty("os.arch");
-        String os = System.getProperty("os.name");
+    void retrievesManifestDigestFromLocalRegistry() throws Exception {
+        List<String> requestedPaths = new CopyOnWriteArrayList<>();
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            requestedPaths.add(path);
+            byte[] body = path.endsWith("/manifests/latest")
+                    ? "{\"config\":{\"digest\":\"sha256:local\"}}".getBytes(StandardCharsets.UTF_8)
+                    : new byte[0];
+            exchange.sendResponseHeaders(200, body.length == 0 ? -1 : body.length);
+            if (body.length > 0) {
+                try (OutputStream responseBody = exchange.getResponseBody()) {
+                    responseBody.write(body);
+                }
+            }
+            exchange.close();
+        });
+        server.start();
 
-        System.err.println(os + "/" + arch);
+        ContainerRegistryClient client = new ContainerRegistryClient(new RegistryAuthProperties());
+        String digest = client.getRegistryDigest(
+                "http://127.0.0.1:" + server.getAddress().getPort(), "team/image", "latest");
+
+        assertEquals("sha256:local", digest);
+        assertEquals(List.of("/v2/", "/v2/team/image/manifests/latest"), requestedPaths);
     }
-    
-
-    @Test
-    void dockerClient() {
-        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
-
-        DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
-                .dockerHost(config.getDockerHost())
-                .sslConfig(config.getSSLConfig())
-                .maxConnections(100)
-                .connectionTimeout(Duration.ofSeconds(30))
-                .responseTimeout(Duration.ofSeconds(45))
-                .build();
-
-
-        Request request = Request.builder()
-            .method(Request.Method.GET)
-            .path("/_ping")
-            .build();
-
-        Response response = httpClient.execute(request);
-
-        assertEquals(200, response.getStatusCode());
-        
-    }
-
 }
