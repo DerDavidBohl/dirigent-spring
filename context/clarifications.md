@@ -16,11 +16,11 @@ Resolved against the current code by REQ-002. The implementation exposes the lis
 
 **ID: CLR-002**
 
-Resolved by SEC-005. Application-level authentication is not currently provided; operators must restrict network access to trusted users and systems. Future application authentication remains a suggested improvement, not an approved current or future delivery requirement.
+Resolved by REQ-014 through REQ-017, SEC-004, SEC-005, SEC-007 through SEC-011, ADR-007, and UX-006. The approved model supports local accounts and optional HTTPS-only OIDC; all successfully authenticated users from the configured issuer are authorized unless an optional provider group restriction is configured. Local accounts use CLI password reset and deletion with final-local-admin protection. Machine tokens require expiry, login is rate limited, local build secrets are excluded from artifacts, and Gitea webhooks use the dedicated `webhooks:trigger` token permission.
 
 **Status:** Resolved for the current access model.
 
-**Dependencies:** SEC-005, ADR-001, ADR-002
+**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010, SEC-011, ADR-007, UX-006
 
 ### Quantitative service-quality targets
 
@@ -118,7 +118,7 @@ Resolved against the current architecture by ADR-005 and ADR-006. The service ex
 
 **ID: CLR-011**
 
-Resolved against the current test setup by QUA-004. Backend tests cover process invocation and selected registry/image parsing/authentication paths. Dedicated secret, config-validation, webhook, lifecycle-controller, frontend, and accessibility tests are absent. No enforced release gate or numeric service target is established.
+Resolved by QUA-004. Backend tests cover process invocation and selected registry/image parsing/authentication paths. Dedicated secret, config-validation, webhook, lifecycle-controller, frontend, and accessibility tests remain absent. Pull-request and image-build workflows run `make test`, and manual publishing passes that gate before version changes and tagging. No numeric service target is established.
 
 **Status:** Resolved for the current verification policy.
 
@@ -134,3 +134,13 @@ Resolved against the current code by COD-004. Request and YAML validation mostly
 **Status:** Resolved at the normative convention level.
 
 **Dependencies:** COD-001, COD-002, COD-003, ADR-001, ADR-002, QUA-001
+
+### Initial frontend bundle size
+
+**ID: CLR-013**
+
+The initial frontend bundle exceeds the 500 kB warning budget and, with the Material date picker for machine token expiry (UX-006), reached 1.06 MB. The initial error budget was raised from 1 MB to 1.2 MB as a quick fix. Open: lazy-load rarely used views, such as machine tokens and secrets, so the initial bundle shrinks and the error budget can return to 1 MB or lower.
+
+**Status:** Open.
+
+**Dependencies:** UX-006

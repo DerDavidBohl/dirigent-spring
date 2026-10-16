@@ -42,3 +42,6 @@ backend/data/
 /deployments/
 /config/
 frontend/proxy.conf.json
+
+### Manual test environment ###
+dev/.state/

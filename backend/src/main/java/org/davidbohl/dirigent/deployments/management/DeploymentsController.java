@@ -15,6 +15,7 @@ import org.davidbohl.dirigent.deployments.state.entity.DeploymentStateEntity;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,21 +41,25 @@ public class DeploymentsController {
     }
 
     @PostMapping("/{name}/start")
+    @Secured({"ROLE_ADMIN", "SCOPE_deployments:write"})
     public void startDeployment(@PathVariable String name, @RequestParam(required = false) boolean forceRecreate) {
         applicationEventPublisher.publishEvent(new NamedDeploymentStartRequestedEvent(this, name, forceRecreate));
     }
 
     @PostMapping("/{name}/stop")
+    @Secured({"ROLE_ADMIN", "SCOPE_deployments:write"})
     public void stopDeployment(@PathVariable String name) {
         applicationEventPublisher.publishEvent(new NamedDeploymentStopRequestedEvent(this, name));
     }
 
     @PostMapping("/all/start")
+    @Secured({"ROLE_ADMIN", "SCOPE_deployments:write"})
     public void startAllDeployments(@RequestParam(required = false) boolean forceRecreate) {
         applicationEventPublisher.publishEvent(new AllDeploymentsStartRequestedEvent(this, forceRecreate));
     }
 
     @GetMapping()
+    @Secured({"ROLE_ADMIN", "SCOPE_deployments:read"})
     public List<DeploymentDto> getDeployments() {
         DeploynentConfiguration configuration = this.deploymentsConfigurationProvider.getCachedConfiguration();
         List<DeploymentStateEntity> deploymentStates = this.deploymentStatePersistingService.getDeploymentStates();

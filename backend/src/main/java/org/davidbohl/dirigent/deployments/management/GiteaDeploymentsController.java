@@ -5,6 +5,8 @@ import org.davidbohl.dirigent.deployments.management.event.SourceDeploymentStart
 import org.davidbohl.dirigent.deployments.management.model.GiteaRequestBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController()
 @RequestMapping("/api/v1/gitea")
-// SEC-004: Webhook trust is enforced by the deployment network boundary.
+// SEC-004: Require a machine token dedicated to webhook triggering.
 public class GiteaDeploymentsController {
 
     private final ApplicationEventPublisher applicationEventPublisher;
@@ -26,11 +28,11 @@ public class GiteaDeploymentsController {
 
     // REQ-004: Route configured repository events into deployment reconciliation.
     @PostMapping()
-    public void webHook(@RequestBody GiteaRequestBody body) {
-
+    @Secured("SCOPE_webhooks:trigger")
+    public ResponseEntity<Void> webHook(@RequestBody GiteaRequestBody body) {
         if(body.repository().cloneUrl().equals(configUrl)) {
             applicationEventPublisher.publishEvent(new RecreateAllDeploymentStatesEvent(this));
-            return;
+            return ResponseEntity.ok().build();
         }
 
         String cleanRef = body.ref();
@@ -41,6 +43,7 @@ public class GiteaDeploymentsController {
         }
 
         applicationEventPublisher.publishEvent(new SourceDeploymentStartRequestedEvent(this, body.repository().cloneUrl(), cleanRef));
+        return ResponseEntity.ok().build();
     }
 
 }

@@ -6,14 +6,60 @@ on:
       version:
         description: 'Version number (z.B. 1.2.3)'
         required: true
+        type: string
 
+permissions: {}
 
 jobs:
+  validate-and-test:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+    steps:
+      - name: Validate release version
+        id: validate
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Version must be a semantic version in X.Y.Z format." >&2
+            exit 1
+          fi
+          printf 'version=%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run test suite
+        run: make test
+
   update-and-tag:
     if: github.ref == 'refs/heads/main'
+    needs: validate-and-test
     permissions:
-      contents: write
+      contents: read
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.validate-and-test.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -34,15 +80,11 @@ jobs:
 
       - name: Update pom.xml version
         working-directory: ./backend
-        run: mvn versions:set -DnewVersion=${{ github.event.inputs.version }}
+        run: mvn versions:set "-DnewVersion=$VERSION"
 
       - name: Update package.json version
         working-directory: ./frontend
-        run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
-
-      - name: Install npm dependencies
-        working-directory: ./frontend
-        run: npm install
+        run: npm version "$VERSION" --no-git-tag-version
 
       - name: Import GPG key
         run: |
@@ -58,24 +100,12 @@ jobs:
       - name: Commit version changes
         run: |
           git add ./backend/pom.xml ./frontend/package.json ./frontend/package-lock.json
-          git commit -S -m "Bump version to ${{ github.event.inputs.version }}"
+          git commit -S -m "Bump version to $VERSION"
 
       - name: Push changes to main branch
         run: git push origin HEAD:main
 
       - name: Create and push tag
         run: |
-          git tag -s v${{ github.event.inputs.version }} -m "Release v${{ github.event.inputs.version }}"
-          git push origin v${{ github.event.inputs.version }}
-      - name: Merge main into dev
-        run: |
-          git checkout dev
-          git pull origin dev
-          git merge main
-          git push origin dev
-      - name: Trigger Docker build via repository_dispatch
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ secrets.PUSH_PAT }}
-          event-type: tag-created
-          client-payload: '{"tag": "v${{ github.event.inputs.version }}"}'
+          git tag -s "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"

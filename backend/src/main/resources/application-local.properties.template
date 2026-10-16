@@ -2,3 +2,4 @@ dirigent.deployments.git.url=
 dirigent.git.authToken=
 spring.h2.console.enabled=true
 dirigent.secrets.encryption.key=
+dirigent.auth.cookie-secure=false

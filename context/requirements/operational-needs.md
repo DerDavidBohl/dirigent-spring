@@ -50,11 +50,11 @@ When an operator configures a repository webhook, a change event for a managed d
 
 **Rationale:** Repository-driven triggers reduce manual deployment steps while preserving version-controlled configuration as the source of changes.
 
-**Constraints:** Webhook use is optional. The receiver accepts a JSON body containing `ref` and a repository object with `clone_url`; it does not check the event-type header or an application signature. A clone URL equal to the configured deployment-list repository URL requests full reconciliation. Other clone URLs publish a source/ref start request; the orchestration service acts only on configured source/ref matches. Requests rely on externally managed network restriction as described by SEC-004.
+**Constraints:** Webhook use is optional. The receiver accepts a JSON body containing `ref` and a repository object with `clone_url`; it requires a machine bearer token granted the dedicated `webhooks:trigger` permission before processing the body. A clone URL equal to the configured deployment-list repository URL requests full reconciliation. Other clone URLs publish a source/ref start request; the orchestration service acts only on configured source/ref matches. HTTPS and network restriction remain defense in depth. Payload HMAC signatures are not required.
 
 **Dependencies:** REQ-001, ADR-001, ADR-004, SEC-004
 
-**Verification expectation:** Current behavior can be checked by posting a compatible body whose clone URL matches the configured deployment-list repository or a configured deployment source/ref. The receiver does not validate event type, and there is no dedicated webhook controller test.
+**Verification expectation:** Tests verify rejection of anonymous and wrong-scope callers, acceptance of a `webhooks:trigger` token, deployment-list URL matching, source/ref matching, arbitrary event headers, repeated requests, malformed bodies, and empty acknowledgment responses.
 
 **Additional constraints:** The receiver does not distinguish push events from other request types. Repeated requests publish repeated events; there is no explicit deduplication or idempotency key.
 
@@ -66,7 +66,7 @@ Operators can configure whether managed deployments are synchronized at applicat
 
 **Rationale:** Self-hosted operators need a way to reconcile deployment state after restart and at a cadence appropriate to their environment.
 
-**Constraints:** Startup synchronization is controlled by `dirigent.start.all.on.startup` (default true in the packaged properties). Recurring synchronization is controlled by `dirigent.delpoyments.schedule.enabled` and `dirigent.delpoyments.schedule.cron` (both spelled `delpoyments`; defaults true and every five minutes in packaged properties). These settings are separate from `startAllOnStartup` in the parsed YAML configuration, which is not the property used by the scheduler.
+**Constraints:** Startup synchronization is controlled by `dirigent.start.all.on.startup` (default true in the packaged properties). Recurring synchronization is controlled by `dirigent.deployments.schedule.enabled` and `dirigent.deployments.schedule.cron` (defaults true and every five minutes in packaged properties). These settings are separate from `startAllOnStartup` in the parsed YAML configuration, which is not the property used by the scheduler.
 
 **Dependencies:** ADR-001, ADR-004, QUA-001
 
@@ -99,3 +99,17 @@ When a deployment is removed from the configuration, reconciliation invokes Comp
 **Dependencies:** REQ-001, REQ-002, ADR-003, QUA-001
 
 **Verification expectation:** Current behavior can be checked by verifying that command invocation precedes deletion and by comparing thrown process errors with non-zero process results; there is no dedicated removal-flow test coverage.
+
+### Breaking releases must explain changes and upgrades
+
+**ID: REQ-018**
+
+For a release that changes an existing operator workflow or public integration contract incompatibly, release documentation must include a concise changelog entry identifying the breaking changes and a migration guide with ordered actions to upgrade and verify the installation.
+
+**Rationale:** Operators and API consumers need to understand both what changed and what they must do to keep existing installations and integrations working.
+
+**Constraints:** Upgrade guidance must distinguish existing installations from fresh setup and cover required account, configuration, API-client, and integration changes, along with any known data or rollback considerations. It must not imply compatibility or migration automation that the product does not provide.
+
+**Dependencies:** REQ-004, REQ-013, REQ-014, REQ-015, SEC-005
+
+**Verification expectation:** A breaking release has a changelog entry that explicitly marks incompatible behavior, and a linked migration guide provides a complete ordered checklist with a way to verify access and integrations after upgrade.

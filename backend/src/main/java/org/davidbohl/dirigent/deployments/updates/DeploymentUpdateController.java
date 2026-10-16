@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.annotation.Secured;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,16 +19,19 @@ public class DeploymentUpdateController {
 
     private final DeploymentUpdateService deploymentUpdateService;
     @GetMapping
+    @Secured({"ROLE_ADMIN", "SCOPE_updates:read"})
     public List<DeploymentUpdateDto> getDeploymentUpdates() {
         return deploymentUpdateService.getDeploymentUpdates();
     }
 
     @PostMapping("run")
+    @Secured({"ROLE_ADMIN", "SCOPE_updates:write"})
     public void postDeploymentUpdate(@RequestBody DeploymentUpdateDto deploymentUpdate) {
         deploymentUpdateService.runDeploymentUpdate(deploymentUpdate);
     }
 
     @PostMapping("check") 
+    @Secured({"ROLE_ADMIN", "SCOPE_updates:write"})
     public void podtDeploymentUpdateCheck() {
         deploymentUpdateService.checkAllDeploymentForUpdates();
     }

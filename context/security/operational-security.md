@@ -42,33 +42,33 @@ The system assumes a trusted host environment for Docker socket access and treat
 
 **Verification expectation:** Operational guidance and security review must make clear that host privileges and Docker socket access are required for deployment execution.
 
-### Gitea webhook access is restricted by the trusted network boundary
+### Gitea webhook requests require a dedicated machine-token permission
 
 **ID: SEC-004**
 
-Gitea webhook requests are trusted only when the deployment environment restricts access to the webhook endpoint to trusted systems. Application-level signature verification is not required by the current operating model.
+Gitea webhook requests are accepted only when authenticated with a valid, unexpired, unrevoked machine token granted the dedicated `webhooks:trigger` permission. The webhook does not require a payload HMAC signature. HTTPS and network restriction remain defense in depth.
 
-**Rationale:** Webhooks provide an automated repository-to-deployment trigger, while this deployment model places caller trust at the operator-managed network boundary.
+**Rationale:** A forged webhook can trigger privileged deployment operations. A dedicated, revocable, least-privilege machine token gives the integration a distinct identity and avoids coupling webhook access to a human credential or broader API token.
 
-**Constraints:** The application does not check a webhook event-type header or signature. The receiver trusts its network boundary; any caller able to reach it and provide a compatible body can cause a reconciliation/source-start request. Operators are responsible for restricting endpoint reachability.
+**Constraints:** The token must be sent in the `Authorization: Bearer` header, kept confidential, and issued without unrelated permissions where possible. Missing, invalid, expired, revoked, or incorrectly scoped tokens are rejected before request processing. Operators should restrict endpoint reachability and use HTTPS. Token authentication does not prevent replay of a previously captured valid request; event-type validation and deduplication remain outside this control.
 
 **Dependencies:** ADR-001, REQ-001, SEC-003
 
-**Verification expectation:** Deployment review confirms that network controls limit webhook access to trusted Gitea systems and that the operator-facing deployment guidance states this responsibility.
+**Verification expectation:** Tests verify rejection of anonymous and incorrectly scoped callers and acceptance of a valid `webhooks:trigger` token. Deployment guidance explains bearer-token configuration, secure storage, expiry/revocation, HTTPS, and network restriction.
 
-### Dashboard and REST API access is restricted by the operator's network boundary
+### Dashboard and REST API require application authentication
 
 **ID: SEC-005**
 
-The current dashboard and REST API do not provide application-level authentication. Operators must restrict network access to trusted users and systems. Future application authentication is a potential improvement, not a current capability or guarantee.
+All dashboard and REST API access requires an authenticated administrator session or an authorized machine token. Unauthenticated access is denied by default. Network restriction remains defense in depth and does not replace application authorization.
 
-**Rationale:** The current operating model has no application identity mechanism, while the API can trigger privileged deployment operations and manage sensitive configuration.
+**Rationale:** The API can trigger privileged deployment operations and manage sensitive configuration, so network location alone is not a sufficient identity or authorization boundary.
 
-**Constraints:** Do not expose the dashboard or API to untrusted networks. Network controls are operator responsibilities and must not be mistaken for application authorization.
+**Constraints:** Browser sessions use secure cookie attributes and CSRF protection for state-changing requests. Authorization is deny-by-default. Operator access remains highly privileged because the supported human role can control deployments and secrets.
 
 **Dependencies:** ADR-001, ADR-002, SEC-003, CLR-002
 
-**Verification expectation:** Operator-facing deployment guidance states the current absence of application authentication and the requirement to restrict network reachability.
+**Verification expectation:** Security tests verify anonymous denial, authenticated access, authorization enforcement, CSRF protection, and safe session invalidation. Operator guidance recommends TLS and network restriction as additional controls.
 
 ### Sensitive values and credentials are excluded from diagnostics
 
@@ -83,3 +83,105 @@ The current diagnostics do not guarantee redaction of secrets and credentials. P
 **Dependencies:** SEC-001, SEC-002, SEC-005, QUA-002
 
 **Verification expectation:** Existing tests do not verify log/exception redaction; such checks would be needed before claiming that sensitive diagnostic data is excluded.
+
+### Local and OIDC identities use separate authorization controls
+
+**ID: SEC-007**
+
+Local accounts use a one-way password hash suitable for password storage and are created only by an operator through the server-side CLI. OIDC identities are authorized after successful authentication by the configured HTTPS issuer without per-user provisioning. Operators may optionally require membership in a configured provider group claim; when set, users missing that group are denied. There is no public local-account signup.
+
+**Rationale:** Local credentials and federated identity have different lifecycle controls. Trusting the issuer avoids duplicate per-user provisioning; an optional group restriction narrows the trusted identity-provider population when required.
+
+**Constraints:** OIDC client secrets, group claims, and local credentials are sensitive. The issuer must use HTTPS. With no group configured, all authenticated users of that issuer receive administrator access. Local passwords must never be logged or supplied as CLI arguments. The deployment must retain a documented local-account recovery path.
+
+**Dependencies:** REQ-014, REQ-016, ADR-007
+
+**Verification expectation:** Tests establish password-hash storage, acceptance of authenticated OIDC users without per-user provisioning, optional group enforcement, and that credentials do not appear in logs or command arguments.
+
+### OIDC discovery requires a secure issuer transport
+
+**ID: SEC-009**
+
+OIDC issuer metadata and authentication endpoints must use HTTPS. The configured issuer must be validated as an absolute HTTPS URL before provider discovery; plaintext HTTP issuers are rejected.
+
+**Rationale:** OIDC metadata, authorization codes, and tokens cross a security boundary and must not be exposed to network interception or modification.
+
+**Constraints:** No HTTP exception is provided for local or private identity providers. Operators must make their test provider available over HTTPS when exercising OIDC.
+
+**Dependencies:** REQ-014, ADR-007
+
+**Verification expectation:** Tests reject HTTP, relative, and malformed issuer values and accept a valid HTTPS issuer.
+
+### Machine tokens are scoped and stored as hashes
+
+**ID: SEC-008**
+
+Machine tokens are generated from cryptographically secure random data, stored only as a non-reversible verifier, granted only the permissions selected at issuance, and revocable by an administrator. Expiring tokens are rejected after expiry. The complete token is disclosed only once at creation.
+
+**Rationale:** Leaked automation credentials must not expose human passwords or grant broader API access than the integration requires.
+
+**Constraints:** Token permissions must be enforced for every protected API operation, including the dedicated `webhooks:trigger` operation. Every token has a mandatory expiry within 366 days and is rejected after expiry or revocation. Token values and verifiers are sensitive and must not appear in logs or ordinary API responses.
+
+**Dependencies:** REQ-015, ADR-007
+
+**Verification expectation:** Tests verify high-entropy issuance, verifier-only persistence, one-time disclosure, permission checks, expiry, and revocation.
+
+### Local login attempts are rate limited
+
+**ID: SEC-010**
+
+Repeated failed local login attempts from one client address are rate limited. The control must limit guessing without trusting caller-supplied forwarding headers unless they are supplied by a configured trusted proxy.
+
+**Rationale:** Publicly reachable password login is vulnerable to automated password guessing and credential stuffing.
+
+**Constraints:** Rate-limit state may be process-local for the supported single-instance deployment. Operators must apply corresponding controls at a trusted reverse proxy when multiple instances or distributed attack resistance is required. Authentication failures must continue to use generic responses that do not disclose account existence.
+
+**Dependencies:** REQ-014, ADR-005, QUA-005
+
+**Verification expectation:** Tests verify the configured failure threshold blocks subsequent login attempts for the defined window, successful login clears or expires the applicable state, and ordinary protected routes are unaffected.
+
+### Local configuration secrets are excluded from build artifacts
+
+**ID: SEC-011**
+
+Local development configuration, credentials, encryption keys, databases, and other operator-local secret material must be excluded from container build contexts and distributable application artifacts. Production secrets are supplied through runtime secret/configuration mechanisms rather than copied into the image.
+
+**Rationale:** A secret excluded from version control can still be disclosed if copied into a container image, build cache, or packaged JAR.
+
+**Constraints:** Build exclusions must not remove safe configuration templates or required application resources. If a local secret has been included in an artifact, operators must treat it as disclosed and rotate it.
+
+**Dependencies:** SEC-001, SEC-006, ADR-001, ADR-005
+
+**Verification expectation:** Build review confirms local-only files are excluded, and an image/JAR inspection finds no local credentials or encryption keys.
+
+### Test credentials exist only in the non-production test environment
+
+**ID: SEC-012**
+
+**Status:** Proposed.
+
+**Basis:** QUA-007 and the maintainer request for a ready-to-use test account; SEC-007 and SEC-011 are the controls it must not weaken.
+
+The manual test environment may create a fixed, well-known local administrator account and a throwaway encryption key so that testing needs no manual setup. This is the only exception to creating local accounts solely through the operator CLI (SEC-007). It applies only when an explicit test-environment mode is enabled, is never active in production configuration or the production image, and is reachable from the local machine only.
+
+**Rationale:** Convenience credentials are acceptable for disposable local data only if they cannot be activated or reached in a real deployment.
+
+**Constraints:** Test-environment configuration, databases, and tooling are excluded from distributable artifacts (SEC-011). Production startup never creates accounts automatically.
+
+**Dependencies:** SEC-007, SEC-011, QUA-005, QUA-007
+
+**Verification expectation:** Tests or review show that without the test-environment mode no account is created automatically, and that the production image and run configuration do not enable it.
+
+### CI workflow inputs and publication permissions are constrained
+
+**ID: SEC-013**
+
+Workflow dispatch inputs and repository-dispatch payloads are untrusted data. They must not be interpreted as shell source, and values used as release versions or Git references must be validated against their allowed format before use. Workflow jobs receive only the permissions required for their task; package publication and branch updates are restricted to the jobs that perform those operations. Secrets and write-capable credentials are not exposed to pull-request code.
+
+**Rationale:** CI workflows can hold repository write credentials, signing material, and package-publishing access. Unsafe input handling or unnecessarily broad permissions can turn a workflow trigger into credential exposure or unauthorized publication.
+
+**Constraints:** Repository settings and branch protections remain part of the trust boundary. Pull-request validation must remain available without write-capable credentials. Release credentials are maintained as protected repository secrets and must be scoped to the repository operations they require.
+
+**Dependencies:** SEC-006, SEC-011, QUA-004
+
+**Verification expectation:** Review confirms untrusted values are validated before use, are not interpolated into shell programs, and write permissions are limited to publishing or branch-synchronization jobs. Pull-request jobs have read-only repository permissions and no publication credentials.

@@ -18,15 +18,15 @@ The system runtime is centered on a Spring Boot backend that reads deployment co
 
 **ID: ADR-002**
 
-The frontend is a lightweight Angular interface that surfaces deployment state, secrets management, and operational actions for the operator.
+The frontend is an Angular single-page application styled exclusively with Tailwind CSS. It is organized as lazy-loaded routes, one chunk per feature area: login, dashboard (start page), deployments, updates, secrets, and machine tokens. It surfaces deployment state, secrets management, and operational actions for the operator and consumes the unchanged backend API contract.
 
 **Rationale:** A web dashboard reduces the need for shell-based operations and supports a more controlled operational workflow for self-hosted administrators.
 
-**Constraints:** The frontend is a presentation layer and must rely on the backend API for authoritative state and actions.
+**Constraints:** The frontend is a presentation layer and must rely on the backend API for authoritative state and actions. When the backend hosts the frontend, requests for client-side routes (including page reloads and direct links to subroutes) must serve the application entry page; `/api/**` and existing static assets keep their normal behavior, and unknown API paths must not return the entry page. The backend must not serve its own framework-generated login page; `/login` always serves the frontend login view.
 
-**Dependencies:** REQ-002, UX-001
+**Dependencies:** REQ-002, REQ-014, REQ-015, UX-001, UX-006
 
-**Verification expectation:** Acceptance review confirms the frontend presents a coherent operational view without performing privileged actions beyond the API contract.
+**Verification expectation:** Acceptance review confirms the frontend presents a coherent operational view without performing privileged actions beyond the API contract. Reloading a subroute such as `/deployments` on the backend-hosted frontend shows the application rather than an error page. Reloading `/login` shows the frontend login view, not a framework-generated page.
 
 ### Deployment configuration is repository-based and ordered by dependency
 
@@ -83,3 +83,31 @@ Deployment reconciliation can be requested again after an interrupted operation,
 **Dependencies:** REQ-002, REQ-004, REQ-005, QUA-001
 
 **Verification expectation:** Current retryability is established by repeated event/manual requests; no failure-injection suite demonstrates transactional recovery or duplicate-side-effect prevention.
+
+### Authentication separates browser sessions, machine tokens, and webhooks
+
+**ID: ADR-007**
+
+The Spring backend is the authority for authentication and authorization. Browser users authenticate through local credentials or an optional OIDC provider and use server-managed sessions. Any identity successfully authenticated by the configured OIDC issuer is authorized unless an optional provider group restriction is configured. Local accounts are operator-managed through the server-side CLI. Machine clients use separately issued opaque API tokens with explicit permissions. The Gitea webhook uses a machine token granted the dedicated `webhooks:trigger` permission and does not use a browser session or require a separate payload-signature secret. Local account state and tokens are persisted with the application data.
+
+**Rationale:** These callers have different lifecycle and security needs: interactive operators need browser login, OIDC delegates identity proof to a configured issuer with optional group authorization, local credentials provide standalone recovery, automation needs revocable least-privilege credentials, and webhook calls need a dedicated token permission distinct from ordinary API access.
+
+**Constraints:** There is no public local-account registration. Human accounts are administrators in the initial access model. OIDC access is issuer-wide unless a required group is configured. At least one local administrator must be creatable and recoverable from the server-side CLI. Authentication controls must not weaken the Docker host trust boundary in ADR-001 and ADR-005.
+
+**Dependencies:** REQ-004, REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010, SEC-011
+
+**Verification expectation:** Architecture review confirms session, API-token, and webhook authentication remain separate and each protected route has an explicit authorization policy.
+
+### Main-to-dev synchronization has one merge-based owner
+
+**ID: ADR-008**
+
+Changes to `main` are propagated to `dev` by one automated merge-based synchronization flow. Release publication does not independently update `dev`; this avoids competing branch writers and preserves commits already present on `dev`.
+
+**Rationale:** A single synchronization owner makes branch history predictable and avoids races between merge and rebase workflows during a release.
+
+**Constraints:** The synchronization flow requires permission to update `dev` and must not rewrite its existing history. Branch protection must permit the configured automation or the synchronization must be adapted to the repository's approved review process.
+
+**Dependencies:** QUA-004, SEC-013
+
+**Verification expectation:** A main-branch update results in a merge of the latest `main` into `dev`; repeated or concurrent synchronization requests do not create competing updates or rewrite `dev` history.

@@ -3,6 +3,8 @@
 # <img src="https://raw.githubusercontent.com/DerDavidBohl/dirigent-spring/latest/assets/icon-background.svg" width="80px"></img> Dirigent
 Tool to manage your docker compose deployments via git.
 
+See the [changelog](CHANGELOG.md) for release notes and the [1.x to 2.0 upgrade guide](docs/upgrading-to-2.0.md) for existing installations.
+
 ## Table of Contents
 
 - [Screenshots](#screenshots)
@@ -11,6 +13,7 @@ Tool to manage your docker compose deployments via git.
   - [docker-compose](#docker-compose)
   - [docker CLI](#docker-cli)
   - [Environment Variables](#environment-variables)
+  - [Authentication](#authentication)
   - [deployments.yml](#deploymentsyml)
   - [Volumes](#volumes)
   - [Step by Step (Gitea)](#step-by-step-gitea)
@@ -25,12 +28,12 @@ Tool to manage your docker compose deployments via git.
       - [Deployment by name](#deployment-by-name-1)
     - [State](#state)
 - [Develop](#develop)
-  - [Setup for local Tests](#setup-for-local-tests)
+  - [Manual test environment](#manual-test-environment)
 - [Roadmap](#roadmap)
 
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/2e0ab3e1-d702-4cc2-9c05-055dc41136ff)
+![image](/assets/screenshots/dashboard.png)
 
 ## Why Dirigent?
 
@@ -88,6 +91,15 @@ services:
       - DIRIGENT_GOTIFY_TOKEN= # optional
       - DIRIGENT_INSTANCENAME= # optional but recommended
       - DIRIGENT_UPDATES_DISABLED= # optional
+      - DIRIGENT_AUTH_COOKIE_SECURE=true # use HTTPS in production
+      # Optional OIDC login. Set ENABLED=true and provide client ID, secret, and HTTPS issuer URI.
+      - DIRIGENT_OIDC_ENABLED=false
+      - DIRIGENT_OIDC_CLIENT_ID=
+      - DIRIGENT_OIDC_CLIENT_SECRET=
+      - DIRIGENT_OIDC_ISSUER_URI=
+      - DIRIGENT_OIDC_SCOPE=openid,profile,email
+      - DIRIGENT_OIDC_REQUIRED_GROUP= # optional provider group gate
+      - DIRIGENT_OIDC_GROUPS_CLAIM=groups # optional claim name override
       # Optional private registry credentials. Repeat with index 1, 2, ... for more registries.
       - DIRIGENT_REGISTRIES_0_HOST= # registry hostname, e.g. gitea.example.com
       - DIRIGENT_REGISTRIES_0_USERNAME= # registry username
@@ -108,30 +120,25 @@ services:
 docker run -d \
   --name=dirigent \
   -e DIRIGENT_DEPLOYMENTS_GIT_URL= \
-  -e DIRIGENT_SECRETS_ENCRYPTION_KEY= \ # Has to be 16 Chars. Can be generated with `openssl rand -base64 12`
-  #optional
+  -e DIRIGENT_SECRETS_ENCRYPTION_KEY= \
   -e DIRIGENT_COMPOSE_COMMAND= \
-  #optional
   -e DIRIGENT_GIT_AUTHTOKEN= \
-  #optional
-  -e DIRIGENT_STARTALL_ON_STARTUP= \
-  #optional
+  -e DIRIGENT_START_ALL_ON_STARTUP= \
   -e DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED= \
-  #optional
   -e DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON= \
-  #optional
   -e DIRIGENT_GOTIFY_BASEURL= \
-  #optional
   -e DIRIGENT_GOTIFY_TOKEN= \
-  #optional but recommended
   -e DIRIGENT_INSTANCENAME= \
-  #optional
   -e DIRIGENT_UPDATES_DISABLED= \
-
-  # optional. Needed, if you mount your config volume to a diffrent place on you root system. Defaults do <docker-root>/volumes/dirigent_deployments/_data
+  -e DIRIGENT_AUTH_COOKIE_SECURE=true \
+  -e DIRIGENT_OIDC_ENABLED=false \
+  -e DIRIGENT_OIDC_CLIENT_ID= \
+  -e DIRIGENT_OIDC_CLIENT_SECRET= \
+  -e DIRIGENT_OIDC_ISSUER_URI= \
+  -e DIRIGENT_OIDC_SCOPE=openid,profile,email \
+  -e DIRIGENT_OIDC_REQUIRED_GROUP= \
+  -e DIRIGENT_OIDC_GROUPS_CLAIM=groups \
   -e DIRIGENT_HOST_DEPLOYMENTS_DIR=/path/to/deployments \
-
-
   -v /path/to/config:/app/config \
   -v /path/to/deployments:/app/deployments \
   -v /path/to/data:/app/data \
@@ -148,16 +155,51 @@ docker run -d \
 | DIRIGENT_COMPOSE_COMMAND              | Command to run your docker-compose files                                                              | `docker compose` |
 | DIRIGENT_GIT_AUTHTOKEN                | Auth token with access to your repos                                                                  |                  |
 | DIRIGENT_START_ALL_ON_STARTUP         | Start all deployments on startup                                                                      | `true`           |
-| DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED | enable scheduled start of all deployments                                                             | `true`           |
-| DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON    | cron expression for scheduled start of all deployments (second minute hour day(month) month day(week) | `* */5 * * * *`  |
+| DIRIGENT_DEPLOYMENTS_SCHEDULE_ENABLED | Enable scheduled deployment reconciliation                                               | `true`           |
+| DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON    | Cron expression (second minute hour day(month) month day(week))                          | `0 */5 * * * *`  |
 | DIRIGENT_GOTIFY_BASEURL               | Gotify Base URL for Notification, when deployments fail                                               |                  |
 | DIRIGENT_GOTIFY_TOKEN                 | Gotify Token for Notification, when deployments fail                                                  |                  |
 | DIRIGENT_INSTANCENAME                 | Name of your Instance (will be shown in Web UI)                                                       |                  |
 | DIRIGENT_UPDATES_DISABLED             | Disable Update Feature                                                                                |`false`           |
+| DIRIGENT_AUTH_COOKIE_SECURE           | Set Secure on session and CSRF cookies; use HTTPS in production                                       | `true`           |
+| DIRIGENT_OIDC_ENABLED                 | Enable OIDC login                                                                                    | `false`          |
+| DIRIGENT_OIDC_CLIENT_ID               | OIDC client identifier (required when enabled)                                                       |                  |
+| DIRIGENT_OIDC_CLIENT_SECRET           | OIDC client secret (required when enabled)                                                           |                  |
+| DIRIGENT_OIDC_ISSUER_URI              | HTTPS issuer URL (required when enabled)                                                             |                  |
+| DIRIGENT_OIDC_SCOPE                   | OIDC scopes requested                                                                                | `openid,profile,email` |
+| DIRIGENT_OIDC_REQUIRED_GROUP          | Optional group required for OIDC access                                                              |                  |
+| DIRIGENT_OIDC_GROUPS_CLAIM            | Claim containing provider group membership                                                           | `groups`         |
 | DIRIGENT_HOST_DEPLOYMENTS_DIR             | Needed, if you mount your config volume to a diffrent place on you root system.                                                                                | Defaults do `<docker-root>/volumes/dirigent_deployments/_data`          |
 | DIRIGENT_REGISTRIES_0_HOST             | Hostname of the first private Docker registry                                                          |                  |
 | DIRIGENT_REGISTRIES_0_USERNAME         | Username for the first private Docker registry                                                        |                  |
 | DIRIGENT_REGISTRIES_0_PASSWORD         | Token or password for the first private Docker registry                                               |                  |
+
+Authentication settings include `DIRIGENT_AUTH_COOKIE_SECURE` for Secure session/CSRF cookies. Optional OIDC uses `DIRIGENT_OIDC_ENABLED`, `DIRIGENT_OIDC_CLIENT_ID`, `DIRIGENT_OIDC_CLIENT_SECRET`, `DIRIGENT_OIDC_ISSUER_URI`, and optional `DIRIGENT_OIDC_SCOPE` (default `openid,profile,email`). Set `DIRIGENT_OIDC_ENABLED=true` only after supplying the client ID, client secret, and HTTPS issuer URI. By default every successfully authenticated user of that issuer is accepted. To restrict access, set `DIRIGENT_OIDC_REQUIRED_GROUP` to a group emitted in the `DIRIGENT_OIDC_GROUPS_CLAIM` claim (default claim name `groups`). Configure the OIDC provider to include that claim in the ID token or UserInfo response. Dirigent discovers provider endpoints from the issuer URI.
+
+#### Authentication
+
+The dashboard and REST API require authentication. On a fresh database, create the first local administrator from an interactive terminal; the password is prompted without echo and must be 12 to 72 UTF-8 bytes:
+
+```bash
+docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=production --create-admin operator
+```
+
+There is no public local-account registration or default password. Additional local administrators can be created with the same command. Configure OIDC using the `DIRIGENT_OIDC_*` environment variables shown in the Compose example. The issuer URI must use HTTPS. Register `https://<dirigent-host>/login/oauth2/code/dirigent` as the provider callback URL. Any user successfully authenticated by that issuer can sign in and receives administrator access; there is no per-user OIDC CLI provisioning. To restrict access, configure `DIRIGENT_OIDC_REQUIRED_GROUP` and ensure the provider emits that group in the configured claim. Retain a local administrator for recovery.
+
+Reset a local account password or delete a local account with these interactive CLI operations:
+
+```bash
+docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=production --reset-admin-password operator
+docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=production --delete-local-account operator
+```
+
+Password reset prompts twice without echo. Deletion requires typing the account name and refuses to remove the final local administrator. These operations cannot change OIDC-only identities.
+
+Use the dashboard's **Machine tokens** page (`/settings/tokens`) to create scoped, revocable tokens for automation. The full token is displayed only once. Send it as `Authorization: Bearer <token>`; never put it in a URL or commit it to a repository. Every token must expire within 366 days; renew integrations by creating a replacement token before expiry. Existing tokens without an expiry are rejected and must be replaced. Human browser sessions remain cookie-based and protected by CSRF tokens.
+
+Failed local-login attempts are rate limited per source peer and normalized username. When running behind a reverse proxy, restrict direct application access and configure rate limiting at that trusted proxy too; Dirigent does not trust arbitrary forwarded-IP headers.
+
+Set `DIRIGENT_AUTH_COOKIE_SECURE=true` when serving through HTTPS, which is the production default. For local HTTP development only, set it to `false`; do not expose an HTTP deployment to an untrusted network.
 
 #### Private Docker registries
 
@@ -217,8 +259,9 @@ deployments:
 ### Security considerations
 
 - Access to the Docker socket grants broad control over the host's containers; run Dirigent only in an environment trusted with that authority.
-- Gitea webhook requests are not authenticated by an application signature. Restrict the webhook endpoint to trusted Gitea systems using the deployment network boundary.
-- The dashboard and REST API do not currently authenticate users. Restrict their network reachability to trusted users and systems; application-level authentication is a possible future improvement, not a current capability.
+- Dashboard and REST API routes require a local/OIDC administrator session or an authorized scoped service token. Use HTTPS and restrict network reachability as defense in depth.
+- Gitea webhook requests require a machine token with only the `webhooks:trigger` permission where possible. Send it in `Authorization: Bearer <token>`, use HTTPS, set an expiry, and revoke it when the integration is removed. Restrict endpoint reachability as defense in depth.
+- The Docker build excludes `backend/src/main/resources/application-local.properties` and local data. If an image was built before this exclusion, treat local credentials and encryption keys as disclosed and rotate them.
 - Keep registry and Git credentials in an environment-management system and restrict access to the Dirigent host and its configuration.
 
 ### Step by Step (Gitea)
@@ -230,7 +273,7 @@ deployments:
     deployments: []
     ```
 3. Deploy the dirigent app as described above. Set the `DIRIGENT_DEPLOYMENTS_GIT_URL` to the URL of your repository. Dont forget to set the `DIRIGENT_GIT_AUTHTOKEN` if your repository is private.
-4. Optional: Create a new webhook in your repository. Set the URL to `http://<dirigent-host-and-port>/api/v1/gitea`
+4. Create a service token in Dirigent with the `webhooks:trigger` permission. In Gitea, configure the webhook URL as `https://<dirigent-host>/api/v1/gitea` and set the request Authorization header to `Bearer <token>`. Store the token in Gitea's secret/variable facility; do not commit it to the repository.
 
 #### Add Deployments
 1. Create a git repository for your deployment
@@ -242,7 +285,7 @@ deployments:
         source: https://url/toyourdeploymentrepo.git
         order: 10 # optional
     ```
-4. Optional: Add a new webhook in your deployment repository. Set the URL to `http://<dirigent-host-and-port>/api/v1/gitea`
+4. Add a webhook in your deployment repository using the same endpoint and bearer token. One token may be shared by related repository webhooks; use a separate token when you need independent revocation.
 
 #### Optional good practice:
 Store all your repositories for one host in one gitea organization. This way you only have to set up one webhook at organization level.
@@ -269,7 +312,18 @@ services:
 
 ### Gitea Webhook
 
-`POST` to `http://<dirigent-host-and-port>/api/v1/gitea`
+`POST` to `https://<dirigent-host>/api/v1/gitea`
+
+Gitea must send `Authorization: Bearer <token>` with a token granted the `webhooks:trigger` permission. Anonymous requests and tokens without that permission are rejected. Webhook token authentication does not prevent replay of a captured request; use HTTPS and restrict network reachability.
+
+### Authentication
+
+- `POST /api/v1/auth/login` accepts form fields `username` and `password` and establishes a browser session. Fetch `GET /api/v1/auth/csrf` first; send the returned cookie/header pair on state-changing browser requests.
+- `GET /api/v1/auth/me` returns the current authenticated identity.
+- `POST /api/v1/auth/logout` ends the browser session.
+- `GET /api/v1/auth/options` reports whether OIDC is configured.
+- `GET /api/v1/auth/tokens` lists token metadata. `POST /api/v1/auth/tokens` issues a token and returns the secret once. `DELETE /api/v1/auth/tokens/{id}` revokes it. These management endpoints require a human administrator session.
+- Machine tokens use `Authorization: Bearer <token>` and are limited to their selected permissions. They do not create browser sessions.
 
 ### Deployments
 
@@ -326,11 +380,24 @@ services:
 
 ## Develop
 
-### Setup for local Tests
+### Manual test environment
 
-1. copy `src/test/resources/application-local.properties.template` to `src/test/resources/application-local.properties`
-2. fill in your test repository url and auth token
-3. Done ;)
+Runs the current working tree locally with authentication, isolated from real data. Requires Java, Maven, Node/npm, `make`, Git, and Docker with Compose (for deployments).
+
+| Command         | Purpose                                                                              |
+|-----------------|--------------------------------------------------------------------------------------|
+| `make dev`      | Start backend (`127.0.0.1:8080`) and dashboard (`http://localhost:4200`); loads the `basic` scenario if none is loaded |
+| `make scenario` | Load a test scenario (default `basic`, see `dev/scenarios`); then restart `make dev` |
+| `make reset`    | Erase all local test data; refuses to run while the backend is running               |
+| `make test`     | Run backend tests, frontend lint and tests, and the frontend production build                                |
+
+- Sign in with `admin` / `admin`. This account exists only in this environment (`dev` profile, test sources) and is never part of the production image.
+- All state (database, secrets, tokens, cloned configuration and deployments) lives in `dev/.state` and is git-ignored. `make reset` deletes it; containers already started by a scenario are not removed.
+- Scenarios are local Git repositories built from `dev/scenarios/<name>`: `config/deployments.yml` plus one folder per deployment under `repos/`. Add a folder there to create a new scenario, then run `make scenario SCENARIO=<name>`.
+- Backend tests that need Docker fail when Docker is not running.
+- Requires JDK 25 (see `java.version` in `backend/pom.xml`).
+
+Fresh start: stop `make dev`, then `make reset dev`.
 
 ## Roadmap
 
