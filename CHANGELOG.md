@@ -2,7 +2,7 @@
 
 Notable changes to Dirigent are recorded here. See the [upgrade guide](docs/upgrading-to-2.0.md) before moving an existing installation to 2.0.
 
-## [2.0.0] - Unreleased
+## [2.0.0]
 
 ### Breaking changes
 
