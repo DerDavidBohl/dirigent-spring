@@ -85,6 +85,7 @@ public class SecurityConfiguration {
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                         request -> request.getRequestURI().startsWith("/api/")))
                 .formLogin(form -> form
+                        .loginPage("/login")
                         .loginProcessingUrl("/api/v1/auth/login")
                         .usernameParameter("username")
                         .passwordParameter("password")
@@ -105,6 +106,7 @@ public class SecurityConfiguration {
 
         if (oidcClientProperties.isEnabled()) {
             http.oauth2Login(oauth2 -> oauth2
+                    .loginPage("/login")
                     .userInfoEndpoint(userInfo -> userInfo.oidcUserService(oidcUserService::loadUser))
                     .defaultSuccessUrl("/", true));
         }
