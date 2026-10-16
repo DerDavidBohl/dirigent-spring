@@ -3,7 +3,7 @@
 # <img src="https://raw.githubusercontent.com/DerDavidBohl/dirigent-spring/latest/assets/icon-background.svg" width="80px"></img> Dirigent
 Tool to manage your docker compose deployments via git.
 
-See the [changelog](CHANGELOG.md) for release notes and the [1.x to 2.0 upgrade guide](docs/upgrading-to-2.0.md) for existing installations.
+See the [changelog](CHANGELOG.md) for release notes and the [1.x to 2.0 upgrade guide](docs/upgrading-to-2.0.md) if you are upgrading an installation still on 1.x.
 
 ## Table of Contents
 
@@ -76,7 +76,7 @@ volumes:
 
 services:
   app:
-    image: ghcr.io/derdavidbohl/dirigent-spring:1
+    image: ghcr.io/derdavidbohl/dirigent-spring:2
     container_name: dirigent-app
     restart: unless-stopped
     environment:
@@ -143,7 +143,7 @@ docker run -d \
   -v /path/to/deployments:/app/deployments \
   -v /path/to/data:/app/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  ghcr.io/derdavidbohl/dirigent-spring:1
+  ghcr.io/derdavidbohl/dirigent-spring:2
 ```
 
 ### Environment Variables

@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes to Dirigent are recorded here. See the [upgrade guide](docs/upgrading-to-2.0.md) before moving an existing installation to 2.0.
+Notable changes to Dirigent are recorded here. See the [upgrade guide](docs/upgrading-to-2.0.md) when upgrading an installation from 1.x.
 
 ## [2.0.0]
 
