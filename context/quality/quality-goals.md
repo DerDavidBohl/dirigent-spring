@@ -84,6 +84,34 @@ README setup, configuration, security, and usage guidance must describe capabili
 
 **Verification expectation:** Review confirms documented environment variables, defaults, CLI commands, API authentication, and deployment examples correspond to the implementation; test commands or example snippets syntactically where practical.
 
+### Federation status is isolated and bounded
+
+**ID: QUA-009**
+
+Federation requests must have finite network timeouts and report each configured instance independently so a slow or failed remote does not block the local dashboard or other instances. Remote write operations and secret forwarding must be tested against the explicit federation allowlist.
+
+**Rationale:** A central view is useful only if failures at one site do not degrade visibility into all other sites.
+
+**Constraints:** No numeric latency or availability target is defined. Tests must use mocked remote responses and must not require network access to real Dirigent instances.
+
+**Dependencies:** ADR-009, REQ-019, SEC-014
+
+**Verification expectation:** Focused backend tests cover successful remote aggregation, HTTP and timeout failures, malformed responses, allowed and rejected methods/paths, per-instance credentials, and a successful result from other instances alongside a failed instance. Frontend tests cover selected-instance reads and writes, pending/error states, and prevent actions from targeting a different selected instance after selection changes.
+
+### Native TLS trust fails closed
+
+**ID: QUA-010**
+
+HTTPS bootstrap must create and persist certificate material safely on first startup, and federation certificate pinning must reject invalid trust rather than silently falling back to plaintext or permissive certificate handling.
+
+**Rationale:** TLS protects browser credentials, federation tokens, and remote secret values; a fallback that appears successful could expose all of them.
+
+**Constraints:** Tests are deterministic and use temporary local directories/certificate fixtures; they require no public network access. HTTP compatibility mode is explicit and tested separately from the HTTPS default.
+
+**Dependencies:** ADR-010, REQ-021, SEC-016
+
+**Verification expectation:** Tests cover first-start generation, permission-restricted persistent reuse, BYOC override, HTTPS default, explicit HTTP compatibility, successful pinned certificates, wrong pins, expiry, hostname mismatch, and default trust-store behavior when no pin is configured.
+
 ### A manual test environment runs the current code with authentication
 
 **ID: QUA-007**
@@ -96,7 +124,7 @@ A maintainer can start the backend and the web dashboard from the working tree w
 
 **Rationale:** Manual testing of authentication-protected workflows is otherwise slow and error-prone, and unrepeatable setups weaken release evidence.
 
-**Constraints:** The environment runs as host processes of the working tree and uses the toolchain and Docker/Compose the project already requires. It reports a clear message when a prerequisite is missing. Test credentials follow SEC-012.
+**Constraints:** The environment runs as host processes of the working tree and uses the toolchain and Docker/Compose the project already requires. It reports a clear message when a prerequisite is missing. Test credentials follow SEC-012. If native TLS is disabled to support the local frontend proxy, the backend must bind to loopback only.
 
 **Dependencies:** QUA-004, QUA-005, QUA-006, SEC-012, REQ-014, COD-007
 

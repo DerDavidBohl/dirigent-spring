@@ -3,7 +3,7 @@
 # <img src="https://raw.githubusercontent.com/DerDavidBohl/dirigent-spring/latest/assets/icon-background.svg" width="80px"></img> Dirigent
 Tool to manage your docker compose deployments via git.
 
-See the [changelog](CHANGELOG.md) for release notes and the [1.x to 2.0 upgrade guide](docs/upgrading-to-2.0.md) if you are upgrading an installation still on 1.x.
+See the [changelog](CHANGELOG.md) for release notes and the [2.x to 3.0 upgrade guide](docs/upgrading-to-3.0.md) when upgrading from 2.x. Installations still on 1.x should first follow the [1.x to 2.0 upgrade guide](docs/upgrading-to-2.0.md).
 
 ## Table of Contents
 
@@ -76,7 +76,7 @@ volumes:
 
 services:
   app:
-    image: ghcr.io/derdavidbohl/dirigent-spring:2
+    image: ghcr.io/derdavidbohl/dirigent-spring:3
     container_name: dirigent-app
     restart: unless-stopped
     environment:
@@ -100,13 +100,24 @@ services:
       - DIRIGENT_OIDC_SCOPE=openid,profile,email
       - DIRIGENT_OIDC_REQUIRED_GROUP= # optional provider group gate
       - DIRIGENT_OIDC_GROUPS_CLAIM=groups # optional claim name override
+      # Optional read/write federation. Repeat the indexed settings for each remote instance.
+      - DIRIGENT_FEDERATION_INSTANCES_0_ID=office
+      - DIRIGENT_FEDERATION_INSTANCES_0_BASE_URL=https://dirigent-office.example.com
+      - DIRIGENT_FEDERATION_INSTANCES_0_TOKEN=
+      - DIRIGENT_FEDERATION_INSTANCES_0_CERTIFICATE_SHA256= # optional pin for self-signed remote TLS
+      - DIRIGENT_TLS_HOSTNAMES=dirigent.example.com # names/IPs clients use; include before first start
+      # Optional BYOC; otherwise a self-signed certificate is generated and persisted in /app/data/tls.
+      # - SERVER_SSL_KEY_STORE=file:/run/secrets/dirigent.p12
+      # - SERVER_SSL_KEY_STORE_PASSWORD=
+      # - SERVER_SSL_KEY_STORE_TYPE=PKCS12
+      # Set DIRIGENT_TLS_ENABLED=false only when a trusted reverse proxy terminates TLS.
       # Optional private registry credentials. Repeat with index 1, 2, ... for more registries.
       - DIRIGENT_REGISTRIES_0_HOST= # registry hostname, e.g. gitea.example.com
       - DIRIGENT_REGISTRIES_0_USERNAME= # registry username
       - DIRIGENT_REGISTRIES_0_PASSWORD= # registry token or password
       - DIRIGENT_HOST_DEPLOYMENTS_DIR= # optional. Needed, if you mount your config volume to a diffrent place on you root system. Defaults do <docker-root>/volumes/dirigent_deployments/_data
     ports:
-      - 8080:8080
+      - "8443:8443"
     volumes:
       - config:/app/config
       - deployments:/app/deployments
@@ -119,6 +130,7 @@ services:
 ```bash
 docker run -d \
   --name=dirigent \
+  -p 8443:8443 \
   -e DIRIGENT_DEPLOYMENTS_GIT_URL= \
   -e DIRIGENT_SECRETS_ENCRYPTION_KEY= \
   -e DIRIGENT_COMPOSE_COMMAND= \
@@ -138,12 +150,19 @@ docker run -d \
   -e DIRIGENT_OIDC_SCOPE=openid,profile,email \
   -e DIRIGENT_OIDC_REQUIRED_GROUP= \
   -e DIRIGENT_OIDC_GROUPS_CLAIM=groups \
+  -e DIRIGENT_FEDERATION_INSTANCES_0_ID=office \
+  -e DIRIGENT_FEDERATION_INSTANCES_0_BASE_URL=https://dirigent-office.example.com \
+  -e DIRIGENT_FEDERATION_INSTANCES_0_TOKEN= \
+  -e DIRIGENT_FEDERATION_INSTANCES_0_CERTIFICATE_SHA256= \
+  -e DIRIGENT_TLS_HOSTNAMES=dirigent.example.com \
+  -e SERVER_SSL_KEY_STORE_TYPE=PKCS12 \
+  -p 8443:8443 \
   -e DIRIGENT_HOST_DEPLOYMENTS_DIR=/path/to/deployments \
   -v /path/to/config:/app/config \
   -v /path/to/deployments:/app/deployments \
   -v /path/to/data:/app/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  ghcr.io/derdavidbohl/dirigent-spring:2
+  ghcr.io/derdavidbohl/dirigent-spring:3
 ```
 
 ### Environment Variables
@@ -169,6 +188,15 @@ docker run -d \
 | DIRIGENT_OIDC_SCOPE                   | OIDC scopes requested                                                                                | `openid,profile,email` |
 | DIRIGENT_OIDC_REQUIRED_GROUP          | Optional group required for OIDC access                                                              |                  |
 | DIRIGENT_OIDC_GROUPS_CLAIM            | Claim containing provider group membership                                                           | `groups`         |
+| DIRIGENT_FEDERATION_INSTANCES_0_ID    | Stable ID of the first remote Dirigent instance                                                     |                  |
+| DIRIGENT_FEDERATION_INSTANCES_0_BASE_URL | HTTPS base URL of the first remote instance                                                        |                  |
+| DIRIGENT_FEDERATION_INSTANCES_0_TOKEN | Expiring machine token for the first remote instance                                                 |                  |
+| DIRIGENT_FEDERATION_INSTANCES_0_CERTIFICATE_SHA256 | Optional SHA-256 fingerprint pin for a self-signed remote certificate                     |                  |
+| DIRIGENT_TLS_HOSTNAMES                | Comma-separated DNS names/IPs included in the generated server certificate                         | `localhost,127.0.0.1` |
+| DIRIGENT_TLS_ENABLED                  | Enable native HTTPS; disable only behind a trusted TLS-terminating proxy                           | `true`           |
+| SERVER_SSL_KEY_STORE                  | Optional PKCS#12 keystore path for a bring-your-own certificate                                    | Generated       |
+| SERVER_SSL_KEY_STORE_PASSWORD         | Password for the configured BYOC keystore                                                          |                  |
+| SERVER_SSL_KEY_STORE_TYPE             | Keystore type for BYOC                                                                             | `PKCS12`         |
 | DIRIGENT_HOST_DEPLOYMENTS_DIR             | Needed, if you mount your config volume to a diffrent place on you root system.                                                                                | Defaults do `<docker-root>/volumes/dirigent_deployments/_data`          |
 | DIRIGENT_REGISTRIES_0_HOST             | Hostname of the first private Docker registry                                                          |                  |
 | DIRIGENT_REGISTRIES_0_USERNAME         | Username for the first private Docker registry                                                        |                  |
@@ -260,6 +288,7 @@ deployments:
 
 - Access to the Docker socket grants broad control over the host's containers; run Dirigent only in an environment trusted with that authority.
 - Dashboard and REST API routes require a local/OIDC administrator session or an authorized scoped service token. Use HTTPS and restrict network reachability as defense in depth.
+- Federation is opt-in and uses indexed `DIRIGENT_FEDERATION_INSTANCES_<n>_ID`, `_BASE_URL`, and `_TOKEN` settings. Add one entry per remote instance; configure a stable ID, an HTTPS base URL, and a token created on that remote. The token needs only `deployments:read`, `deployments:write`, `updates:read`, `updates:write`, `secrets:read`, `secrets:write`, and `system:read`; do not grant `webhooks:trigger`. Keep tokens in a secret manager, rotate them before expiry, and use TLS certificates trusted by the hub. The hub can start/stop deployments, apply updates, and manage secrets on every configured remote, so compromise of the hub exposes those capabilities. Remote account, OIDC, and machine-token administration remain local to each instance.
 - Gitea webhook requests require a machine token with only the `webhooks:trigger` permission where possible. Send it in `Authorization: Bearer <token>`, use HTTPS, set an expiry, and revoke it when the integration is removed. Restrict endpoint reachability as defense in depth.
 - The Docker build excludes `backend/src/main/resources/application-local.properties` and local data. If an image was built before this exclusion, treat local credentials and encryption keys as disclosed and rotate them.
 - Keep registry and Git credentials in an environment-management system and restrict access to the Dirigent host and its configuration.
@@ -324,6 +353,38 @@ Gitea must send `Authorization: Bearer <token>` with a token granted the `webhoo
 - `GET /api/v1/auth/options` reports whether OIDC is configured.
 - `GET /api/v1/auth/tokens` lists token metadata. `POST /api/v1/auth/tokens` issues a token and returns the secret once. `DELETE /api/v1/auth/tokens/{id}` revokes it. These management endpoints require a human administrator session.
 - Machine tokens use `Authorization: Bearer <token>` and are limited to their selected permissions. They do not create browser sessions.
+
+### Native HTTPS and certificates
+
+Dirigent serves HTTPS on port `8443` by default. On first startup it creates a self-signed certificate and private key under `/app/data/tls` and reuses them on later starts. Keep the `/app/data` volume persistent and accessible only to the Dirigent process. Set `DIRIGENT_TLS_HOSTNAMES` to the DNS names or IP addresses clients will use before the first startup; generated certificates also include `localhost` and `127.0.0.1`. Publish host port 8443 to container port 8443. Browsers do not automatically trust this certificate; install its public certificate in the browser/OS trust store or use a certificate issued by a trusted CA. Do not bypass hostname or certificate warnings for production use.
+
+To use your own certificate, mount a PKCS#12 keystore read-only and configure `SERVER_SSL_KEY_STORE`, `SERVER_SSL_KEY_STORE_PASSWORD`, and `SERVER_SSL_KEY_STORE_TYPE=PKCS12`. To keep TLS at a trusted reverse proxy, set `DIRIGENT_TLS_ENABLED=false`, publish/map the backend's HTTP port (8080 by default), and do not expose it directly to untrusted networks. Existing reverse-proxy installations must set this explicitly before upgrading.
+
+#### Existing reverse-proxy installations
+
+Before upgrading an installation that currently proxies to Dirigent over HTTP:
+
+1. Add `DIRIGENT_TLS_ENABLED=false` to the Dirigent service environment.
+2. Keep the proxy's upstream on HTTP port `8080`; do not publish that backend port to an untrusted network.
+3. Recreate Dirigent and verify the dashboard and API through the proxy before removing the old container.
+
+Alternatively, keep native TLS enabled and update the proxy upstream to HTTPS port `8443`, configuring it to trust Dirigent's certificate and verify its hostname.
+
+For a generated self-signed remote, obtain its leaf-certificate fingerprint through trusted local access to that host:
+
+```bash
+docker exec dirigent-app sh -c 'keytool -exportcert -alias dirigent -keystore /app/data/tls/dirigent.p12 -storepass:file /app/data/tls/keystore.password' | sha256sum
+```
+
+Set the resulting 64-character hex value as `DIRIGENT_FEDERATION_INSTANCES_<n>_CERTIFICATE_SHA256` on the hub. This trusts only that leaf certificate; the URL hostname must still match its SAN, and the certificate must be valid. When the certificate is regenerated or replaced, securely update the pin. Do not use a trust-all setting.
+
+To rotate a generated certificate, stop Dirigent, back up `/app/data`, remove `/app/data/tls/dirigent.p12` and `/app/data/tls/keystore.password`, then start Dirigent to create a new certificate. Recompute and securely update every hub pin before relying on federation again. For multiple installations, a CA-issued BYOC certificate avoids individual leaf-pin updates.
+
+### Federation
+
+Federation is configured on the hub with indexed `DIRIGENT_FEDERATION_INSTANCES_<n>_ID`, `DIRIGENT_FEDERATION_INSTANCES_<n>_BASE_URL`, and `DIRIGENT_FEDERATION_INSTANCES_<n>_TOKEN` environment variables. The base URL must use HTTPS. The token is created on the remote instance and should include only `deployments:read`, `deployments:write`, `updates:read`, `updates:write`, `secrets:read`, `secrets:write`, and `system:read`; do not grant `webhooks:trigger`.
+
+The hub exposes instance status at `GET /api/v1/federation/instances` and proxies only the existing deployment, update, secret, and system-information workflows under `/api/v1/federation/instances/{id}/...`. Unknown resources are rejected; remote account and token administration are not federated. Remote writes are audited without request bodies or credentials. A remote authentication failure is reported as a gateway error and does not end the hub browser session.
 
 ### Deployments
 

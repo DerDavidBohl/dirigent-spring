@@ -37,6 +37,7 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-semibold">Machine tokens</h1>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">These credentials belong to the instance where you are signed in.</p>
 
     @if (issued(); as token) {
       <section class="mt-4 rounded-lg border-2 border-brand-500 bg-brand-50 p-4 dark:border-accent-400 dark:bg-brand-950" aria-labelledby="issued-heading" data-testid="issued">

@@ -1,6 +1,7 @@
 package org.davidbohl.dirigent;
 
 import org.davidbohl.dirigent.auth.OperatorAccountService;
+import org.davidbohl.dirigent.federation.FederationProperties;
 import org.davidbohl.dirigent.deployments.updates.RegistryAuthProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,7 @@ import java.io.Console;
 import java.util.Arrays;
 
 @SpringBootApplication
-@EnableConfigurationProperties(RegistryAuthProperties.class)
+@EnableConfigurationProperties({RegistryAuthProperties.class, FederationProperties.class})
 public class DirigentApplication {
 
 	static Logger logger = LoggerFactory.getLogger(DirigentApplication.class);

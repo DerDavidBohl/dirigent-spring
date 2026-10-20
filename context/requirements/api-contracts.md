@@ -121,3 +121,31 @@ An operator with server access can reset a local administrator password through 
 **Dependencies:** REQ-014, SEC-007, ADR-007
 
 **Verification expectation:** Tests verify reset changes the password hash and enables login only with the replacement password, OIDC-only accounts cannot be reset/deleted through these commands, deletion requires confirmation, the last local administrator cannot be deleted, and CLI operations do not start HTTP serving.
+
+### Operators can inspect configured Dirigent instances centrally
+
+**ID: REQ-019**
+
+When federation is configured, the dashboard presents the local instance and each configured remote instance with its instance name, connection status, and operational resources supported by the dashboard. Federation configuration is supplied at runtime and is not managed through the public API. Remote accounts, OIDC configuration, and machine-token administration remain local to each instance.
+
+**Rationale:** Operators need a consolidated view of deployment health across independently hosted Dirigent instances while each instance retains control of its own host.
+
+**Constraints:** Federation is optional. Remote operations are limited to the existing deployment lifecycle, image update, and secret APIs. A failure for one remote is visible for that remote and does not hide local data or successful remote results. Existing per-instance API contracts remain unchanged.
+
+**Dependencies:** ADR-009, REQ-008, REQ-012, SEC-014, UX-009
+
+**Verification expectation:** Tests verify local and multiple remote resources, per-remote connection failures, and relay of only the documented operations to the selected instance.
+
+### Federation exposes a fixed set of remote API operations
+
+**ID: REQ-020**
+
+The federation API exposes explicitly routed, instance-scoped operations corresponding to the existing frontend workflows: read deployments, start/stop one deployment or start all; read updates, check for updates, and apply a selected update; read secrets and create/update/delete a secret; and read system information. Operations are routed only to the configured instance ID and corresponding fixed remote API path and method. Unknown instances, paths, and operations are rejected. Remote command responses preserve the remote API's acknowledgment semantics.
+
+**Rationale:** A closed route set supports the current operational dashboard without creating an arbitrary HTTP proxy or granting access to remote identity administration.
+
+**Constraints:** Human callers must be authenticated as hub administrators. Remote credentials are selected per instance and the remote Dirigent independently enforces the permission required for each operation. Secret request bodies are forwarded only to the selected HTTPS remote and must not be logged or stored by the hub. New remote API operations require an explicit contract and security review before being added.
+
+**Dependencies:** ADR-009, REQ-008, REQ-010, REQ-011, REQ-012, SEC-005, SEC-014, SEC-015
+
+**Verification expectation:** Controller/client tests verify allowed methods and paths, rejection of unknown instance/resource/operation, correct per-instance token use, preserved response status/body where applicable, and absence of remote auth/token-management routes.

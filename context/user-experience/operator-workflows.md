@@ -111,3 +111,17 @@ The visual design is dense and operational and uses the logo colours: blue (`#4A
 **Dependencies:** UX-005, REQ-002, COD-005
 
 **Verification expectation:** Tests confirm theme initialisation, toggling, and persistence; manual review confirms contrast in both themes.
+
+### Operators can compare deployment health across instances
+
+**ID: UX-009**
+
+When federation is configured, operators can select the local instance or a configured remote and use the existing deployment, update, and secret workflows against that instance. The selected instance is clearly identified throughout those workflows. An Instances view shows connection status and deployment names, states, and messages; an unreachable instance shows a concise error state without suppressing other results.
+
+**Rationale:** Operators need to locate which host owns a deployment and perform the supported operations without confusing remote connectivity failure with deployment failure.
+
+**Constraints:** Remote deployment lifecycle, image update, and secret workflows match the existing local interactions and show target identity, pending, and failure states. Account/OIDC and machine-token administration remain per-instance and are not exposed through federation. The view follows the established responsive, accessible operational styling in UX-001, UX-005, and UX-008.
+
+**Dependencies:** ADR-009, REQ-019, UX-001, UX-005
+
+**Verification expectation:** Frontend tests cover disabled/empty federation, instance selection, local and remote operational workflows, per-instance errors, deployment states, action target selection, and responsive semantic status presentation.

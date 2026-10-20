@@ -20,7 +20,7 @@ backend:
 	@mkdir -p $(STATE)/data
 	@cd backend && \
 	  if [ -d $(STATE)/scenario/config ]; then export DIRIGENT_DEPLOYMENTS_GIT_URL=$(STATE)/scenario/config; fi && \
-	  mvn -q test-compile spring-boot:run \
+	  DIRIGENT_TLS_ENABLED=false SERVER_ADDRESS=127.0.0.1 SERVER_PORT=8080 mvn -q test-compile spring-boot:run \
 	    -Dspring-boot.run.profiles=dev \
 	    -Dspring-boot.run.additional-classpath-elements=$(CURDIR)/backend/target/test-classes \
 	    -Dspring-boot.run.workingDirectory=$(STATE) 2>&1 | sed -u 's/^/[backend]  /'

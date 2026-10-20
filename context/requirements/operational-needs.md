@@ -14,6 +14,20 @@ Dirigent manages Docker Compose deployments from a repository-backed deployment 
 
 **Verification expectation:** The operator can configure deployment sources and observe deployment actions through the system without direct shell-based orchestration.
 
+### Operators can serve Dirigent over native HTTPS
+
+**ID: REQ-021**
+
+The embedded server serves HTTPS by default. On first startup, Dirigent generates a self-signed certificate and private key, stores them persistently, and reuses them on subsequent starts; operators can instead configure their own PKCS#12 certificate and key. An advertised hostname can be configured so generated certificates identify the address operators use. Federation callers can trust a remote certificate through the JVM trust store or an explicitly configured SHA-256 certificate fingerprint.
+
+**Rationale:** HTTPS protects browser sessions, machine tokens, and federated secret operations without requiring certificate-generation expertise or a reverse proxy.
+
+**Constraints:** Generated certificate and private key material must survive application restarts and be stored with restrictive filesystem permissions. The default self-signed certificate is not automatically trusted by browsers or remote clients; callers must explicitly trust its SHA-256 fingerprint or use the ordinary JVM trust store for a CA-issued certificate. BYOC configuration takes precedence over generated material. Operators may explicitly disable native TLS when a trusted reverse proxy provides TLS. A configured fingerprint is exact leaf-certificate trust and must not bypass hostname verification, certificate validity dates, or HTTPS-only URLs. Certificate renewal requires updating the pin when the leaf certificate changes.
+
+**Dependencies:** ADR-009, ADR-010, SEC-005, SEC-014, SEC-016
+
+**Verification expectation:** Tests verify first-start creation and persistent reuse, BYOC precedence, default HTTPS, explicit reverse-proxy HTTP mode, client trust limited to the configured certificate fingerprint, and enforced hostname and validity checks.
+
 ### Deployment lifecycle control must cover start, stop, and state visibility
 
 **ID: REQ-002**

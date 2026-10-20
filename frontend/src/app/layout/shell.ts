@@ -2,6 +2,8 @@ import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {AuthService} from '../core/auth/auth.service';
 import {ThemeService} from '../core/theme/theme.service';
+import {FederationDirectory} from '../core/federation/federation-directory';
+import {FederationTarget} from '../core/federation/federation-target';
 
 interface NavItem {
   label: string;
@@ -49,6 +51,20 @@ interface NavItem {
         @if (logoutError()) {
           <p role="alert" class="mr-auto text-sm text-alert-700 dark:text-alert-300">{{ logoutError() }}</p>
         }
+        <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          Instance
+          <select aria-label="Selected instance" class="max-w-56 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-slate-900 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
+                  [value]="target.selectedId()" (change)="selectInstance($any($event.target).value)">
+            @for (instance of directory.instances(); track instance.id) {
+              <option [value]="instance.id" [disabled]="!instance.available">{{ instance.instanceName }}{{ instance.available ? '' : ' (offline)' }}</option>
+            }
+            @if (directory.instances().length === 0) {
+              <option value="local">Local instance</option>
+            }
+          </select>
+        </label>
+        <button type="button" class="rounded-md px-2 py-1.5 text-sm ring-1 ring-slate-300 hover:bg-slate-100 dark:ring-slate-600 dark:hover:bg-slate-800"
+                [disabled]="directory.loading()" (click)="directory.refresh()">Refresh instances</button>
         <span class="text-sm text-slate-600 dark:text-slate-300" data-testid="username">{{ auth.user()?.username }}</span>
         <button type="button" class="rounded-md px-3 py-1.5 text-sm ring-1 ring-slate-300 hover:bg-slate-100 dark:ring-slate-600 dark:hover:bg-slate-800"
                 [attr.aria-pressed]="theme.theme() === 'dark'" (click)="theme.toggle()">
@@ -68,10 +84,13 @@ interface NavItem {
 export class Shell {
   protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
+  protected readonly directory = inject(FederationDirectory);
+  protected readonly target = inject(FederationTarget);
   private readonly router = inject(Router);
 
   protected readonly items: NavItem[] = [
     {label: 'Dashboard', path: '/', exact: true},
+    {label: 'Instances', path: '/instances'},
     {label: 'Deployments', path: '/deployments'},
     {label: 'Updates', path: '/updates'},
     {label: 'Secrets', path: '/secrets'},
@@ -81,6 +100,11 @@ export class Shell {
   protected readonly menuOpen = signal(false);
   protected readonly signingOut = signal(false);
   protected readonly logoutError = signal('');
+
+  protected selectInstance(id: string): void {
+    this.target.select(id);
+    void this.router.navigate(['/instances']);
+  }
 
   protected signOut(): void {
     this.signingOut.set(true);

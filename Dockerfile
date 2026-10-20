@@ -24,7 +24,7 @@ RUN apk add docker docker-compose git tini
 # Finish
 WORKDIR /app
 COPY --from=backend-build /app/target/*.jar app.jar
-EXPOSE 8080
+EXPOSE 8080 8443
 
 # Use tini as init to reap zombie processes
 ENTRYPOINT ["/sbin/tini", "--", "java", "-jar", "app.jar", "--spring.profiles.active=production"]

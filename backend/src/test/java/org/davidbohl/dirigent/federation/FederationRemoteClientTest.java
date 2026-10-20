@@ -1,0 +1,88 @@
+package org.davidbohl.dirigent.federation;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
+
+@SuppressWarnings("unchecked")
+class FederationRemoteClientTest {
+
+    @Test
+    void sendsBearerTokenToValidatedHttpsEndpoint() throws Exception {
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn("{\"instanceName\":\"Remote\",\"gitUrl\":\"\"}");
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        FederationProperties.RemoteInstance instance = new FederationProperties.RemoteInstance();
+        instance.setBaseUrl("https://remote.example/prefix/");
+        instance.setToken("secret-token");
+
+        FederationRemoteClient client = new FederationRemoteClient(httpClient, new ObjectMapper());
+        client.getSystemInformation(instance);
+
+        var request = org.mockito.ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).send(request.capture(), any(HttpResponse.BodyHandler.class));
+        assertEquals(URI.create("https://remote.example/prefix/api/v1/system-information"), request.getValue().uri());
+        assertEquals("Bearer secret-token", request.getValue().headers().firstValue("Authorization").orElseThrow());
+        assertEquals("GET", request.getValue().method());
+    }
+
+    @Test
+    void rejectsNonHttpsAndCredentialBearingUrls() {
+        assertThrows(IllegalArgumentException.class, () -> FederationRemoteClient.endpoint("http://remote.example", "/api"));
+        assertThrows(IllegalArgumentException.class, () -> FederationRemoteClient.endpoint("https://user@remote.example", "/api"));
+        assertThrows(IllegalArgumentException.class, () -> FederationRemoteClient.endpoint("https://remote.example?token=x", "/api"));
+    }
+
+    @Test
+    void keepsHttpsHostnameVerificationEnabledForPinnedClients() {
+        assertEquals("HTTPS", FederationRemoteClient.httpsSslParameters().getEndpointIdentificationAlgorithm());
+    }
+
+    @Test
+    void rejectsNonAllowlistedPathsBeforeSending() {
+        FederationRemoteClient client = new FederationRemoteClient(mock(HttpClient.class), new ObjectMapper());
+        FederationProperties.RemoteInstance instance = new FederationProperties.RemoteInstance();
+        instance.setBaseUrl("https://remote.example");
+        instance.setToken("secret-token");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> client.forward(instance, HttpMethod.GET, "/api/v1/auth/tokens", null, null));
+    }
+
+    @Test
+    void allowsOnlyDocumentedDeploymentWritesWithFiniteRequestTimeout() throws Exception {
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(202);
+        when(response.body()).thenReturn("");
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        FederationProperties.RemoteInstance instance = new FederationProperties.RemoteInstance();
+        instance.setBaseUrl("https://remote.example");
+        instance.setToken("write-token");
+
+        FederationRemoteClient client = new FederationRemoteClient(httpClient, new ObjectMapper());
+        client.forward(instance, HttpMethod.POST, "/api/v1/deployments/all/start", "forceRecreate=false", null);
+
+        var request = org.mockito.ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).send(request.capture(), any(HttpResponse.BodyHandler.class));
+        assertEquals(Duration.ofSeconds(5), request.getValue().timeout().orElseThrow());
+        assertEquals(URI.create("https://remote.example/api/v1/deployments/all/start?forceRecreate=false"),
+                request.getValue().uri());
+        assertEquals(0, request.getValue().bodyPublisher().orElseThrow().contentLength());
+    }
+}

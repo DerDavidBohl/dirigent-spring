@@ -2,6 +2,16 @@
 
 Notable changes to Dirigent are recorded here. See the [upgrade guide](docs/upgrading-to-2.0.md) when upgrading an installation from 1.x.
 
+## [Unreleased]
+
+### Breaking changes
+
+- Native HTTPS is enabled by default on port 8443. Existing reverse-proxy deployments must explicitly set `DIRIGENT_TLS_ENABLED=false` and keep the backend HTTP port private, or update the proxy to use HTTPS on port 8443.
+
+### Added
+
+- First-start persistent self-signed TLS certificate generation, configurable advertised hostnames, bring-your-own PKCS#12 certificates, and per-remote federation certificate fingerprint pinning.
+
 ## [2.0.0]
 
 ### Breaking changes
