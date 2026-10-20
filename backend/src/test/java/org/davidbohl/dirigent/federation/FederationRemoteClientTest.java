@@ -14,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 
@@ -51,6 +52,9 @@ class FederationRemoteClientTest {
     @Test
     void keepsHttpsHostnameVerificationEnabledForPinnedClients() {
         assertEquals("HTTPS", FederationRemoteClient.httpsSslParameters().getEndpointIdentificationAlgorithm());
+        HttpClient client = FederationRemoteClient.newHttpClient(null);
+        assertEquals(HttpClient.Redirect.NEVER, client.followRedirects());
+        assertEquals(Duration.ofSeconds(3), client.connectTimeout().orElseThrow());
     }
 
     @Test
@@ -84,5 +88,30 @@ class FederationRemoteClientTest {
         assertEquals(URI.create("https://remote.example/api/v1/deployments/all/start?forceRecreate=false"),
                 request.getValue().uri());
         assertEquals(0, request.getValue().bodyPublisher().orElseThrow().contentLength());
+    }
+
+    @Test
+    void discardsRemoteErrorBodyAndNeverChangesConfiguredOrigin() throws Exception {
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(500);
+        when(response.body()).thenReturn("sensitive-remote-error");
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        FederationProperties.RemoteInstance instance = new FederationProperties.RemoteInstance();
+        instance.setBaseUrl("https://remote.example/dirigent");
+        instance.setToken("remote-token");
+
+        FederationRemoteClient.RemoteResponse forwarded = new FederationRemoteClient(httpClient, new ObjectMapper())
+                .forward(instance, HttpMethod.GET, "/api/v1/secrets", null, null);
+
+        var request = org.mockito.ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).send(request.capture(), any(HttpResponse.BodyHandler.class));
+        assertEquals("https", request.getValue().uri().getScheme());
+        assertEquals("remote.example", request.getValue().uri().getHost());
+        assertEquals("Bearer remote-token",
+                request.getValue().headers().firstValue("Authorization").orElseThrow());
+        assertEquals(500, forwarded.status());
+        Assertions.assertEquals("", forwarded.body());
+        Assertions.assertFalse(forwarded.body().contains("sensitive-remote-error"));
     }
 }

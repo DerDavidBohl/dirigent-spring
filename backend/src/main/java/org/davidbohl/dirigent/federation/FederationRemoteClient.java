@@ -125,7 +125,7 @@ public class FederationRemoteClient {
         }
     }
 
-    private static HttpClient newHttpClient(SSLContext context) {
+    static HttpClient newHttpClient(SSLContext context) {
         HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(3))
                 .followRedirects(HttpClient.Redirect.NEVER)

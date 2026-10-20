@@ -1,4 +1,4 @@
-import {TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter, Router} from '@angular/router';
 import {signal} from '@angular/core';
 import {FederationDirectory} from '../../core/federation/federation-directory';
@@ -23,7 +23,7 @@ describe('Instances', () => {
   });
 
   it('shows instance status and deployment information', () => {
-    const fixture = TestBed.createComponent(Instances);
+    const fixture: ComponentFixture<Instances> = TestBed.createComponent(Instances);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Office');
     expect(fixture.nativeElement.textContent).toContain('api');
@@ -32,10 +32,10 @@ describe('Instances', () => {
   });
 
   it('selects the instance before returning to the dashboard', () => {
-    const fixture = TestBed.createComponent(Instances);
+    const fixture: ComponentFixture<Instances> = TestBed.createComponent(Instances);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
-    const button = Array.from(fixture.nativeElement.querySelectorAll('li'))[1]
+    const button = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('li'))[1]
       .querySelector('button') as HTMLButtonElement;
     button.click();
     expect(TestBed.inject(FederationTarget).selectedId()).toBe('office');

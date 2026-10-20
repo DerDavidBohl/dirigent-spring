@@ -68,7 +68,9 @@ class FederationServiceTest {
         FederationService service = new FederationService(properties, mock(FederationRemoteClient.class),
                 mock(CachedDeploymentsConfigurationProvider.class), mock(DeploymentStatePersistingService.class), "Local");
 
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> service.getRemote("same"));
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> service.getRemote("../other"));
+        org.junit.jupiter.api.Assertions.assertThrows(FederationService.UnknownFederatedInstanceException.class,
+                () -> service.getRemote("same"));
+        org.junit.jupiter.api.Assertions.assertThrows(FederationService.UnknownFederatedInstanceException.class,
+                () -> service.getRemote("../other"));
     }
 }

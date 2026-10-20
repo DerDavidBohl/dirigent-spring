@@ -19,6 +19,9 @@ import jakarta.servlet.http.Cookie;
 import org.davidbohl.dirigent.auth.dto.MachineTokenCreatedResponse;
 
 import org.davidbohl.dirigent.deployments.management.GiteaDeploymentsController;
+import org.davidbohl.dirigent.federation.FederationController;
+import org.davidbohl.dirigent.federation.FederationService;
+import org.davidbohl.dirigent.federation.FederatedInstance;
 import org.springframework.context.ApplicationEventPublisher;
 import org.davidbohl.dirigent.sercrets.SecretController;
 import org.davidbohl.dirigent.sercrets.SecretService;
@@ -34,7 +37,8 @@ import org.springframework.security.oauth2.server.resource.introspection.OAuth2I
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = {AuthController.class, SecretController.class, GiteaDeploymentsController.class})
+@WebMvcTest(controllers = {AuthController.class, SecretController.class, GiteaDeploymentsController.class,
+        FederationController.class})
 @Import(SecurityConfiguration.class)
 class SecurityAuthorizationTest {
 
@@ -65,10 +69,30 @@ class SecurityAuthorizationTest {
         @MockitoBean
         private ApplicationEventPublisher applicationEventPublisher;
 
+        @MockitoBean
+        private FederationService federationService;
+
     @Test
     void rejectsAnonymousApiRequests() throws Exception {
         mockMvc.perform(get("/api/v1/deployments"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void federationRequiresAuthenticatedAdministrator() throws Exception {
+        when(federationService.getInstances()).thenReturn(List.of(
+                new FederatedInstance("local", "Local", true, List.of(), "")));
+
+        mockMvc.perform(get("/api/v1/federation/instances"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/v1/federation/instances")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("operator").roles("ADMIN")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/federation/instances")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("viewer")))
+                .andExpect(status().isForbidden());
     }
 
     @Test

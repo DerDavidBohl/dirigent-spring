@@ -96,7 +96,7 @@ Federation requests must have finite network timeouts and report each configured
 
 **Dependencies:** ADR-009, REQ-019, SEC-014
 
-**Verification expectation:** Focused backend tests cover successful remote aggregation, HTTP and timeout failures, malformed responses, allowed and rejected methods/paths, per-instance credentials, and a successful result from other instances alongside a failed instance. Frontend tests cover selected-instance reads and writes, pending/error states, and prevent actions from targeting a different selected instance after selection changes.
+**Verification expectation:** Focused backend tests cover successful remote aggregation, HTTP and timeout failures, malformed responses, allowed and rejected methods/paths, credentials sent only to the configured origin, redirects not followed, secret bodies excluded from audit/error output, and a successful result from other instances alongside a failed instance. Controller tests establish authenticated administrator access to federation operations. Frontend tests cover selected-instance reads and writes, pending/error states, and prevent actions from targeting a different selected instance after selection changes.
 
 ### Native TLS trust fails closed
 
@@ -110,7 +110,7 @@ HTTPS bootstrap must create and persist certificate material safely on first sta
 
 **Dependencies:** ADR-010, REQ-021, SEC-016
 
-**Verification expectation:** Tests cover first-start generation, permission-restricted persistent reuse, BYOC override, HTTPS default, explicit HTTP compatibility, successful pinned certificates, wrong pins, expiry, hostname mismatch, and default trust-store behavior when no pin is configured.
+**Verification expectation:** Tests cover first-start generation, permission-restricted persistent reuse (including the stored password file), BYOC override, HTTPS default, explicit HTTP compatibility, successful pinned certificates, wrong pins, expiry, hostname mismatch, and default trust-store behavior when no pin is configured. At least one client test exercises the actual HTTP client configuration for redirect refusal and bounded request time rather than only checking helper values.
 
 ### A manual test environment runs the current code with authentication
 

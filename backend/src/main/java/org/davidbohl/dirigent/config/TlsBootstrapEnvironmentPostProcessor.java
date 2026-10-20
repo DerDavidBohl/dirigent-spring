@@ -105,6 +105,7 @@ public class TlsBootstrapEnvironmentPostProcessor implements EnvironmentPostProc
                             throw new IllegalStateException("Generated TLS keystore password is missing");
                         }
                         setPrivateFilePermissions(keyStore);
+                        setPrivateFilePermissions(passwordFile);
                         return new GeneratedKeyStore(keyStore, Files.readString(passwordFile).trim());
                     }
                     String password = loadOrCreatePassword(passwordFile);

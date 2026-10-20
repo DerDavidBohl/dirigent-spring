@@ -56,10 +56,14 @@ class TlsBootstrapEnvironmentPostProcessorTest {
         assertTrue(containsIpSan(subjectAlternativeNames, expectedIpv6));
 
         ConfigurableEnvironment secondEnvironment = environment(tlsDirectory);
+        Files.setPosixFilePermissions(keyStore, PosixFilePermissions.fromString("rw-r--r--"));
+        Files.setPosixFilePermissions(password, PosixFilePermissions.fromString("rw-r--r--"));
         processor.prepare(secondEnvironment, true);
 
         assertEquals(passwordValue, secondEnvironment.getProperty("server.ssl.key-store-password"));
         assertEquals(passwordValue, Files.readString(password));
+        assertEquals("rw-------", PosixFilePermissions.toString(Files.getPosixFilePermissions(keyStore)));
+        assertEquals("rw-------", PosixFilePermissions.toString(Files.getPosixFilePermissions(password)));
     }
 
     @Test
