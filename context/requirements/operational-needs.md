@@ -28,6 +28,20 @@ The embedded server serves HTTPS by default. On first startup, Dirigent generate
 
 **Verification expectation:** Tests verify first-start creation and persistent reuse, BYOC precedence, default HTTPS, explicit reverse-proxy HTTP mode, client trust limited to the configured certificate fingerprint, and enforced hostname and validity checks.
 
+### Operators can provision machine tokens without browser access
+
+**ID: REQ-022**
+
+An operator with server access can issue a machine token through the server-side CLI for an instance that is managed through configuration or federation rather than its dashboard. The command requires an explicit token name, one or more supported permissions, and an expiry instant. It uses the instance's persistent application database, applies the same issuance rules as dashboard token creation, and prints the token value only once after successful creation.
+
+**Rationale:** Headless and federation-target instances need a way to provision their own least-privilege integration credentials without enabling routine browser administration.
+
+**Constraints:** The token must follow REQ-015 and SEC-008, including mandatory expiry within 366 days, supported explicit permissions, verifier-only persistence, and one-time token disclosure. The command does not start HTTP serving or deployment synchronization. It must not print the token in application logs or accept the token value as input.
+
+**Dependencies:** REQ-015, SEC-008, SEC-014, UX-006, QUA-005
+
+**Verification expectation:** CLI tests verify required arguments, permission and expiry validation, token persistence through the shared issuance service, one-time token output, and that CLI mode exits without starting HTTP serving or deployment synchronization.
+
 ### Deployment lifecycle control must cover start, stop, and state visibility
 
 **ID: REQ-002**

@@ -223,7 +223,16 @@ docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=pro
 
 Password reset prompts twice without echo. Deletion requires typing the account name and refuses to remove the final local administrator. These operations cannot change OIDC-only identities.
 
-Use the dashboard's **Machine tokens** page (`/settings/tokens`) to create scoped, revocable tokens for automation. The full token is displayed only once. Send it as `Authorization: Bearer <token>`; never put it in a URL or commit it to a repository. Every token must expire within 366 days; renew integrations by creating a replacement token before expiry. Existing tokens without an expiry are rejected and must be replaced. Human browser sessions remain cookie-based and protected by CSRF tokens.
+Use the dashboard's **Machine tokens** page (`/settings/tokens`) to create scoped, revocable tokens for automation. For headless instances managed through configuration or federation, issue a token on the instance with the server-side CLI. This command uses the same database and token validation as dashboard creation and does not start HTTP serving or deployment synchronization:
+
+```bash
+docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=production \
+  --create-machine-token federation-hub \
+  --token-permissions deployments:read,deployments:write,updates:read,updates:write,secrets:read,secrets:write,system:read \
+  --token-expires-at 2027-01-01T00:00:00Z
+```
+
+The name, comma-separated permissions, and expiry instant are required. Use only the permissions needed by the integration; for a Gitea webhook, use only `webhooks:trigger`. Expiry must be in the future and no more than 366 days away. The raw token is printed once to stdout. Capture it securely, do not redirect it to a persistent log or include the command in shared shell history, and store it in the hub's secret configuration. Send it as `Authorization: Bearer <token>`; never put it in a URL or commit it to a repository. The dashboard also displays the full token only once. Existing tokens without an expiry are rejected and must be replaced. Human browser sessions remain cookie-based and protected by CSRF tokens.
 
 Failed local-login attempts are rate limited per source peer and normalized username. When running behind a reverse proxy, restrict direct application access and configure rate limiting at that trusted proxy too; Dirigent does not trust arbitrary forwarded-IP headers.
 

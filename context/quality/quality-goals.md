@@ -60,13 +60,13 @@ The backend suite covers process invocation, registry authentication/properties/
 
 **ID: QUA-005**
 
-Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, OIDC administrator access to token management, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, and local-account CLI lifecycle operations. Frontend verification covers readable identity display, logout success/failure states, responsive login presentation, token creation dialog and immediate token table presentation, and a successful Angular production build.
+Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, OIDC administrator access to token management, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, local-account CLI lifecycle operations, and machine-token CLI issuance. Frontend verification covers readable identity display, logout success/failure states, responsive login presentation, token creation dialog and immediate token table presentation, and a successful Angular production build.
 
 **Rationale:** Authentication is a security boundary around privileged deployment and secret operations; compilation alone cannot demonstrate correct access policy.
 
 **Constraints:** External OIDC tests must use a deterministic local test provider or mocked protocol responses and must not depend on a live identity service. Test credentials are non-production and must not be committed as reusable secrets.
 
-**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010
+**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, REQ-022, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010
 
 **Verification expectation:** The focused backend and frontend checks cover both allowed and denied cases; failures must not be accepted as a passing authentication verification.
 

@@ -1,6 +1,9 @@
 package org.davidbohl.dirigent;
 
 import org.davidbohl.dirigent.auth.OperatorAccountService;
+import org.davidbohl.dirigent.auth.MachineTokenService;
+import org.davidbohl.dirigent.auth.dto.MachineTokenCreateRequest;
+import org.davidbohl.dirigent.auth.dto.MachineTokenCreatedResponse;
 import org.davidbohl.dirigent.federation.FederationProperties;
 import org.davidbohl.dirigent.deployments.updates.RegistryAuthProperties;
 import org.slf4j.Logger;
@@ -13,7 +16,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.Console;
+import java.io.PrintStream;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 @EnableConfigurationProperties({RegistryAuthProperties.class, FederationProperties.class})
@@ -22,6 +29,18 @@ public class DirigentApplication {
 	static Logger logger = LoggerFactory.getLogger(DirigentApplication.class);
 
 	public static void main(String[] args) {
+		int createMachineTokenIndex = indexOf(args, "--create-machine-token");
+		if (createMachineTokenIndex >= 0) {
+			MachineTokenCreateRequest request = parseMachineTokenRequest(args, createMachineTokenIndex);
+			String[] springArguments = withoutCliArguments(args, createMachineTokenIndex, 6);
+			try (ConfigurableApplicationContext context = new SpringApplicationBuilder(DirigentApplication.class)
+					.web(WebApplicationType.NONE)
+					.properties("spring.main.banner-mode=off")
+					.run(withBootstrapDefaults(springArguments))) {
+				createMachineToken(request, context.getBean(MachineTokenService.class), System.out);
+			}
+			return;
+		}
 		int createAdminIndex = indexOf(args, "--create-admin");
 		if (createAdminIndex >= 0) {
 			if (createAdminIndex + 1 >= args.length) {
@@ -54,6 +73,35 @@ public class DirigentApplication {
 					composeCommand);
 			System.exit(1);
 		}
+	}
+
+	static MachineTokenCreateRequest parseMachineTokenRequest(String[] args, int commandIndex) {
+		if (commandIndex + 5 >= args.length
+				|| !"--token-permissions".equals(args[commandIndex + 2])
+				|| !"--token-expires-at".equals(args[commandIndex + 4])) {
+			throw new IllegalArgumentException("Usage: --create-machine-token <name> "
+					+ "--token-permissions <permission,...> --token-expires-at <ISO-8601 instant>");
+		}
+		Set<String> permissions = Arrays.stream(args[commandIndex + 3].split(",", -1))
+				.map(permission -> permission.trim())
+				.filter(permission -> !permission.isEmpty())
+				.collect(Collectors.toUnmodifiableSet());
+		Instant expiresAt;
+		try {
+			expiresAt = Instant.parse(args[commandIndex + 5]);
+		} catch (RuntimeException exception) {
+			throw new IllegalArgumentException("Token expiry must be an ISO-8601 instant, for example 2027-01-01T00:00:00Z");
+		}
+		return new MachineTokenCreateRequest(args[commandIndex + 1], permissions, expiresAt);
+	}
+
+	static void createMachineToken(MachineTokenCreateRequest request, MachineTokenService tokenService,
+			PrintStream output) {
+		MachineTokenCreatedResponse created = tokenService.create(request, "server-cli");
+		output.printf("Machine token created: %s%n", created.name());
+		output.printf("Permissions: %s%n", created.permissions().stream().sorted().collect(Collectors.joining(", ")));
+		output.printf("Expires at: %s%n", created.expiresAt());
+		output.printf("Token: %s%n", created.token());
 	}
 
 	private static void createAdmin(String username, String[] springArguments) {
