@@ -487,6 +487,10 @@ The roadmap separates planned work from delivered capabilities.
 - [ ] Improve secret encryption and add key rotation
 - [ ] Improve certificate rotation experience
 - [ ] Improve notifications
+- [ ] Show more information about instances, including their version
+- [ ] Identify the affected instance clearly in notifications
+- [ ] Support additional notification destinations
+- [ ] Allow unused features to be disabled to reduce resource use
 
 ### Achieved
 
