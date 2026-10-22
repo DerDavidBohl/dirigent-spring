@@ -169,7 +169,21 @@ public class FederationRemoteClient {
 
     private static void requireSuccessful(HttpResponse<String> response) throws IOException {
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IOException("Federated instance returned an unsuccessful status");
+            throw new RemoteStatusException(response.statusCode());
+        }
+    }
+
+    public static class RemoteStatusException extends IOException {
+        private static final long serialVersionUID = 1L;
+        private final int status;
+
+        public RemoteStatusException(int status) {
+            super("Federated instance returned an unsuccessful status");
+            this.status = status;
+        }
+
+        public int getStatus() {
+            return status;
         }
     }
 

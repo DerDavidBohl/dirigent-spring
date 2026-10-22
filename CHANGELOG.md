@@ -12,6 +12,7 @@ Notable changes to Dirigent are recorded here. See the [upgrade guide](docs/upgr
 
 - First-start persistent self-signed TLS certificate generation, configurable advertised hostnames, bring-your-own PKCS#12 certificates, and per-remote federation certificate fingerprint pinning.
 - Machine tokens show their last use, revoked tokens are hidden by default, and an hourly Gotify notice lists expired, unrevoked tokens.
+- Unreachable federated instances now show the failure reason (timeout, connection, certificate, HTTP status such as a rejected token) in the Instances view, and the cause is logged.
 
 ## [2.0.0]
 

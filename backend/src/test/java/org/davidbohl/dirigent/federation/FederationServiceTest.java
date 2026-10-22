@@ -55,7 +55,7 @@ class FederationServiceTest {
         assertEquals("Office", result.get(1).instanceName());
         assertEquals("api", result.get(1).deployments().get(0).name());
         assertFalse(result.get(2).available());
-        assertEquals("Unable to reach this instance.", result.get(2).error());
+        assertEquals("Unable to reach this instance: unexpected error.", result.get(2).error());
     }
 
         @Test
@@ -84,11 +84,24 @@ class FederationServiceTest {
 
                 assertEquals("local", result.get(0).id());
                 assertFalse(result.get(1).available());
-                assertEquals("Unable to reach this instance.", result.get(1).error());
+                assertEquals("Unable to reach this instance: unexpected error.", result.get(1).error());
                 assertFalse(result.get(2).available());
+                assertEquals("Unable to reach this instance: the request timed out.", result.get(2).error());
                 assertTrue(result.get(3).available());
                 assertEquals("Healthy", result.get(3).instanceName());
                 assertEquals("api", result.get(3).deployments().get(0).name());
+        }
+
+        @Test
+        void describesFailureReasonsWithoutRawExceptionText() {
+                assertEquals("connection failed (host unknown or refused)",
+                                FederationService.describeFailure(new java.net.ConnectException("secret-host:443")));
+                assertEquals("TLS or certificate validation failed",
+                                FederationService.describeFailure(new javax.net.ssl.SSLHandshakeException("cert detail")));
+                assertEquals("remote returned HTTP 401 (token rejected)",
+                                FederationService.describeFailure(new FederationRemoteClient.RemoteStatusException(401)));
+                assertEquals("remote returned HTTP 500",
+                                FederationService.describeFailure(new FederationRemoteClient.RemoteStatusException(500)));
         }
 
         private FederationProperties.RemoteInstance remote(String id) {

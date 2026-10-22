@@ -198,7 +198,7 @@ The federation hub treats remote instance URLs and machine tokens as sensitive o
 
 **Dependencies:** ADR-009, REQ-015, REQ-020, SEC-006, SEC-008
 
-**Verification expectation:** Tests reject non-HTTPS or malformed URLs, ensure authorization headers are sent only to the configured origin and are not exposed in logs/responses, confirm finite timeouts and no redirect following, verify remote authorization failures do not invalidate the hub session, and verify one remote failure does not fail other operations or instance results.
+**Verification expectation:** Tests reject non-HTTPS or malformed URLs, ensure authorization headers are sent only to the configured origin and are not exposed in logs/responses, confirm finite timeouts and no redirect following, verify remote authorization failures do not invalidate the hub session, verify one remote failure does not fail other operations or instance results, and verify failure diagnostics (log and instance error) contain only the fixed reason category and no URL, token, or raw exception text in the returned error.
 
 ### Federated secret values are transient and excluded from diagnostics
 

@@ -130,11 +130,11 @@ When federation is configured, the dashboard presents the local instance and eac
 
 **Rationale:** Operators need a consolidated view of deployment health across independently hosted Dirigent instances while each instance retains control of its own host.
 
-**Constraints:** Federation is optional. Remote operations are limited to the existing deployment lifecycle, image update, and secret APIs. A failure for one remote is visible for that remote and does not hide local data or successful remote results. Existing per-instance API contracts remain unchanged.
+**Constraints:** Federation is optional. Remote operations are limited to the existing deployment lifecycle, image update, and secret APIs. A failure for one remote is visible for that remote and does not hide local data or successful remote results. Existing per-instance API contracts remain unchanged. When a remote is unreachable, both the instance's error state and the hub log state a diagnosable reason from a fixed set of categories (timeout, connection failure, TLS/certificate failure, remote HTTP status such as rejected token, invalid configuration, unexpected error); the log additionally names the instance ID and underlying exception type. Neither exposes URLs, tokens, or raw exception text to callers.
 
 **Dependencies:** ADR-009, REQ-008, REQ-012, SEC-014, UX-009
 
-**Verification expectation:** Tests verify local and multiple remote resources, per-remote connection failures, and relay of only the documented operations to the selected instance.
+**Verification expectation:** Tests verify local and multiple remote resources, per-remote connection failures including the reported reason category, and relay of only the documented operations to the selected instance.
 
 ### Federation exposes a fixed set of remote API operations
 

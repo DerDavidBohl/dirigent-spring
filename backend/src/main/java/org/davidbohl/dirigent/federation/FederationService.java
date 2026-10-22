@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class FederationService {
 
+    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(FederationService.class);
+
     private final FederationProperties properties;
     private final FederationRemoteClient remoteClient;
     private final CachedDeploymentsConfigurationProvider configurationProvider;
@@ -110,11 +112,37 @@ public class FederationService {
                     .map(this::toFederatedDeployment)
                     .toList();
             return new FederatedInstance(id, information.join().instanceName(), true, deployments, "");
-        } catch (CompletionException exception) {
-            return unavailable(id);
         } catch (Exception exception) {
-            return unavailable(id);
+            Throwable cause = exception instanceof CompletionException && exception.getCause() != null
+                    ? exception.getCause() : exception;
+            String reason = describeFailure(cause);
+            LOGGER.warn("Federated instance '{}' is unavailable: {} ({})", id, reason, cause.getClass().getName());
+            return unavailable(id, reason);
         }
+    }
+
+    static String describeFailure(Throwable cause) {
+        if (cause instanceof java.net.http.HttpTimeoutException) {
+            return "the request timed out";
+        }
+        if (cause instanceof javax.net.ssl.SSLException) {
+            return "TLS or certificate validation failed";
+        }
+        if (cause instanceof java.net.ConnectException || cause instanceof java.nio.channels.UnresolvedAddressException
+                || cause instanceof java.net.UnknownHostException) {
+            return "connection failed (host unknown or refused)";
+        }
+        if (cause instanceof FederationRemoteClient.RemoteStatusException status) {
+            boolean rejected = status.getStatus() == 401 || status.getStatus() == 403;
+            return "remote returned HTTP " + status.getStatus() + (rejected ? " (token rejected)" : "");
+        }
+        if (cause instanceof com.fasterxml.jackson.core.JsonProcessingException) {
+            return "the response was invalid";
+        }
+        if (cause instanceof IllegalArgumentException) {
+            return "the instance configuration is invalid";
+        }
+        return "unexpected error";
     }
 
     private <T> CompletableFuture<T> callRemoteAsync(Executor executor, RemoteCall<T> call) {
@@ -135,7 +163,11 @@ public class FederationService {
     }
 
     private FederatedInstance unavailable(String id) {
-        return new FederatedInstance(id, id, false, List.of(), "Unable to reach this instance.");
+        return unavailable(id, "the instance configuration is invalid");
+    }
+
+    private FederatedInstance unavailable(String id, String reason) {
+        return new FederatedInstance(id, id, false, List.of(), "Unable to reach this instance: " + reason + ".");
     }
 
     private boolean isValidId(String id) {
