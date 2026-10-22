@@ -31,14 +31,13 @@ describe('Instances', () => {
     expect(fixture.nativeElement.textContent).toContain('Unable to reach this instance.');
   });
 
-  it('selects the instance before returning to the dashboard', () => {
+  it('opens the dashboard for the chosen instance', () => {
     const fixture: ComponentFixture<Instances> = TestBed.createComponent(Instances);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
     const button = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('li'))[1]
       .querySelector('button') as HTMLButtonElement;
     button.click();
-    expect(TestBed.inject(FederationTarget).selectedId()).toBe('office');
-    expect(navigate).toHaveBeenCalledWith(['/']);
+    expect(navigate).toHaveBeenCalledWith(['/'], {queryParams: {instance: 'office'}});
   });
 });

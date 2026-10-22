@@ -39,14 +39,19 @@ describe('Shell', () => {
     expect(el.querySelector('[data-testid=username]')?.textContent).toContain('Ada Lovelace');
   });
 
-  it('routes resource selection to the chosen instance', () => {
+  it('selects the instance from the URL', async () => {
+    render();
+    await TestBed.inject(Router).navigateByUrl('/?instance=office');
+    expect(TestBed.inject(FederationTarget).selectedId()).toBe('office');
+  });
+
+  it('keeps the current page when switching instance', () => {
     const fixture = render();
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const select = fixture.nativeElement.querySelector('select[aria-label="Selected instance"]') as HTMLSelectElement;
     select.value = 'office';
     select.dispatchEvent(new Event('change'));
-    expect(TestBed.inject(FederationTarget).selectedId()).toBe('office');
-    expect(navigate).toHaveBeenCalledWith(['/instances']);
+    expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({queryParams: {instance: 'office'}, queryParamsHandling: 'merge'}));
   });
 
   it('toggles the theme', () => {

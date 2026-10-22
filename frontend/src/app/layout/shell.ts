@@ -1,5 +1,6 @@
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
-import {Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {AuthService} from '../core/auth/auth.service';
 import {ThemeService} from '../core/theme/theme.service';
 import {FederationDirectory} from '../core/federation/federation-directory';
@@ -21,7 +22,7 @@ interface NavItem {
 
     <aside class="border-b border-slate-200 bg-white md:w-60 md:shrink-0 md:border-b-0 md:border-r dark:border-slate-800 dark:bg-slate-900">
       <div class="flex items-center justify-between px-4 py-3 md:py-5">
-        <a routerLink="/" class="flex items-center gap-2 text-lg font-semibold">
+        <a routerLink="/" queryParamsHandling="merge" class="flex items-center gap-2 text-lg font-semibold">
           <img src="icon-no-background.svg" alt="" class="size-8">
           Dirigent
         </a>
@@ -34,7 +35,7 @@ interface NavItem {
         <ul class="flex flex-col gap-1">
           @for (item of items; track item.path) {
             <li>
-              <a [routerLink]="item.path" routerLinkActive="bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-200"
+              <a [routerLink]="item.path" queryParamsHandling="merge" routerLinkActive="bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-200"
                  [routerLinkActiveOptions]="{exact: item.exact ?? false}" ariaCurrentWhenActive="page"
                  class="block rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                  (click)="menuOpen.set(false)">
@@ -87,6 +88,11 @@ export class Shell {
   protected readonly directory = inject(FederationDirectory);
   protected readonly target = inject(FederationTarget);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  constructor() {
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => this.target.select(params.get('instance') ?? 'local'));
+  }
 
   protected readonly items: NavItem[] = [
     {label: 'Dashboard', path: '/', exact: true},
@@ -102,8 +108,7 @@ export class Shell {
   protected readonly logoutError = signal('');
 
   protected selectInstance(id: string): void {
-    this.target.select(id);
-    void this.router.navigate(['/instances']);
+    void this.router.navigate([], {relativeTo: this.route, queryParams: {instance: id}, queryParamsHandling: 'merge'});
   }
 
   protected signOut(): void {

@@ -22,7 +22,7 @@ import {StatusLine} from '../../ui/status-line';
       <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         @for (tile of tiles(); track tile.state) {
           <li>
-            <a routerLink="/deployments" [queryParams]="{state: tile.state}" data-testid="state-tile"
+            <a routerLink="/deployments" [queryParams]="{state: tile.state}" queryParamsHandling="merge" data-testid="state-tile"
                class="block rounded-lg bg-white p-4 ring-1 ring-slate-200 hover:ring-brand-400 dark:bg-slate-900 dark:ring-slate-700 dark:hover:ring-accent-400">
               <span class="block text-3xl font-semibold" data-testid="tile-count">{{ tile.count }}</span>
               <app-state-badge [state]="tile.state" />

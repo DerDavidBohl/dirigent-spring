@@ -1,7 +1,6 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {Router} from '@angular/router';
 import {FederationDirectory} from '../../core/federation/federation-directory';
-import {FederationTarget} from '../../core/federation/federation-target';
 import {StateBadge} from '../../ui/state-badge';
 
 @Component({
@@ -62,11 +61,9 @@ import {StateBadge} from '../../ui/state-badge';
 })
 export class Instances {
   protected readonly directory = inject(FederationDirectory);
-  private readonly target = inject(FederationTarget);
   private readonly router = inject(Router);
 
   protected useInstance(id: string): void {
-    this.target.select(id);
-    void this.router.navigate(['/']);
+    void this.router.navigate(['/'], {queryParams: {instance: id}});
   }
 }
