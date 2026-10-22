@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.davidbohl.dirigent.deployments.management.model.DeploymentDto;
 import org.davidbohl.dirigent.system.SystemInformation;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +41,7 @@ public class FederationRemoteClient {
     private final ConcurrentMap<String, HttpClient> pinnedHttpClients = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
 
+    @Autowired
     public FederationRemoteClient(ObjectMapper objectMapper) {
         this(newHttpClient(null), objectMapper);
     }

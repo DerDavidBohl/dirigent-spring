@@ -16,10 +16,22 @@ import java.time.Duration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.HttpMethod;
 
 @SuppressWarnings("unchecked")
 class FederationRemoteClientTest {
+
+    @Test
+    void createsComponentWithSpringUsingObjectMapperConstructor() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
+            context.register(FederationRemoteClient.class);
+            context.refresh();
+
+            Assertions.assertNotNull(context.getBean(FederationRemoteClient.class));
+        }
+    }
 
     @Test
     void sendsBearerTokenToValidatedHttpsEndpoint() throws Exception {
