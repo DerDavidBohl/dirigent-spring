@@ -3,6 +3,8 @@ import {DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {CreatedMachineToken, MachineToken} from '../../core/api/models';
 import {TokensApi} from '../../core/api/tokens-api';
+import {FederationDirectory} from '../../core/federation/federation-directory';
+import {FederationTarget} from '../../core/federation/federation-target';
 
 const PERMISSIONS = [
   {value: 'deployments:read', label: 'Read deployments'},
@@ -37,7 +39,12 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-semibold">Machine tokens</h1>
-    <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">These credentials belong to the instance where you are signed in.</p>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Machine tokens are managed only on the main instance, the one you are signed in to. They are never managed through federation.</p>
+    @if (target.selectedId() !== 'local') {
+      <p role="note" class="mt-3 rounded-md bg-brand-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-accent-400 dark:bg-brand-950 dark:text-slate-100" data-testid="remote-notice">
+        The selected instance “{{ selectedName() }}” does not apply here. The tokens below belong to the main instance. To manage tokens of “{{ selectedName() }}”, open its own dashboard or use the server-side CLI on that instance.
+      </p>
+    }
 
     @if (issued(); as token) {
       <section class="mt-4 rounded-lg border-2 border-brand-500 bg-brand-50 p-4 dark:border-accent-400 dark:bg-brand-950" aria-labelledby="issued-heading" data-testid="issued">
@@ -125,6 +132,12 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
 })
 export class Tokens {
   private readonly api = inject(TokensApi);
+  private readonly directory = inject(FederationDirectory);
+  protected readonly target = inject(FederationTarget);
+  protected readonly selectedName = computed(() => {
+    const id = this.target.selectedId();
+    return this.directory.instances().find(instance => instance.id === id)?.instanceName ?? id;
+  });
 
   protected readonly permissions = PERMISSIONS;
   protected readonly tokens = signal<MachineToken[]>([]);

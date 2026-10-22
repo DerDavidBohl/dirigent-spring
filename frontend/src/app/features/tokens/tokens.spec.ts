@@ -1,7 +1,10 @@
 import {TestBed} from '@angular/core/testing';
+import {signal} from '@angular/core';
 import {Observable, of, throwError} from 'rxjs';
 import {CreatedMachineToken, MachineToken} from '../../core/api/models';
 import {TokensApi} from '../../core/api/tokens-api';
+import {FederationDirectory} from '../../core/federation/federation-directory';
+import {FederationTarget} from '../../core/federation/federation-target';
 import {Tokens, expiryToIso, tokenStatus} from './tokens';
 
 describe('token helpers', () => {
@@ -28,7 +31,10 @@ describe('Tokens', () => {
 
   function render() {
     list.mockReturnValue(of([token]));
-    TestBed.configureTestingModule({providers: [{provide: TokensApi, useValue: {list, create, revoke}}]});
+    TestBed.configureTestingModule({providers: [
+      {provide: TokensApi, useValue: {list, create, revoke}},
+      {provide: FederationDirectory, useValue: {instances: signal([{id: 'office', instanceName: 'Office', available: true, deployments: [], error: ''}])}}
+    ]});
     const fixture = TestBed.createComponent(Tokens);
     fixture.detectChanges();
     return {fixture, el: fixture.nativeElement as HTMLElement};
@@ -60,6 +66,19 @@ describe('Tokens', () => {
 
   it('states that tokens expire at 00:00 UTC', () => {
     expect(render().el.textContent).toContain('Expires at 00:00 UTC');
+  });
+
+  it('states that tokens are managed only on the main instance without a remote warning', () => {
+    const {el} = render();
+    expect(el.textContent).toContain('managed only on the main instance');
+    expect(el.querySelector('[data-testid=remote-notice]')).toBeNull();
+  });
+
+  it('warns that a selected remote does not apply to the tokens shown', () => {
+    const {fixture, el} = render();
+    TestBed.inject(FederationTarget).select('office');
+    fixture.detectChanges();
+    expect(el.querySelector('[data-testid=remote-notice]')?.textContent).toContain('Office');
   });
 
   it('requires name, expiry and a permission before creating', async () => {
