@@ -1,8 +1,8 @@
 # Changelog
 
-Notable changes to Dirigent are recorded here. See the [upgrade guide](docs/upgrading-to-2.0.md) when upgrading an installation from 1.x.
+Notable changes to Dirigent are recorded here. See the [2.x to 3.0 upgrade guide](docs/upgrading-to-3.0.md) when upgrading from 2.x, or the [1.x to 2.0 upgrade guide](docs/upgrading-to-2.0.md) first when upgrading from 1.x.
 
-## [Unreleased]
+## [3.0.0]
 
 ### Breaking changes
 
@@ -11,6 +11,7 @@ Notable changes to Dirigent are recorded here. See the [upgrade guide](docs/upgr
 ### Added
 
 - First-start persistent self-signed TLS certificate generation, configurable advertised hostnames, bring-your-own PKCS#12 certificates, and per-remote federation certificate fingerprint pinning.
+- Read/write federation for deployment lifecycle, image updates, secrets, and system information across configured instances.
 - Machine tokens show their last use, revoked tokens are hidden by default, and an hourly Gotify notice lists expired, unrevoked tokens.
 - Unreachable federated instances now show the failure reason (timeout, connection, certificate, HTTP status such as a rejected token) in the Instances view, and the cause is logged.
 
