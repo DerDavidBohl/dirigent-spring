@@ -113,6 +113,34 @@ describe('Tokens', () => {
     expect(el.querySelector('[role=alert]')?.textContent).toContain('could not be created');
   });
 
+  it('hides revoked tokens by default and shows them on request', () => {
+    list.mockReturnValue(of([token, {...token, id: 9, name: 'old', revokedAt: '2030-02-01T00:00:00Z'}]));
+    TestBed.configureTestingModule({providers: [
+      {provide: TokensApi, useValue: {list, create, revoke}},
+      {provide: FederationDirectory, useValue: {instances: signal([])}}
+    ]});
+    const fixture = TestBed.createComponent(Tokens);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelectorAll('[data-testid=token]').length).toBe(1);
+    (el.querySelector('[data-testid=show-revoked]') as HTMLInputElement).click();
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-testid=token]').length).toBe(2);
+  });
+
+  it('shows the last use or Never', () => {
+    list.mockReturnValue(of([{...token, lastUsedAt: '2030-03-04T10:00:00Z'}, {...token, id: 8}]));
+    TestBed.configureTestingModule({providers: [
+      {provide: TokensApi, useValue: {list, create, revoke}},
+      {provide: FederationDirectory, useValue: {instances: signal([])}}
+    ]});
+    const fixture = TestBed.createComponent(Tokens);
+    fixture.detectChanges();
+    const cells = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid=last-used]'));
+    expect(cells[0].textContent).toContain('2030');
+    expect(cells[1].textContent).toBe('Never');
+  });
+
   it('revokes a token and reloads', () => {
     const {el} = render();
     (el.querySelector('[data-testid=token] button') as HTMLButtonElement).click();

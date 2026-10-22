@@ -120,7 +120,7 @@ Machine tokens are generated from cryptographically secure random data, stored o
 
 **Rationale:** Leaked automation credentials must not expose human passwords or grant broader API access than the integration requires.
 
-**Constraints:** Token permissions must be enforced for every protected API operation, including the dedicated `webhooks:trigger` operation. Every token has a mandatory expiry within 366 days and is rejected after expiry or revocation. Token values and verifiers are sensitive and must not appear in logs or ordinary API responses. Server-side CLI issuance applies the same permission, expiry, storage, and one-time disclosure controls; its output is the only CLI disclosure of the raw token.
+**Constraints:** Token permissions must be enforced for every protected API operation, including the dedicated `webhooks:trigger` operation. Every token has a mandatory expiry within 366 days and is rejected after expiry or revocation. Token values and verifiers are sensitive and must not appear in logs or ordinary API responses. The time of a token's last successful authentication is recorded (at most once per minute) and exposed in token metadata; expired-token notices contain only token names and expiry. Server-side CLI issuance applies the same permission, expiry, storage, and one-time disclosure controls; its output is the only CLI disclosure of the raw token.
 
 **Dependencies:** REQ-015, REQ-022, ADR-007
 

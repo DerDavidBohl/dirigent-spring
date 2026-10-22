@@ -56,6 +56,7 @@ export interface MachineToken {
   createdAt: string;
   expiresAt: string | null;
   revokedAt: string | null;
+  lastUsedAt?: string | null;
 }
 
 export interface CreatedMachineToken {

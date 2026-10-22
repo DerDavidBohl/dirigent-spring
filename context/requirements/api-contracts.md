@@ -84,7 +84,7 @@ Dirigent supports browser authentication through either a configured OpenID Conn
 
 **ID: REQ-015**
 
-An administrator can issue, list, and revoke machine API tokens. A token is displayed only once when created, must expire within 366 days, and is granted explicitly selected permissions. Token listings expose metadata and permissions but never the token value. Tokens authenticate API clients without creating browser sessions.
+An administrator can issue, list, and revoke machine API tokens. A token is displayed only once when created, must expire within 366 days, and is granted explicitly selected permissions. Token listings expose metadata and permissions, including when the token was last used, but never the token value. Tokens authenticate API clients without creating browser sessions.
 
 **Rationale:** Automation needs non-interactive access without sharing a human password or an administrator browser session.
 
@@ -92,7 +92,7 @@ An administrator can issue, list, and revoke machine API tokens. A token is disp
 
 **Dependencies:** SEC-008, ADR-007, UX-006
 
-**Verification expectation:** Tests verify one-time token disclosure, stored-token non-disclosure, permission enforcement, mandatory bounded expiry, expiration, and revocation.
+**Verification expectation:** Tests verify one-time token disclosure, stored-token non-disclosure, permission enforcement, mandatory bounded expiry, expiration, revocation, and last-use recording.
 
 ### Server-side account provisioning command
 

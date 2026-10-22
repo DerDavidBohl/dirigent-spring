@@ -11,6 +11,7 @@ Notable changes to Dirigent are recorded here. See the [upgrade guide](docs/upgr
 ### Added
 
 - First-start persistent self-signed TLS certificate generation, configurable advertised hostnames, bring-your-own PKCS#12 certificates, and per-remote federation certificate fingerprint pinning.
+- Machine tokens show their last use, revoked tokens are hidden by default, and an hourly Gotify notice lists expired, unrevoked tokens.
 
 ## [2.0.0]
 

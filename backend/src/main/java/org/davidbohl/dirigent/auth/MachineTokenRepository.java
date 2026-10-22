@@ -11,4 +11,6 @@ public interface MachineTokenRepository extends JpaRepository<MachineTokenEntity
     Optional<MachineTokenEntity> findByTokenHashAndRevokedAtIsNull(String tokenHash);
 
     List<MachineTokenEntity> findAllByOrderByCreatedAtDesc();
+
+    List<MachineTokenEntity> findAllByRevokedAtIsNullAndExpiresAtBeforeOrderByExpiresAtAsc(java.time.Instant now);
 }

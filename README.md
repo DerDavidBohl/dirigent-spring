@@ -55,7 +55,7 @@ Dirigent simplifies **GitOps for Docker Compose deployments** by automating the 
 
 ### 🔧 **Extensible & Developer-Friendly**
 - **REST API**: Integrate with existing tools (CI/CD, monitoring).
-- **Gotify notifications**: Get alerts when deployments fail.
+- **Gotify notifications**: Get alerts when deployments fail, and an hourly reminder while machine tokens are expired but not revoked.
 
 ### 🔒 Encrypted Secrets
 - You can store encrypted Secrets that are injected as Environment Variable on execution
@@ -223,7 +223,7 @@ docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=pro
 
 Password reset prompts twice without echo. Deletion requires typing the account name and refuses to remove the final local administrator. These operations cannot change OIDC-only identities.
 
-Use the dashboard's **Machine tokens** page (`/settings/tokens`) to create scoped, revocable tokens for automation. For headless instances managed through configuration or federation, issue a token on the instance with the server-side CLI. This command uses the same database and token validation as dashboard creation and does not start HTTP serving or deployment synchronization:
+Use the dashboard's **Machine tokens** page (`/settings/tokens`) to create scoped, revocable tokens for automation. The page shows when each token was last used and hides revoked tokens unless you enable **Show revoked tokens**. For headless instances managed through configuration or federation, issue a token on the instance with the server-side CLI. This command uses the same database and token validation as dashboard creation and does not start HTTP serving or deployment synchronization:
 
 ```bash
 docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=production \

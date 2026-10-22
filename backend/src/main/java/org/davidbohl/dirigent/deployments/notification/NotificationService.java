@@ -61,6 +61,10 @@ public class NotificationService {
         sendGotifyMessage(title, message);
     }
 
+    public void sendNotice(String title, String message) {
+        sendGotifyMessage(title, message);
+    }
+
     @Retryable
     private void sendGotifyMessage(String title, String message) {
         try {

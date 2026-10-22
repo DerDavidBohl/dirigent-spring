@@ -91,7 +91,14 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
       <button type="submit" class="mt-4 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60" [disabled]="!canCreate()">Create token</button>
     </form>
 
-    <div class="mt-6 overflow-x-auto">
+    <div class="mt-6 flex items-center justify-between">
+      <h2 class="text-lg font-semibold">Tokens</h2>
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" class="size-4 accent-brand-600" data-testid="show-revoked" [checked]="showRevoked()" (change)="showRevoked.set(!showRevoked())">
+        Show revoked tokens
+      </label>
+    </div>
+    <div class="mt-2 overflow-x-auto">
       <table class="w-full text-left text-sm">
         <caption class="sr-only">Machine tokens</caption>
         <thead>
@@ -99,12 +106,13 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
             <th scope="col" class="py-2 pr-4 font-semibold">Name</th>
             <th scope="col" class="py-2 pr-4 font-semibold">Permissions</th>
             <th scope="col" class="py-2 pr-4 font-semibold">Expires (UTC)</th>
+            <th scope="col" class="py-2 pr-4 font-semibold">Last used</th>
             <th scope="col" class="py-2 pr-4 font-semibold">Status</th>
             <th scope="col" class="py-2"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (token of tokens(); track token.id) {
+          @for (token of visibleTokens(); track token.id) {
             <tr class="border-b border-slate-100 align-top dark:border-slate-800" data-testid="token">
               <td class="py-2 pr-4 font-medium">{{ token.name }}</td>
               <td class="py-2 pr-4">
@@ -115,6 +123,7 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
                 </ul>
               </td>
               <td class="py-2 pr-4">{{ token.expiresAt ? (token.expiresAt | date: 'mediumDate' : 'UTC') : 'Never' }}</td>
+              <td class="py-2 pr-4" data-testid="last-used">{{ token.lastUsedAt ? (token.lastUsedAt | date: 'medium') : 'Never' }}</td>
               <td class="py-2 pr-4" data-testid="status">{{ status(token) }}</td>
               <td class="py-2">
                 @if (!token.revokedAt) {
@@ -141,6 +150,9 @@ export class Tokens {
 
   protected readonly permissions = PERMISSIONS;
   protected readonly tokens = signal<MachineToken[]>([]);
+  protected readonly showRevoked = signal(false);
+  protected readonly visibleTokens = computed(() =>
+    this.showRevoked() ? this.tokens() : this.tokens().filter(token => !token.revokedAt));
   protected readonly issued = signal<CreatedMachineToken | null>(null);
   protected readonly error = signal('');
   protected readonly busy = signal(false);
