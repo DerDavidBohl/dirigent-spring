@@ -471,11 +471,28 @@ Fresh start: stop `make dev`, then `make reset dev`.
 
 ## Roadmap
 
-Here is a roadmap with future Ideas
+The roadmap separates planned work from delivered capabilities.
 
-- [ ] Automate Updates for deployments - Work in Progress
-- [ ] Add automated tests
+### Planned
+
+- [ ] Automate image update application (currently operator-triggered) - Work in Progress
+- [ ] Retain and expose completed image-update outcomes
+- [ ] Expand automated test coverage for deployment lifecycle and API integration gaps
+- [ ] Reduce the initial frontend bundle size
 - [ ] Add cleanups (i. e. `docker system prune` or `docker volume prune`)
+- [ ] Add backup and restore support
 - [ ] Add a single repo mode
-- [ ] Improve pathhandling for deployment related files in repo
-- [ ] Multiple Dirigent hosts
+- [ ] Improve path handling for deployment-related files in repositories
+- [ ] Validate deployment configuration and recover safely from invalid changes
+- [ ] Improve secret encryption and add key rotation
+- [ ] Improve certificate rotation experience
+- [ ] Improve notifications
+
+### Achieved
+
+- [x] Image-update discovery and operator-triggered application
+- [x] Automated test suite and release gate
+- [x] Gotify deployment, update, and expired-token notifications
+- [x] Native HTTPS with generated or operator-supplied certificates
+- [x] Multiple Dirigent hosts (via federation)
+- [x] Authentication (local accounts, OIDC, and scoped machine tokens)

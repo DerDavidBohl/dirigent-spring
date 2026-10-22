@@ -141,3 +141,19 @@ For a release that changes an existing operator workflow or public integration c
 **Dependencies:** REQ-004, REQ-013, REQ-014, REQ-015, SEC-005
 
 **Verification expectation:** A breaking release has a changelog entry that explicitly marks incompatible behavior, and a linked migration guide provides a complete ordered checklist with a way to verify access and integrations after upgrade.
+
+### The project roadmap distinguishes planned work from delivered capabilities
+
+**ID: REQ-023**
+
+The README roadmap must distinguish planned work from achieved capabilities and must not list delivered capabilities as though they were still outstanding. Where a roadmap goal is partially implemented, its wording should make the remaining gap clear. Achieved capabilities include operator authentication and scoped machine tokens (REQ-014, REQ-015), multi-host federation (REQ-019, REQ-020), native HTTPS (REQ-021), image-update discovery and operator-triggered application (REQ-006), configured Gotify notifications (UX-004), and the automated test/release gate (QUA-004).
+
+The roadmap includes planned improvements to the certificate rotation experience and notifications. Their detailed behavioral scope remains to be specified before implementation, informed by SEC-016, UX-004, and QUA-003.
+
+It also tracks reducing the initial frontend bundle size, retaining clear outcomes for image update operations, providing backup and restore support, improving secret encryption and key rotation, and validating deployment configuration with safe recovery from invalid changes. These goals are informed by CLR-013, REQ-011, ADR-005, SEC-001, REQ-001, and CLR-004; detailed acceptance criteria remain to be specified before implementation.
+
+**Rationale:** Contributors and operators use the roadmap to understand project direction and should not be misled about existing capabilities or work that remains.
+
+**Dependencies:** QUA-006, SEC-016, UX-004, QUA-003, CLR-013, REQ-011, ADR-005, SEC-001, REQ-001, CLR-004
+
+**Verification expectation:** Roadmap entries are checked against the current supported behavior and relevant requirements before publication.
