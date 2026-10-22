@@ -11,6 +11,9 @@ import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.net.http.HttpTimeoutException;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -76,6 +79,25 @@ class FederationTlsIntegrationTest {
             exchange.close();
         });
         redirectServer.start();
+
+        CountDownLatch releaseSlowResponse = new CountDownLatch(1);
+        HttpsServer slowServer = HttpsServer.create(
+                new InetSocketAddress(InetAddress.getByName("0.0.0.0"), 0), 0);
+        slowServer.setHttpsConfigurator(new HttpsConfigurator(serverContext));
+        slowServer.createContext("/api/v1/system-information", exchange -> {
+            try {
+                releaseSlowResponse.await(10, TimeUnit.SECONDS);
+                byte[] body = "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, body.length);
+                try (var output = exchange.getResponseBody()) {
+                    output.write(body);
+                }
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                exchange.close();
+            }
+        });
+        slowServer.start();
         try {
             String origin = "https://localhost:" + server.getAddress().getPort();
             FederationRemoteClient client = new FederationRemoteClient();
@@ -96,7 +118,13 @@ class FederationTlsIntegrationTest {
                     "https://localhost:" + redirectServer.getAddress().getPort(), validPin);
             assertThrows(Exception.class, () -> client.getSystemInformation(redirect));
             assertEquals(0, redirectTargetHits.get());
+
+            FederationProperties.RemoteInstance slow = remote(
+                    "https://localhost:" + slowServer.getAddress().getPort(), validPin);
+            assertThrows(HttpTimeoutException.class, () -> client.getSystemInformation(slow));
         } finally {
+            releaseSlowResponse.countDown();
+            slowServer.stop(0);
             redirectServer.stop(0);
             server.stop(0);
         }

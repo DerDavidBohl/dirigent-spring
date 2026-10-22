@@ -226,4 +226,4 @@ Native HTTPS is enabled by default. On first startup, Dirigent creates and persi
 
 **Dependencies:** ADR-010, REQ-021, SEC-005, SEC-014
 
-**Verification expectation:** Tests verify safe first-start key generation and persistence, BYOC precedence, restrictive permissions on generated key and password files both at creation and when reused, rejection of unpinned/mismatched/expired/hostname-mismatched certificates, and successful use of a valid configured pin. Documentation explains hostname configuration, key protection, trust, and certificate rotation.
+**Verification expectation:** Tests verify safe first-start key generation and persistence, BYOC precedence, restrictive permissions on generated key and password files both at creation and when reused, including recovery when the keystore is missing but the password file remains. They also verify rejection of unpinned/mismatched/expired/hostname-mismatched certificates and successful use of a valid configured pin. Documentation explains hostname configuration, key protection, trust, and certificate rotation.

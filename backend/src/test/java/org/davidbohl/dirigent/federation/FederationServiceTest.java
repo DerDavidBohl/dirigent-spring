@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.net.http.HttpTimeoutException;
 
 import org.davidbohl.dirigent.deployments.config.CachedDeploymentsConfigurationProvider;
 import org.davidbohl.dirigent.deployments.config.model.Deployment;
@@ -56,6 +57,47 @@ class FederationServiceTest {
         assertFalse(result.get(2).available());
         assertEquals("Unable to reach this instance.", result.get(2).error());
     }
+
+        @Test
+        void isolatesMalformedAndTimedOutRemotesWhileReturningHealthyResults() throws Exception {
+                FederationProperties properties = new FederationProperties();
+                FederationProperties.RemoteInstance malformed = remote("malformed");
+                FederationProperties.RemoteInstance timedOut = remote("timed-out");
+                FederationProperties.RemoteInstance healthy = remote("healthy");
+                properties.setInstances(List.of(malformed, timedOut, healthy));
+
+                FederationRemoteClient client = mock(FederationRemoteClient.class);
+                when(client.getSystemInformation(malformed)).thenReturn(new SystemInformation("Malformed", ""));
+                when(client.getDeployments(malformed)).thenThrow(new java.io.IOException("invalid JSON"));
+                when(client.getSystemInformation(timedOut)).thenThrow(new HttpTimeoutException("timed out"));
+                when(client.getSystemInformation(healthy)).thenReturn(new SystemInformation("Healthy", ""));
+                when(client.getDeployments(healthy)).thenReturn(List.of(new DeploymentDto("api", "repo", 0,
+                                DeploymentStateEntity.State.RUNNING, "healthy")));
+
+                CachedDeploymentsConfigurationProvider configuration = mock(CachedDeploymentsConfigurationProvider.class);
+                when(configuration.getCachedConfiguration()).thenReturn(new DeploynentConfiguration(List.of(), false));
+                DeploymentStatePersistingService states = mock(DeploymentStatePersistingService.class);
+                when(states.getDeploymentStates()).thenReturn(List.of());
+
+                List<FederatedInstance> result = new FederationService(properties, client, configuration, states, "Local")
+                                .getInstances();
+
+                assertEquals("local", result.get(0).id());
+                assertFalse(result.get(1).available());
+                assertEquals("Unable to reach this instance.", result.get(1).error());
+                assertFalse(result.get(2).available());
+                assertTrue(result.get(3).available());
+                assertEquals("Healthy", result.get(3).instanceName());
+                assertEquals("api", result.get(3).deployments().get(0).name());
+        }
+
+        private FederationProperties.RemoteInstance remote(String id) {
+                FederationProperties.RemoteInstance instance = new FederationProperties.RemoteInstance();
+                instance.setId(id);
+                instance.setBaseUrl("https://" + id + ".example");
+                instance.setToken("read-token");
+                return instance;
+        }
 
     @Test
     void rejectsDuplicateOrInvalidRemoteIdsForWriteRouting() {

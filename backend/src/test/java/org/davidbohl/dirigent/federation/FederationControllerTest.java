@@ -3,6 +3,7 @@ package org.davidbohl.dirigent.federation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Logger;
@@ -36,7 +37,7 @@ class FederationControllerTest {
         FederationService service = mock(FederationService.class);
         when(service.forward("office", HttpMethod.PUT, "/api/v1/secrets/database-password",
                 "restartDeployments=false", java.util.Map.of("value", secretValue)))
-                .thenReturn(new FederationRemoteClient.RemoteResponse(HttpStatus.NO_CONTENT.value(), ""));
+            .thenReturn(new FederationRemoteClient.RemoteResponse(HttpStatus.BAD_GATEWAY.value(), ""));
         Logger logger = (Logger) LoggerFactory.getLogger(FederationController.class);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
@@ -49,7 +50,9 @@ class FederationControllerTest {
             var response = controller.saveSecret("office", "database-password", false,
                     java.util.Map.of("value", secretValue));
 
-            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+            assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
+            assertFalse(String.valueOf(response.getBody()).contains(secretValue));
+            assertFalse(String.valueOf(response.getBody()).contains(token));
             String auditEvents = appender.list.stream().map(event -> String.valueOf(event.getFormattedMessage()))
                     .reduce("", (left, right) -> left + "\n" + right);
             assertFalse(auditEvents.contains(secretValue));

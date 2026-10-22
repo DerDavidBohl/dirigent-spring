@@ -1,11 +1,12 @@
 import {TestBed} from '@angular/core/testing';
 import {Dialog} from '@angular/cdk/dialog';
-import {Observable, of, throwError} from 'rxjs';
+import {Observable, Subject, of, throwError} from 'rxjs';
 import {DeploymentsApi} from '../../core/api/deployments-api';
 import {Secret} from '../../core/api/models';
 import {SecretsApi} from '../../core/api/secrets-api';
 import {SecretEditorResult} from './secret-editor';
 import {Secrets} from './secrets';
+import {FederationTarget} from '../../core/federation/federation-target';
 
 describe('Secrets', () => {
   const list = vi.fn<() => Observable<Secret[]>>();
@@ -71,6 +72,19 @@ describe('Secrets', () => {
   it('does nothing when the editor is dismissed', () => {
     const {el} = render([secret]);
     (el.querySelector('[data-testid=new]') as HTMLButtonElement).click();
+    expect(put).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('does not submit an editor result after the selected instance changes', () => {
+    const result = new Subject<SecretEditorResult | undefined>();
+    const {el} = render([secret]);
+    open.mockReturnValue({closed: result});
+    (el.querySelector('[data-testid=secret] button') as HTMLButtonElement).click();
+
+    TestBed.inject(FederationTarget).select('office');
+    result.next({action: 'save', secret: {...secret, value: 'new'}, restart: false});
+
     expect(put).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
   });

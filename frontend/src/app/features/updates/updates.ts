@@ -3,6 +3,7 @@ import {UpdatesApi} from '../../core/api/updates-api';
 import {DeploymentUpdate} from '../../core/api/models';
 import {polledResource} from '../../core/polled-resource';
 import {StatusLine} from '../../ui/status-line';
+import {FederationTarget} from '../../core/federation/federation-target';
 
 // UX-005: the check request only acknowledges asynchronous work; rows expose isRunning.
 @Component({
@@ -45,8 +46,9 @@ import {StatusLine} from '../../ui/status-line';
 })
 export class Updates {
   private readonly api = inject(UpdatesApi);
+  private readonly target = inject(FederationTarget);
 
-  protected readonly resource = polledResource(() => this.api.list());
+  protected readonly resource = polledResource(() => this.api.list(), 2000, this.target.selectionChanges);
   protected readonly checking = signal(false);
   protected readonly actionError = signal('');
 

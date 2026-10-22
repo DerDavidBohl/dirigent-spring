@@ -64,6 +64,13 @@ class TlsBootstrapEnvironmentPostProcessorTest {
         assertEquals(passwordValue, Files.readString(password));
         assertEquals("rw-------", PosixFilePermissions.toString(Files.getPosixFilePermissions(keyStore)));
         assertEquals("rw-------", PosixFilePermissions.toString(Files.getPosixFilePermissions(password)));
+
+        Files.setPosixFilePermissions(password, PosixFilePermissions.fromString("rw-r--r--"));
+        Files.delete(keyStore);
+        processor.prepare(environment(tlsDirectory), true);
+
+        assertEquals("rw-------", PosixFilePermissions.toString(Files.getPosixFilePermissions(password)));
+        assertEquals("rw-------", PosixFilePermissions.toString(Files.getPosixFilePermissions(keyStore)));
     }
 
     @Test

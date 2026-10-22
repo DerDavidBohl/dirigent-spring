@@ -7,6 +7,7 @@ import {polledResource} from '../../core/polled-resource';
 import {DEPLOYMENT_STATES} from '../../core/state-tone';
 import {StateBadge} from '../../ui/state-badge';
 import {StatusLine} from '../../ui/status-line';
+import {FederationTarget} from '../../core/federation/federation-target';
 
 // UX-007: read-only overview; lifecycle actions live on the deployments page.
 @Component({
@@ -94,10 +95,11 @@ export class Dashboard {
   private readonly updatesApi = inject(UpdatesApi);
   private readonly deploymentsApi = inject(DeploymentsApi);
   private readonly systemApi = inject(SystemApi);
+  private readonly target = inject(FederationTarget);
 
-  protected readonly deployments = polledResource(() => this.deploymentsApi.list());
-  protected readonly updates = polledResource(() => this.updatesApi.list());
-  protected readonly system = polledResource(() => this.systemApi.info(), 60_000);
+  protected readonly deployments = polledResource(() => this.deploymentsApi.list(), 2000, this.target.selectionChanges);
+  protected readonly updates = polledResource(() => this.updatesApi.list(), 2000, this.target.selectionChanges);
+  protected readonly system = polledResource(() => this.systemApi.info(), 60_000, this.target.selectionChanges);
 
   protected readonly tiles = computed(() => {
     const list = this.deployments.data() ?? [];

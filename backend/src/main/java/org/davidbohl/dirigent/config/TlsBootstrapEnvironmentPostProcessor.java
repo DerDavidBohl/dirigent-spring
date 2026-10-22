@@ -136,6 +136,7 @@ public class TlsBootstrapEnvironmentPostProcessor implements EnvironmentPostProc
 
     private String loadOrCreatePassword(Path passwordFile) throws IOException {
         if (Files.exists(passwordFile)) {
+            setPrivateFilePermissions(passwordFile);
             return Files.readString(passwordFile).trim();
         }
         byte[] random = new byte[48];

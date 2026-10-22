@@ -12,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
@@ -54,6 +55,25 @@ class FederationRemoteClientTest {
     }
 
     @Test
+    void rejectsMalformedResponsesAndRemoteHttpErrors() throws Exception {
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpResponse<String> response = mock(HttpResponse.class);
+        FederationProperties.RemoteInstance instance = new FederationProperties.RemoteInstance();
+        instance.setBaseUrl("https://remote.example");
+        instance.setToken("secret-token");
+        FederationRemoteClient client = new FederationRemoteClient(httpClient, new ObjectMapper());
+
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn("not-json");
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        assertThrows(IOException.class, () -> client.getSystemInformation(instance));
+
+        when(response.statusCode()).thenReturn(503);
+        when(response.body()).thenReturn("remote-error-detail");
+        assertThrows(IOException.class, () -> client.getSystemInformation(instance));
+    }
+
+    @Test
     void rejectsNonHttpsAndCredentialBearingUrls() {
         assertThrows(IllegalArgumentException.class, () -> FederationRemoteClient.endpoint("http://remote.example", "/api"));
         assertThrows(IllegalArgumentException.class, () -> FederationRemoteClient.endpoint("https://user@remote.example", "/api"));
@@ -78,6 +98,23 @@ class FederationRemoteClientTest {
         assertThrows(IllegalArgumentException.class,
                 () -> client.forward(instance, HttpMethod.GET, "/api/v1/auth/tokens", null, null));
     }
+
+        @Test
+        void rejectsUnallowlistedMethodAndPathCombinations() {
+        FederationRemoteClient client = new FederationRemoteClient(mock(HttpClient.class), new ObjectMapper());
+        FederationProperties.RemoteInstance instance = new FederationProperties.RemoteInstance();
+        instance.setBaseUrl("https://remote.example");
+        instance.setToken("secret-token");
+
+        assertThrows(IllegalArgumentException.class,
+            () -> client.forward(instance, HttpMethod.GET, "/api/v1/secrets/db", null, null));
+        assertThrows(IllegalArgumentException.class,
+            () -> client.forward(instance, HttpMethod.DELETE, "/api/v1/deployments/all/start", null, null));
+        assertThrows(IllegalArgumentException.class,
+            () -> client.forward(instance, HttpMethod.POST, "/api/v1/secrets/key", null, null));
+        assertThrows(IllegalArgumentException.class,
+            () -> client.forward(instance, HttpMethod.PUT, "/api/v1/deployments/api/start", null, null));
+        }
 
     @Test
     void allowsOnlyDocumentedDeploymentWritesWithFiniteRequestTimeout() throws Exception {
