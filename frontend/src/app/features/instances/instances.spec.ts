@@ -22,12 +22,12 @@ describe('Instances', () => {
     directory.refresh.mockClear();
   });
 
-  it('shows instance status and deployment information', () => {
+  it('shows instance status without deployments', () => {
     const fixture: ComponentFixture<Instances> = TestBed.createComponent(Instances);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Office');
-    expect(fixture.nativeElement.textContent).toContain('api');
-    expect(fixture.nativeElement.textContent).toContain('RUNNING');
+    expect(fixture.nativeElement.textContent).not.toContain('api');
+    expect(fixture.nativeElement.textContent).not.toContain('RUNNING');
     expect(fixture.nativeElement.textContent).toContain('Unable to reach this instance.');
   });
 
