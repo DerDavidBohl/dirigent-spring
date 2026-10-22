@@ -78,7 +78,7 @@ class FederationTlsIntegrationTest {
         redirectServer.start();
         try {
             String origin = "https://localhost:" + server.getAddress().getPort();
-            FederationRemoteClient client = new FederationRemoteClient(new ObjectMapper());
+            FederationRemoteClient client = new FederationRemoteClient();
             FederationProperties.RemoteInstance pinned = remote(origin, validPin);
             assertEquals("Pinned", client.getSystemInformation(pinned).instanceName());
 

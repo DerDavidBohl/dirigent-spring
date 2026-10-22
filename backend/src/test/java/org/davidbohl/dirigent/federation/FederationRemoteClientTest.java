@@ -23,9 +23,8 @@ import org.springframework.http.HttpMethod;
 class FederationRemoteClientTest {
 
     @Test
-    void createsComponentWithSpringUsingObjectMapperConstructor() {
+    void createsComponentWithSpringWithoutAnObjectMapperBean() {
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
-            context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
             context.register(FederationRemoteClient.class);
             context.refresh();
 
