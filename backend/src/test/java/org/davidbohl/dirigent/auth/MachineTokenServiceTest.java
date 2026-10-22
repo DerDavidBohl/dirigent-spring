@@ -129,6 +129,67 @@ class MachineTokenServiceTest {
         Mockito.verify(repository, Mockito.never()).delete(any(MachineTokenEntity.class));
     }
 
+    @Test
+    void refreshesLastUseOnceItIsOlderThanAMinute() {
+        MachineTokenEntity stored = new MachineTokenEntity("ci", "hash", "deployments:read",
+                "operator", Instant.now(), futureExpiry());
+        ReflectionTestUtils.setField(stored, "id", 6L);
+        Instant stale = Instant.now().minusSeconds(120);
+        stored.markUsed(stale);
+        when(repository.findByTokenHashAndRevokedAtIsNull(any())).thenReturn(Optional.of(stored));
+
+        service.authenticate("dgt_x");
+
+        assertTrue(stored.getLastUsedAt().isAfter(stale));
+    }
+
+    @Test
+    void doesNotRecordUseForExpiredTokens() {
+        MachineTokenEntity expired = new MachineTokenEntity("old", "hash", "deployments:read",
+                "operator", Instant.now().minusSeconds(3600), Instant.now().minusSeconds(1));
+        when(repository.findByTokenHashAndRevokedAtIsNull(any())).thenReturn(Optional.of(expired));
+
+        assertTrue(service.authenticate("dgt_x").isEmpty());
+
+        assertEquals(null, expired.getLastUsedAt());
+    }
+
+    @Test
+    void listExposesLastUse() {
+        MachineTokenEntity stored = new MachineTokenEntity("ci", "hash", "deployments:read",
+                "operator", Instant.now(), futureExpiry());
+        Instant used = Instant.now().minusSeconds(30);
+        stored.markUsed(used);
+        when(repository.findAllByOrderByCreatedAtDesc()).thenReturn(java.util.List.of(stored));
+
+        assertEquals(used, service.list().get(0).lastUsedAt());
+    }
+
+    @Test
+    void findsExpiredUnrevokedTokensThroughTheRepository() {
+        MachineTokenEntity expired = new MachineTokenEntity("old", "hash", "deployments:read",
+                "operator", Instant.now().minusSeconds(3600), Instant.now().minusSeconds(1));
+        when(repository.findAllByRevokedAtIsNullAndExpiresAtBeforeOrderByExpiresAtAsc(any()))
+                .thenReturn(java.util.List.of(expired));
+
+        assertEquals(java.util.List.of(expired), service.findExpiredUnrevoked());
+    }
+
+    @Test
+    void recordsLastUseAtMostOncePerMinute() {
+        MachineTokenEntity stored = new MachineTokenEntity("ci", "hash", "deployments:read",
+                "operator", Instant.now(), futureExpiry());
+        ReflectionTestUtils.setField(stored, "id", 5L);
+        when(repository.findByTokenHashAndRevokedAtIsNull(any())).thenReturn(Optional.of(stored));
+
+        service.authenticate("dgt_x");
+        Instant first = stored.getLastUsedAt();
+        service.authenticate("dgt_x");
+
+        assertTrue(first != null);
+        assertEquals(first, stored.getLastUsedAt());
+    }
+
         private Instant futureExpiry() {
                 return Instant.now().plus(30, ChronoUnit.DAYS);
         }

@@ -120,9 +120,9 @@ Machine tokens are generated from cryptographically secure random data, stored o
 
 **Rationale:** Leaked automation credentials must not expose human passwords or grant broader API access than the integration requires.
 
-**Constraints:** Token permissions must be enforced for every protected API operation, including the dedicated `webhooks:trigger` operation. Every token has a mandatory expiry within 366 days and is rejected after expiry or revocation. Token values and verifiers are sensitive and must not appear in logs or ordinary API responses.
+**Constraints:** Token permissions must be enforced for every protected API operation, including the dedicated `webhooks:trigger` operation. Every token has a mandatory expiry within 366 days and is rejected after expiry or revocation. Token values and verifiers are sensitive and must not appear in logs or ordinary API responses. The time of a token's last successful authentication is recorded (at most once per minute) and exposed in token metadata; expired-token notices contain only token names and expiry. Server-side CLI issuance applies the same permission, expiry, storage, and one-time disclosure controls; its output is the only CLI disclosure of the raw token.
 
-**Dependencies:** REQ-015, ADR-007
+**Dependencies:** REQ-015, REQ-022, ADR-007
 
 **Verification expectation:** Tests verify high-entropy issuance, verifier-only persistence, one-time disclosure, permission checks, expiry, and revocation.
 
@@ -185,3 +185,45 @@ Workflow dispatch inputs and repository-dispatch payloads are untrusted data. Th
 **Dependencies:** SEC-006, SEC-011, QUA-004
 
 **Verification expectation:** Review confirms untrusted values are validated before use, are not interpolated into shell programs, and write permissions are limited to publishing or branch-synchronization jobs. Pull-request jobs have read-only repository permissions and no publication credentials.
+
+### Federation credentials and outbound requests are constrained
+
+**ID: SEC-014**
+
+The federation hub treats remote instance URLs and machine tokens as sensitive operator-provided configuration. It accepts only absolute HTTPS URLs without embedded user information, query, or fragment; redirects are not followed. Tokens are used only for the explicitly allowlisted operations on that configured instance and must never be logged, returned to callers, or persisted in application data. Federation requests use bounded connection and response timeouts, and failures are isolated by instance.
+
+**Rationale:** The hub holds credentials capable of reading operational metadata from multiple hosts, and unrestricted outbound URLs or token leakage could expose other services or instances.
+
+**Constraints:** Remote instances must be reachable using the hub's normal TLS trust store; private-network HTTPS endpoints are allowed because the operator explicitly configures them. Tokens must include only the scopes needed by the supported workflows (`deployments:read/write`, `updates:read/write`, `secrets:read/write`, and `system:read`), must be expiring and revocable under SEC-008, and should be rotated by replacing runtime configuration. They must not include `webhooks:trigger`. The hub must not expose remote account, OIDC, or machine-token administration. Remote `401` and `403` responses must not be returned as hub authentication failures or terminate the hub browser session. The credential set grants substantial operational authority; compromise of the hub process or host can compromise every configured remote.
+
+**Dependencies:** ADR-009, REQ-015, REQ-020, SEC-006, SEC-008
+
+**Verification expectation:** Tests reject non-HTTPS or malformed URLs, ensure authorization headers are sent only to the configured origin and are not exposed in logs/responses, confirm finite timeouts and no redirect following, verify remote authorization failures do not invalidate the hub session, verify one remote failure does not fail other operations or instance results, and verify failure diagnostics (log and instance error) contain only the fixed reason category and no URL, token, or raw exception text in the returned error.
+
+### Federated secret values are transient and excluded from diagnostics
+
+**ID: SEC-015**
+
+Secret values handled through federation are forwarded only to the selected remote instance over HTTPS. The hub does not persist, cache, or include secret values in logs, audit records, error messages, or response metadata beyond the API response required by the operator workflow. Audit records for remote writes identify the authenticated hub operator, target instance, operation, timestamp, and outcome without recording request bodies or credentials.
+
+**Rationale:** A central control plane increases the impact of a secret disclosure and must not become a second secret store or diagnostic leak path.
+
+**Constraints:** The remote instance remains responsible for its existing secret encryption and lifecycle controls (SEC-001). This control does not eliminate the risk of hub process/host compromise or the existing diagnostic risks described by SEC-006.
+
+**Dependencies:** ADR-009, REQ-020, SEC-001, SEC-006, SEC-014
+
+**Verification expectation:** Tests verify secret request bodies are sent only to the selected remote, do not appear in hub persistence/logging/returned error text, and write audit metadata excludes bodies and bearer tokens.
+
+### Native HTTPS and pinned self-signed certificates preserve peer identity
+
+**ID: SEC-016**
+
+Native HTTPS is enabled by default. On first startup, Dirigent creates and persists a self-signed certificate and private key; operators may supply a PKCS#12 keystore instead. A federation client may trust one remote leaf certificate by its SHA-256 fingerprint. HTTPS hostname verification and certificate validity-period checks remain enabled; a pin mismatch, expired certificate, or hostname mismatch fails closed. Without a pin, the JVM's ordinary certificate trust rules apply.
+
+**Rationale:** Default direct TLS removes plaintext exposure without requiring a reverse proxy, while explicit pinning allows controlled self-signed certificates without accepting arbitrary certificates.
+
+**Constraints:** Generated and supplied certificates must identify the DNS name or IP address used in the remote base URL. Generated private key material must be persisted with restrictive file permissions and must not be exposed in logs or application responses. Self-signed certificates are not automatically trusted by callers; explicit pinning or CA trust is required. Keystore files/passwords and certificate pins are sensitive operational configuration. Operators must renew certificates, update pins before expiry/rotation, and distribute trust changes through a secure channel. HTTP compatibility mode is only appropriate behind a trusted TLS-terminating proxy, except for the isolated local manual test environment, which must bind the backend to loopback. Do not provide a trust-all mode or disable endpoint identification.
+
+**Dependencies:** ADR-010, REQ-021, SEC-005, SEC-014
+
+**Verification expectation:** Tests verify safe first-start key generation and persistence, BYOC precedence, restrictive permissions on generated key and password files both at creation and when reused, including recovery when the keystore is missing but the password file remains. They also verify rejection of unpinned/mismatched/expired/hostname-mismatched certificates and successful use of a valid configured pin. Documentation explains hostname configuration, key protection, trust, and certificate rotation.

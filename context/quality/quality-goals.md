@@ -60,13 +60,13 @@ The backend suite covers process invocation, registry authentication/properties/
 
 **ID: QUA-005**
 
-Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, OIDC administrator access to token management, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, and local-account CLI lifecycle operations. Frontend verification covers readable identity display, logout success/failure states, responsive login presentation, token creation dialog and immediate token table presentation, and a successful Angular production build.
+Authentication changes must include focused backend tests for local login, OIDC issuer authentication with and without the optional required group, OIDC administrator access to token management, anonymous access denial, administrator authorization, login rate limiting, API-token permission/mandatory expiry/revocation, webhook `webhooks:trigger` authorization, local-account CLI lifecycle operations, and machine-token CLI issuance. Frontend verification covers readable identity display, logout success/failure states, responsive login presentation, token creation dialog and immediate token table presentation, and a successful Angular production build.
 
 **Rationale:** Authentication is a security boundary around privileged deployment and secret operations; compilation alone cannot demonstrate correct access policy.
 
 **Constraints:** External OIDC tests must use a deterministic local test provider or mocked protocol responses and must not depend on a live identity service. Test credentials are non-production and must not be committed as reusable secrets.
 
-**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010
+**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, REQ-022, SEC-004, SEC-005, SEC-007, SEC-008, SEC-009, SEC-010
 
 **Verification expectation:** The focused backend and frontend checks cover both allowed and denied cases; failures must not be accepted as a passing authentication verification.
 
@@ -84,6 +84,34 @@ README setup, configuration, security, and usage guidance must describe capabili
 
 **Verification expectation:** Review confirms documented environment variables, defaults, CLI commands, API authentication, and deployment examples correspond to the implementation; test commands or example snippets syntactically where practical.
 
+### Federation status is isolated and bounded
+
+**ID: QUA-009**
+
+Federation requests must have finite network timeouts and report each configured instance independently so a slow or failed remote does not block the local dashboard or other instances. Remote write operations and secret forwarding must be tested against the explicit federation allowlist.
+
+**Rationale:** A central view is useful only if failures at one site do not degrade visibility into all other sites.
+
+**Constraints:** No numeric latency or availability target is defined. Tests must use mocked remote responses and must not require network access to real Dirigent instances.
+
+**Dependencies:** ADR-009, REQ-019, SEC-014
+
+**Verification expectation:** Focused backend tests cover successful remote aggregation, HTTP and timeout failures, malformed responses, allowed and rejected methods/paths (including method/path combinations), credentials sent only to the configured origin, redirects not followed, secret bodies excluded from audit/error output, and a successful result from other instances alongside a failed instance. At least one bounded-timeout test exercises an actual local HTTP exchange rather than only inspecting request configuration. Controller tests establish authenticated administrator access to federation operations. Frontend tests cover selected-instance reads and writes, pending/error states, clear stale data on target changes, and prevent open or stale actions from targeting a different selected instance.
+
+### Native TLS trust fails closed
+
+**ID: QUA-010**
+
+HTTPS bootstrap must create and persist certificate material safely on first startup, and federation certificate pinning must reject invalid trust rather than silently falling back to plaintext or permissive certificate handling.
+
+**Rationale:** TLS protects browser credentials, federation tokens, and remote secret values; a fallback that appears successful could expose all of them.
+
+**Constraints:** Tests are deterministic and use temporary local directories/certificate fixtures; they require no public network access. HTTP compatibility mode is explicit and tested separately from the HTTPS default.
+
+**Dependencies:** ADR-010, REQ-021, SEC-016
+
+**Verification expectation:** Tests cover first-start generation, permission-restricted persistent reuse (including the stored password file and keystore-missing recovery), BYOC override, HTTPS default, explicit HTTP compatibility, successful pinned certificates, wrong pins, expiry, hostname mismatch, and default trust-store behavior when no pin is configured. At least one client test exercises actual HTTP exchanges for redirect refusal and bounded response time rather than only checking helper values.
+
 ### A manual test environment runs the current code with authentication
 
 **ID: QUA-007**
@@ -96,7 +124,7 @@ A maintainer can start the backend and the web dashboard from the working tree w
 
 **Rationale:** Manual testing of authentication-protected workflows is otherwise slow and error-prone, and unrepeatable setups weaken release evidence.
 
-**Constraints:** The environment runs as host processes of the working tree and uses the toolchain and Docker/Compose the project already requires. It reports a clear message when a prerequisite is missing. Test credentials follow SEC-012.
+**Constraints:** The environment runs as host processes of the working tree and uses the toolchain and Docker/Compose the project already requires. It reports a clear message when a prerequisite is missing. Test credentials follow SEC-012. If native TLS is disabled to support the local frontend proxy, the backend must bind to loopback only.
 
 **Dependencies:** QUA-004, QUA-005, QUA-006, SEC-012, REQ-014, COD-007
 

@@ -5,6 +5,7 @@ import {DeploymentsApi} from '../../core/api/deployments-api';
 import {DeploymentState} from '../../core/api/models';
 import {ConfirmResult} from '../../ui/confirm-dialog';
 import {ConfirmService} from '../../ui/confirm.service';
+import {FederationTarget} from '../../core/federation/federation-target';
 import {Deployments} from './deployments';
 
 describe('Deployments', () => {
@@ -92,6 +93,22 @@ describe('Deployments', () => {
     confirm.mockReturnValue(of(undefined));
     const {el} = await render([dep('a', 'STOPPED')]);
     rowButton(el, 'Start').click();
+    expect(start).not.toHaveBeenCalled();
+  });
+
+  it('invalidates deployment rows and pending actions when the selected instance changes', async () => {
+    const answer = new Subject<ConfirmResult | undefined>();
+    confirm.mockReturnValue(answer);
+    const {fixture, el} = await render([dep('a', 'STOPPED')]);
+    rowButton(el, 'Start').click();
+
+    const remoteResponse = new Subject<DeploymentState[]>();
+    list.mockReturnValue(remoteResponse);
+    TestBed.inject(FederationTarget).select('office');
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-testid=row]')).toHaveLength(0);
+
+    answer.next({option: false});
     expect(start).not.toHaveBeenCalled();
   });
 

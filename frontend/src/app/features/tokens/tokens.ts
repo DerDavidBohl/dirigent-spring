@@ -3,6 +3,8 @@ import {DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {CreatedMachineToken, MachineToken} from '../../core/api/models';
 import {TokensApi} from '../../core/api/tokens-api';
+import {FederationDirectory} from '../../core/federation/federation-directory';
+import {FederationTarget} from '../../core/federation/federation-target';
 
 const PERMISSIONS = [
   {value: 'deployments:read', label: 'Read deployments'},
@@ -37,6 +39,12 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-semibold">Machine tokens</h1>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Machine tokens are managed only on the main instance, the one you are signed in to. They are never managed through federation.</p>
+    @if (target.selectedId() !== 'local') {
+      <p role="note" class="mt-3 rounded-md bg-brand-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-accent-400 dark:bg-brand-950 dark:text-slate-100" data-testid="remote-notice">
+        The selected instance “{{ selectedName() }}” does not apply here. The tokens below belong to the main instance. To manage tokens of “{{ selectedName() }}”, open its own dashboard or use the server-side CLI on that instance.
+      </p>
+    }
 
     @if (issued(); as token) {
       <section class="mt-4 rounded-lg border-2 border-brand-500 bg-brand-50 p-4 dark:border-accent-400 dark:bg-brand-950" aria-labelledby="issued-heading" data-testid="issued">
@@ -83,7 +91,14 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
       <button type="submit" class="mt-4 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60" [disabled]="!canCreate()">Create token</button>
     </form>
 
-    <div class="mt-6 overflow-x-auto">
+    <div class="mt-6 flex items-center justify-between">
+      <h2 class="text-lg font-semibold">Tokens</h2>
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" class="size-4 accent-brand-600" data-testid="show-revoked" [checked]="showRevoked()" (change)="showRevoked.set(!showRevoked())">
+        Show revoked tokens
+      </label>
+    </div>
+    <div class="mt-2 overflow-x-auto">
       <table class="w-full text-left text-sm">
         <caption class="sr-only">Machine tokens</caption>
         <thead>
@@ -91,12 +106,13 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
             <th scope="col" class="py-2 pr-4 font-semibold">Name</th>
             <th scope="col" class="py-2 pr-4 font-semibold">Permissions</th>
             <th scope="col" class="py-2 pr-4 font-semibold">Expires (UTC)</th>
+            <th scope="col" class="py-2 pr-4 font-semibold">Last used</th>
             <th scope="col" class="py-2 pr-4 font-semibold">Status</th>
             <th scope="col" class="py-2"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (token of tokens(); track token.id) {
+          @for (token of visibleTokens(); track token.id) {
             <tr class="border-b border-slate-100 align-top dark:border-slate-800" data-testid="token">
               <td class="py-2 pr-4 font-medium">{{ token.name }}</td>
               <td class="py-2 pr-4">
@@ -107,6 +123,7 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
                 </ul>
               </td>
               <td class="py-2 pr-4">{{ token.expiresAt ? (token.expiresAt | date: 'mediumDate' : 'UTC') : 'Never' }}</td>
+              <td class="py-2 pr-4" data-testid="last-used">{{ token.lastUsedAt ? (token.lastUsedAt | date: 'medium') : 'Never' }}</td>
               <td class="py-2 pr-4" data-testid="status">{{ status(token) }}</td>
               <td class="py-2">
                 @if (!token.revokedAt) {
@@ -124,9 +141,18 @@ export function tokenStatus(token: MachineToken, now = Date.now()): string {
 })
 export class Tokens {
   private readonly api = inject(TokensApi);
+  private readonly directory = inject(FederationDirectory);
+  protected readonly target = inject(FederationTarget);
+  protected readonly selectedName = computed(() => {
+    const id = this.target.selectedId();
+    return this.directory.instances().find(instance => instance.id === id)?.instanceName ?? id;
+  });
 
   protected readonly permissions = PERMISSIONS;
   protected readonly tokens = signal<MachineToken[]>([]);
+  protected readonly showRevoked = signal(false);
+  protected readonly visibleTokens = computed(() =>
+    this.showRevoked() ? this.tokens() : this.tokens().filter(token => !token.revokedAt));
   protected readonly issued = signal<CreatedMachineToken | null>(null);
   protected readonly error = signal('');
   protected readonly busy = signal(false);

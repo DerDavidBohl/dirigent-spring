@@ -11,13 +11,25 @@ export interface PolledResource<T> {
 }
 
 // UX-005: periodic polling with explicit loading, error, and last-refreshed state; pauses in hidden tabs.
-export function polledResource<T>(fetch: () => Observable<T>, intervalMs = 2000): PolledResource<T> {
+export function polledResource<T>(fetch: () => Observable<T>, intervalMs = 2000, invalidations: Observable<unknown> = EMPTY): PolledResource<T> {
   const document = inject(DOCUMENT);
   const data = signal<T | null>(null);
   const loading = signal(true);
   const error = signal(false);
   const lastUpdated = signal<Date | null>(null);
   const manualRefresh = new Subject<void>();
+  const destroyRef = inject(DestroyRef);
+
+  invalidations.pipe(
+    tap(() => {
+      data.set(null);
+      loading.set(true);
+      error.set(false);
+      lastUpdated.set(null);
+      manualRefresh.next();
+    }),
+    takeUntilDestroyed(destroyRef)
+  ).subscribe();
 
   fromEvent(document, 'visibilitychange').pipe(
     startWith(null),
@@ -37,7 +49,7 @@ export function polledResource<T>(fetch: () => Observable<T>, intervalMs = 2000)
         return EMPTY;
       })
     )),
-    takeUntilDestroyed(inject(DestroyRef))
+    takeUntilDestroyed(destroyRef)
   ).subscribe();
 
   return {

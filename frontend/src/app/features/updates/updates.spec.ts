@@ -2,6 +2,7 @@ import {TestBed} from '@angular/core/testing';
 import {Observable, Subject, of, throwError} from 'rxjs';
 import {UpdatesApi} from '../../core/api/updates-api';
 import {DeploymentUpdate} from '../../core/api/models';
+import {FederationTarget} from '../../core/federation/federation-target';
 import {Updates} from './updates';
 
 describe('Updates', () => {
@@ -11,8 +12,11 @@ describe('Updates', () => {
 
   const update = (name: string, isRunning = false): DeploymentUpdate => ({deploymentName: name, service: 'app', image: `img-${name}`, isRunning});
 
-  function render(items: DeploymentUpdate[]) {
-    list.mockReturnValue(of(items));
+  function render(items: DeploymentUpdate[], nextItems?: DeploymentUpdate[]) {
+    list.mockReset().mockReturnValueOnce(of(items));
+    if (nextItems) {
+      list.mockReturnValue(of(nextItems));
+    }
     TestBed.configureTestingModule({providers: [{provide: UpdatesApi, useValue: {list, check, run}}]});
     const fixture = TestBed.createComponent(Updates);
     vi.advanceTimersByTime(0);
@@ -35,6 +39,18 @@ describe('Updates', () => {
   it('shows an empty state', () => {
     const {el} = render([]);
     expect(el.querySelector('[data-testid=empty]')).not.toBeNull();
+  });
+
+  it('replaces rows immediately when the selected instance changes', () => {
+    const {fixture, el} = render([update('local')], [update('remote')]);
+    expect(el.textContent).toContain('local');
+
+    TestBed.inject(FederationTarget).select('office');
+    vi.advanceTimersByTime(0);
+    fixture.detectChanges();
+
+    expect(el.textContent).not.toContain('local');
+    expect(el.textContent).toContain('remote');
   });
 
   it('disables the row action while an update is running', () => {

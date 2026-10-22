@@ -1,8 +1,10 @@
-import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
+import {DestroyRef, ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Dialog} from '@angular/cdk/dialog';
 import {DeploymentsApi} from '../../core/api/deployments-api';
 import {Secret} from '../../core/api/models';
 import {SecretsApi} from '../../core/api/secrets-api';
+import {FederationTarget} from '../../core/federation/federation-target';
 import {SecretEditor, SecretEditorResult} from './secret-editor';
 
 // UX-003: list responses never contain stored values.
@@ -47,28 +49,42 @@ export class Secrets {
   private readonly secretsApi = inject(SecretsApi);
   private readonly deploymentsApi = inject(DeploymentsApi);
   private readonly dialog = inject(Dialog);
+  private readonly target = inject(FederationTarget);
 
   protected readonly secrets = signal<Secret[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  private loadGeneration = 0;
 
   constructor() {
     this.reload();
+    this.target.selectionChanges.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe(() => {
+      this.loadGeneration++;
+      this.secrets.set([]);
+      this.loading.set(true);
+      this.error.set('');
+      this.reload();
+    });
   }
 
   protected edit(secret: Secret | null): void {
+    const selectedId = this.target.selectedId();
     this.deploymentsApi.list().subscribe({
-      next: deployments => this.openEditor(secret, deployments.map(d => d.name)),
+      next: deployments => {
+        if (selectedId === this.target.selectedId()) {
+          this.openEditor(secret, deployments.map(d => d.name), selectedId);
+        }
+      },
       error: () => this.error.set('Deployments could not be loaded.')
     });
   }
 
-  private openEditor(secret: Secret | null, deployments: string[]): void {
+  private openEditor(secret: Secret | null, deployments: string[], selectedId: string): void {
     this.dialog.open<SecretEditorResult | undefined>(SecretEditor, {
       data: {secret, deployments},
       ariaLabelledBy: 'secret-title'
     }).closed.subscribe(result => {
-      if (!result) {
+      if (!result || selectedId !== this.target.selectedId()) {
         return;
       }
       const request = result.action === 'save'
@@ -83,12 +99,19 @@ export class Secrets {
   }
 
   private reload(): void {
+    const generation = this.loadGeneration;
     this.secretsApi.list().subscribe({
       next: secrets => {
+        if (generation !== this.loadGeneration) {
+          return;
+        }
         this.secrets.set(secrets);
         this.loading.set(false);
       },
       error: () => {
+        if (generation !== this.loadGeneration) {
+          return;
+        }
         this.loading.set(false);
         this.error.set('Secrets could not be loaded.');
       }

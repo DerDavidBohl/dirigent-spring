@@ -22,6 +22,7 @@ public class MachineTokenService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final long MAX_TOKEN_LIFETIME_DAYS = 366;
+    private static final java.time.Duration LAST_USED_RESOLUTION = java.time.Duration.ofMinutes(1);
 
     private final MachineTokenRepository tokenRepository;
 
@@ -70,20 +71,32 @@ public class MachineTokenService {
     }
 
     @Transactional(readOnly = true)
+    public java.util.List<MachineTokenEntity> findExpiredUnrevoked() {
+        return tokenRepository.findAllByRevokedAtIsNullAndExpiresAtBeforeOrderByExpiresAtAsc(Instant.now());
+    }
+
+    @Transactional
     public java.util.Optional<MachineTokenIdentity> authenticate(String token) {
         if (token == null || token.isBlank()) {
             return java.util.Optional.empty();
         }
         return tokenRepository.findByTokenHashAndRevokedAtIsNull(hashToken(token))
             .filter(entity -> entity.getExpiresAt() != null && entity.getExpiresAt().isAfter(Instant.now()))
-                .map(entity -> new MachineTokenIdentity(entity.getId(), entity.getCreatedBy(),
-                        Set.of(entity.getPermissions().split(" "))));
+                .map(entity -> {
+                    Instant now = Instant.now();
+                    if (entity.getLastUsedAt() == null
+                            || entity.getLastUsedAt().isBefore(now.minus(LAST_USED_RESOLUTION))) {
+                        entity.markUsed(now);
+                    }
+                    return new MachineTokenIdentity(entity.getId(), entity.getCreatedBy(),
+                            Set.of(entity.getPermissions().split(" ")));
+                });
     }
 
     private MachineTokenSummary summary(MachineTokenEntity entity) {
         Set<String> permissions = Set.of(entity.getPermissions().split(" "));
         return new MachineTokenSummary(entity.getId(), entity.getName(), permissions, entity.getCreatedBy(),
-                entity.getCreatedAt(), entity.getExpiresAt(), entity.getRevokedAt());
+                entity.getCreatedAt(), entity.getExpiresAt(), entity.getRevokedAt(), entity.getLastUsedAt());
     }
 
     private String generateToken() {

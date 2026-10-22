@@ -6,6 +6,7 @@ import {UpdatesApi} from './updates-api';
 import {SecretsApi} from './secrets-api';
 import {SystemApi} from './system-api';
 import {TokensApi} from './tokens-api';
+import {FederationTarget} from '../federation/federation-target';
 
 describe('API services', () => {
   let http: HttpTestingController;
@@ -60,7 +61,35 @@ describe('API services', () => {
     expect(http.expectOne('api/v1/system-information').request.method).toBe('GET');
   });
 
+  it('routes operational API calls through the selected remote instance', () => {
+    TestBed.inject(FederationTarget).select('office');
+    const deployments = TestBed.inject(DeploymentsApi);
+    const updates = TestBed.inject(UpdatesApi);
+    const secrets = TestBed.inject(SecretsApi);
+    const system = TestBed.inject(SystemApi);
+    deployments.start('web app', false).subscribe();
+    deployments.stop('web app').subscribe();
+    updates.list().subscribe();
+    updates.check().subscribe();
+    updates.run({deploymentName: 'app', service: 'web', image: 'example/app', isRunning: false}).subscribe();
+    secrets.list().subscribe();
+    const secret = {key: 'db', value: 'sensitive', environmentVariable: 'DB', deployments: ['app']};
+    secrets.put(secret, false).subscribe();
+    secrets.remove(secret, true).subscribe();
+    system.info().subscribe();
+    expect(http.expectOne('api/v1/federation/instances/office/deployments/web%20app/start?forceRecreate=false').request.method).toBe('POST');
+    expect(http.expectOne('api/v1/federation/instances/office/deployments/web%20app/stop').request.method).toBe('POST');
+    expect(http.expectOne('api/v1/federation/instances/office/deployment-updates').request.method).toBe('GET');
+    expect(http.expectOne('api/v1/federation/instances/office/deployment-updates/check').request.method).toBe('POST');
+    expect(http.expectOne('api/v1/federation/instances/office/deployment-updates/run').request.method).toBe('POST');
+    expect(http.expectOne('api/v1/federation/instances/office/secrets').request.method).toBe('GET');
+    expect(http.expectOne('api/v1/federation/instances/office/secrets/db?restartDeployments=false').request.method).toBe('PUT');
+    expect(http.expectOne('api/v1/federation/instances/office/secrets/db?restartDeployments=true').request.method).toBe('DELETE');
+    expect(http.expectOne('api/v1/federation/instances/office/system-information').request.method).toBe('GET');
+  });
+
   it('manages machine tokens', () => {
+    TestBed.inject(FederationTarget).select('office');
     const api = TestBed.inject(TokensApi);
     api.list().subscribe();
     api.create('ci', ['webhooks:trigger'], '2030-01-01T00:00:00.000Z').subscribe();

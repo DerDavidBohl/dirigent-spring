@@ -40,6 +40,9 @@ public class MachineTokenEntity {
     @Column(name = "revoked_at")
     private Instant revokedAt;
 
+    @Column(name = "last_used_at")
+    private Instant lastUsedAt;
+
     protected MachineTokenEntity() {
     }
 
@@ -51,6 +54,10 @@ public class MachineTokenEntity {
         this.createdBy = createdBy;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
+    }
+
+    public void markUsed(Instant usedAt) {
+        this.lastUsedAt = usedAt;
     }
 
     public void revoke(Instant revokedAt) {

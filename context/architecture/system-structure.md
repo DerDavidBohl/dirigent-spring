@@ -56,19 +56,47 @@ Manual API actions, configured repository webhooks, startup synchronization, and
 
 **Verification expectation:** Review confirms each supported trigger requests the backend deployment workflow rather than performing deployment actions in the presentation layer.
 
-### The supported operating topology is one self-hosted instance and one Docker host
+### Each Dirigent instance controls one Docker host
 
 **ID: ADR-005**
 
-The supported deployment topology is one Dirigent instance controlling one Docker host. The operator supplies Docker runtime access and durable application data. Multi-host orchestration is outside the supported architecture unless adopted by a later decision.
+Each Dirigent instance controls one Docker host. The operator supplies Docker runtime access and durable application data. Centralized read/write federation across instances is adopted by ADR-009; each instance remains the authority for its own operations.
 
 **Rationale:** A single-host boundary makes the trust, persistence, and operational responsibilities explicit for the self-hosted deployment manager.
 
 **Constraints:** The Docker socket and application data must be available to the service. Application persistence uses SQLite with ORM schema update behavior. Deployment configuration is read from YAML without explicit schema validation; read/parse failures propagate, and no last-known-good configuration is retained. The application does not provide a backup/restore workflow or a secret-key rotation migration.
 
-**Dependencies:** ADR-001, SEC-001, SEC-003, REQ-001
+**Dependencies:** ADR-001, ADR-009, SEC-001, SEC-003, REQ-001
 
 **Verification expectation:** Operational review confirms the supported topology and required durable assets are documented. Current automated tests do not demonstrate configuration validation, last-known-good recovery, backup/restore, or key rotation.
+
+### Federation provides centralized operational management
+
+**ID: ADR-009**
+
+An optional federation hub connects to operator-configured Dirigent instances over HTTPS and presents their operational state in one dashboard. It can relay the existing deployment lifecycle, image update, and secret workflows to a selected instance. Each instance remains authoritative for its own state and enforces its own machine-token permissions. Local-account, OIDC, and machine-token administration remain per-instance. Instance enrollment through the UI and agent-initiated connections are not part of this decision.
+
+**Rationale:** Operators can manage deployments across independently managed Docker hosts while keeping execution and authorization at each host.
+
+**Constraints:** Federation is disabled when no instances are configured. Remote instance definitions and API tokens are supplied through runtime configuration, not persisted or editable in the dashboard. Each remote token is limited to the scopes required by the supported dashboard workflows (`deployments:read/write`, `updates:read/write`, `secrets:read/write`, and `system:read`), is sent only to its configured HTTPS origin, and must not appear in logs or responses. The hub exposes only explicit allowlisted API operations; it is not a generic proxy. Remote secret values are forwarded only in-memory over HTTPS and are not persisted by the hub. An unavailable or invalid remote must be isolated without blocking the local instance or other remotes. Write outcomes are reported from the remote API response; no transactional cross-instance operation is promised.
+
+**Dependencies:** ADR-001, ADR-005, ADR-007, ADR-010, REQ-019, REQ-020, SEC-014, SEC-015, SEC-016, UX-009
+
+**Verification expectation:** Architecture review confirms remote calls use HTTPS, finite timeouts, exact configured origins, and a fixed route/method allowlist; failures are isolated per configured instance and remote authorization remains authoritative.
+
+### The service defaults to native HTTPS with generated or operator-supplied identity
+
+**ID: ADR-010**
+
+The embedded Spring server serves HTTPS by default. On first startup it creates a self-signed certificate and private key, persists them with the application data, and reuses them on later startups. Operators may supply their own certificate and private key instead. Existing reverse-proxy deployments can explicitly select HTTP mode.
+
+**Rationale:** Small self-hosted installations need secure transport without a reverse proxy or a manual certificate-generation prerequisite.
+
+**Constraints:** The generated certificate includes configured advertised hostnames plus loopback identities; operators must configure the advertised names clients will use. Generated private keys are stored persistently with restrictive filesystem permissions. BYOC configuration takes precedence over generation. Client trust uses the normal JVM trust store or an explicitly configured SHA-256 leaf-certificate pin; pinning does not disable hostname or certificate-validity checks. HTTP mode is an explicit compatibility choice and should only be used behind a trusted TLS-terminating proxy.
+
+**Dependencies:** ADR-001, ADR-009, REQ-021, SEC-016
+
+**Verification expectation:** Tests establish first-start certificate creation, persistence and reuse, BYOC precedence, default HTTPS startup, explicit HTTP compatibility mode, and client pinning that retains hostname and validity checks.
 
 ### Reconciliation is repeatable after interruption
 

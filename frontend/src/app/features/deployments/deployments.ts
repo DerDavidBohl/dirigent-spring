@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@ang
 import {toSignal} from '@angular/core/rxjs-interop';
 import {NgTemplateOutlet} from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
-import {filter, map} from 'rxjs';
+import {filter, map, takeUntil} from 'rxjs';
 import {DeploymentsApi} from '../../core/api/deployments-api';
 import {DeploymentState} from '../../core/api/models';
 import {polledResource} from '../../core/polled-resource';
@@ -10,6 +10,7 @@ import {DEPLOYMENT_STATES} from '../../core/state-tone';
 import {ConfirmService} from '../../ui/confirm.service';
 import {StateBadge} from '../../ui/state-badge';
 import {StatusLine} from '../../ui/status-line';
+import {FederationTarget} from '../../core/federation/federation-target';
 
 type SortKey = 'name' | 'state' | 'source';
 
@@ -113,8 +114,9 @@ export class Deployments {
   private readonly confirmDialog = inject(ConfirmService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly target = inject(FederationTarget);
 
-  protected readonly resource = polledResource(() => this.api.list());
+  protected readonly resource = polledResource(() => this.api.list(), 2000, this.target.selectionChanges);
   protected readonly states = DEPLOYMENT_STATES;
   protected readonly columns: {key: SortKey; label: string}[] = [
     {key: 'name', label: 'Name'},
@@ -174,7 +176,7 @@ export class Deployments {
       message: 'Start this deployment now?',
       confirmLabel: 'Start',
       optionLabel: 'Force recreate containers'
-    }).pipe(filter(result => !!result), map(result => result!.option)).subscribe(force =>
+    }).pipe(takeUntil(this.target.selectionChanges), filter(result => !!result), map(result => result!.option)).subscribe(force =>
       this.run(this.api.start(item.name, force), `Starting ${item.name} failed.`));
   }
 
@@ -184,7 +186,7 @@ export class Deployments {
       message: 'Stop this deployment and its containers?',
       confirmLabel: 'Stop',
       danger: true
-    }).pipe(filter(result => !!result)).subscribe(() =>
+    }).pipe(takeUntil(this.target.selectionChanges), filter(result => !!result)).subscribe(() =>
       this.run(this.api.stop(item.name), `Stopping ${item.name} failed.`));
   }
 

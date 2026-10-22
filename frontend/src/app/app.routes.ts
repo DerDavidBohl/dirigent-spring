@@ -15,6 +15,7 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/shell').then(m => m.Shell),
     children: [
       {path: '', pathMatch: 'full', title: 'Dashboard · Dirigent', loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard)},
+      {path: 'instances', title: 'Instances · Dirigent', loadComponent: () => import('./features/instances/instances').then(m => m.Instances)},
       {path: 'deployments', title: 'Deployments · Dirigent', loadComponent: () => import('./features/deployments/deployments').then(m => m.Deployments)},
       {path: 'updates', title: 'Updates · Dirigent', loadComponent: () => import('./features/updates/updates').then(m => m.Updates)},
       {path: 'secrets', title: 'Secrets · Dirigent', loadComponent: () => import('./features/secrets/secrets').then(m => m.Secrets)},

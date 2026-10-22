@@ -1,7 +1,10 @@
 import {TestBed} from '@angular/core/testing';
+import {signal} from '@angular/core';
 import {Observable, of, throwError} from 'rxjs';
 import {CreatedMachineToken, MachineToken} from '../../core/api/models';
 import {TokensApi} from '../../core/api/tokens-api';
+import {FederationDirectory} from '../../core/federation/federation-directory';
+import {FederationTarget} from '../../core/federation/federation-target';
 import {Tokens, expiryToIso, tokenStatus} from './tokens';
 
 describe('token helpers', () => {
@@ -28,7 +31,10 @@ describe('Tokens', () => {
 
   function render() {
     list.mockReturnValue(of([token]));
-    TestBed.configureTestingModule({providers: [{provide: TokensApi, useValue: {list, create, revoke}}]});
+    TestBed.configureTestingModule({providers: [
+      {provide: TokensApi, useValue: {list, create, revoke}},
+      {provide: FederationDirectory, useValue: {instances: signal([{id: 'office', instanceName: 'Office', available: true, deployments: [], error: ''}])}}
+    ]});
     const fixture = TestBed.createComponent(Tokens);
     fixture.detectChanges();
     return {fixture, el: fixture.nativeElement as HTMLElement};
@@ -62,6 +68,19 @@ describe('Tokens', () => {
     expect(render().el.textContent).toContain('Expires at 00:00 UTC');
   });
 
+  it('states that tokens are managed only on the main instance without a remote warning', () => {
+    const {el} = render();
+    expect(el.textContent).toContain('managed only on the main instance');
+    expect(el.querySelector('[data-testid=remote-notice]')).toBeNull();
+  });
+
+  it('warns that a selected remote does not apply to the tokens shown', () => {
+    const {fixture, el} = render();
+    TestBed.inject(FederationTarget).select('office');
+    fixture.detectChanges();
+    expect(el.querySelector('[data-testid=remote-notice]')?.textContent).toContain('Office');
+  });
+
   it('requires name, expiry and a permission before creating', async () => {
     const {fixture, el} = render();
     await fixture.whenStable();
@@ -92,6 +111,34 @@ describe('Tokens', () => {
     (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
     fixture.detectChanges();
     expect(el.querySelector('[role=alert]')?.textContent).toContain('could not be created');
+  });
+
+  it('hides revoked tokens by default and shows them on request', () => {
+    list.mockReturnValue(of([token, {...token, id: 9, name: 'old', revokedAt: '2030-02-01T00:00:00Z'}]));
+    TestBed.configureTestingModule({providers: [
+      {provide: TokensApi, useValue: {list, create, revoke}},
+      {provide: FederationDirectory, useValue: {instances: signal([])}}
+    ]});
+    const fixture = TestBed.createComponent(Tokens);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelectorAll('[data-testid=token]').length).toBe(1);
+    (el.querySelector('[data-testid=show-revoked]') as HTMLInputElement).click();
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-testid=token]').length).toBe(2);
+  });
+
+  it('shows the last use or Never', () => {
+    list.mockReturnValue(of([{...token, lastUsedAt: '2030-03-04T10:00:00Z'}, {...token, id: 8}]));
+    TestBed.configureTestingModule({providers: [
+      {provide: TokensApi, useValue: {list, create, revoke}},
+      {provide: FederationDirectory, useValue: {instances: signal([])}}
+    ]});
+    const fixture = TestBed.createComponent(Tokens);
+    fixture.detectChanges();
+    const cells = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid=last-used]'));
+    expect(cells[0].textContent).toContain('2030');
+    expect(cells[1].textContent).toBe('Never');
   });
 
   it('revokes a token and reloads', () => {

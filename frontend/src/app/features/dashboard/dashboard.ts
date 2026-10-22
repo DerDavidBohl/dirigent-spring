@@ -7,6 +7,7 @@ import {polledResource} from '../../core/polled-resource';
 import {DEPLOYMENT_STATES} from '../../core/state-tone';
 import {StateBadge} from '../../ui/state-badge';
 import {StatusLine} from '../../ui/status-line';
+import {FederationTarget} from '../../core/federation/federation-target';
 
 // UX-007: read-only overview; lifecycle actions live on the deployments page.
 @Component({
@@ -22,7 +23,7 @@ import {StatusLine} from '../../ui/status-line';
       <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         @for (tile of tiles(); track tile.state) {
           <li>
-            <a routerLink="/deployments" [queryParams]="{state: tile.state}" data-testid="state-tile"
+            <a routerLink="/deployments" [queryParams]="{state: tile.state}" queryParamsHandling="merge" data-testid="state-tile"
                class="block rounded-lg bg-white p-4 ring-1 ring-slate-200 hover:ring-brand-400 dark:bg-slate-900 dark:ring-slate-700 dark:hover:ring-accent-400">
               <span class="block text-3xl font-semibold" data-testid="tile-count">{{ tile.count }}</span>
               <app-state-badge [state]="tile.state" />
@@ -94,10 +95,11 @@ export class Dashboard {
   private readonly updatesApi = inject(UpdatesApi);
   private readonly deploymentsApi = inject(DeploymentsApi);
   private readonly systemApi = inject(SystemApi);
+  private readonly target = inject(FederationTarget);
 
-  protected readonly deployments = polledResource(() => this.deploymentsApi.list());
-  protected readonly updates = polledResource(() => this.updatesApi.list());
-  protected readonly system = polledResource(() => this.systemApi.info(), 60_000);
+  protected readonly deployments = polledResource(() => this.deploymentsApi.list(), 2000, this.target.selectionChanges);
+  protected readonly updates = polledResource(() => this.updatesApi.list(), 2000, this.target.selectionChanges);
+  protected readonly system = polledResource(() => this.systemApi.info(), 60_000, this.target.selectionChanges);
 
   protected readonly tiles = computed(() => {
     const list = this.deployments.data() ?? [];

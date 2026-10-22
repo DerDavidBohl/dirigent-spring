@@ -46,11 +46,11 @@ Operators can create, update, associate, and remove deployment secrets. The inte
 
 **ID: UX-004**
 
-When a Gotify base URL and token are configured, notices are sent for deployment state changes, discovered image updates, successful image updates, and failed image updates. Without both values, sending is a no-op.
+When a Gotify base URL and token are configured, notices are sent for deployment state changes, discovered image updates, successful image updates, and failed image updates. Without both values, sending is a no-op. Additionally, every hour one notice lists all machine tokens that are expired and not revoked; nothing is sent when there are none.
 
 **Rationale:** Notifications let operators learn about operational changes without continuously watching the dashboard.
 
-**Constraints:** The implementation has one Gotify destination configured by base URL and token. The four event categories are fixed in the service; operators cannot select destinations or event types. Retry behavior is not explicitly configured or guaranteed.
+**Constraints:** The implementation has one Gotify destination configured by base URL and token. The event categories (the four above plus the hourly expired-token reminder) are fixed in the service; operators cannot select destinations or event types. Retry behavior is not explicitly configured or guaranteed.
 
 **Dependencies:** REQ-002, QUA-001
 
@@ -74,13 +74,13 @@ The dashboard, deployments, and updates pages poll every two seconds and show ex
 
 **ID: UX-006**
 
-Operators can sign in with a local account or the configured OIDC provider without a separate per-user provisioning step. The signed-in header should show a human-readable provider username when one is supplied, falling back through display name and email before using the provider subject. If an optional OIDC group restriction is configured, only members of that provider group can sign in. There is no public local-account registration. Operators manage local account recovery through the server-side CLI and machine tokens through the dashboard using tables and dialog workflows consistent with the rest of the application. The token expiry is chosen with a calendar date input; the token expires at 00:00 UTC on that date, which the form states, and the token table shows expiry dates in UTC. A newly created machine token is presented prominently upon creation so the operator can copy it before dismissal, while the table immediately reflects the new token metadata. Operators can revoke tokens and end their browser session. Signing out ends the browser session and returns to the login view; failures are communicated without falsely implying the session ended.
+Operators can sign in with a local account or the configured OIDC provider without a separate per-user provisioning step. The signed-in header should show a human-readable provider username when one is supplied, falling back through display name and email before using the provider subject. If an optional OIDC group restriction is configured, only members of that provider group can sign in. There is no public local-account registration. Operators manage local account recovery through the server-side CLI and machine tokens through the dashboard using tables and dialog workflows consistent with the rest of the application. For instances managed through configuration or federation without routine browser access, an operator can also issue a machine token through the server-side CLI by supplying its name, explicit permissions, and expiry. A newly issued CLI token is printed once for secure capture. The token expiry in the dashboard is chosen with a calendar date input; the token expires at 00:00 UTC on that date, which the form states, and the token table shows expiry dates in UTC. A newly created dashboard token is presented prominently upon creation so the operator can copy it before dismissal, while the table immediately reflects the new token metadata. The token table shows each token's last usage (or that it was never used) and hides revoked tokens by default; a control lets operators include them. Operators can revoke tokens and end their browser session. Signing out ends the browser session and returns to the login view; failures are communicated without falsely implying the session ended.
 
 **Rationale:** Authentication must fit both standalone self-hosting and existing identity-provider setups while making privileged access and one-time credentials understandable.
 
 **Constraints:** All human accounts are administrators initially. Local account creation, password reset, and deletion are operator-controlled through server-side CLI operations; the final local administrator cannot be deleted. OIDC authorization follows the configured issuer and optional group restriction without per-user CLI provisioning. Gitea is configured with a machine token carrying the dedicated `webhooks:trigger` permission; that token is separate from interactive login and should not carry unrelated API permissions.
 
-**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, SEC-005, SEC-007, SEC-008, ADR-007
+**Dependencies:** REQ-014, REQ-015, REQ-016, REQ-017, REQ-022, SEC-005, SEC-007, SEC-008, ADR-007
 
 **Verification expectation:** Manual or automated checks cover local and OIDC login without per-user provisioning, readable OIDC display-name selection, optional group acceptance/rejection, successful and failed logout behavior, local account recovery, token creation with a calendar-date expiry sent as 00:00 UTC of the chosen date, revocation, and one-time token presentation without exposing credentials in list views. The login form remains aligned and usable on desktop and narrow viewports.
 
@@ -111,3 +111,17 @@ The visual design is dense and operational and uses the logo colours: blue (`#4A
 **Dependencies:** UX-005, REQ-002, COD-005
 
 **Verification expectation:** Tests confirm theme initialisation, toggling, and persistence; manual review confirms contrast in both themes.
+
+### Operators can compare deployment health across instances
+
+**ID: UX-009**
+
+When federation is configured, operators can select the local instance or a configured remote and use the existing deployment, update, and secret workflows against that instance. The selected instance is clearly identified throughout those workflows and is reflected in the frontend URL (`instance` query parameter), so a URL can be bookmarked or shared and restores the selection; navigation within the app preserves it. Switching instances with the top selector keeps the operator on the current page, now showing the new instance; the Instances view's "Manage this instance" action selects that instance and opens the dashboard. An Instances view lists each instance with its connection status only (deployments are viewed per instance in the deployment workflows); an unreachable instance shows a concise error state that names the failure reason category (e.g. timeout, connection failure, certificate problem, rejected token) without suppressing other results.
+
+**Rationale:** Operators need to locate which host owns a deployment and perform the supported operations without confusing remote connectivity failure with deployment failure.
+
+**Constraints:** Remote deployment lifecycle, image update, and secret workflows match the existing local interactions and show target identity, pending, and failure states. Changing the selected instance immediately invalidates data from the previous instance, and pending confirmations or editor results must not submit actions against a different instance. Account/OIDC and machine-token administration remain per-instance and are not exposed through federation; the Machine tokens page always manages the main (signed-in) instance, states this explicitly, and, while a remote instance is selected, warns that the selection does not apply there and that the remote's tokens are managed on that instance's own dashboard or CLI. The view follows the established responsive, accessible operational styling in UX-001, UX-005, and UX-008.
+
+**Dependencies:** ADR-009, REQ-019, UX-001, UX-005
+
+**Verification expectation:** Frontend tests cover disabled/empty federation, instance selection, local and remote operational workflows, per-instance errors, deployment states, action target selection, and responsive semantic status presentation, including stale-data invalidation and pending-action cancellation after a target change. Token page tests cover the main-instance statement and the remote-selected warning.

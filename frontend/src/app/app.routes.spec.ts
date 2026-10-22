@@ -9,12 +9,12 @@ describe('routes', () => {
   const all = flatten(routes);
 
   it('defines the documented route structure', () => {
-    expect(all.map(r => r.path)).toEqual(['login', '', '', 'deployments', 'updates', 'secrets', 'settings/tokens', '**']);
+    expect(all.map(r => r.path)).toEqual(['login', '', '', 'instances', 'deployments', 'updates', 'secrets', 'settings/tokens', '**']);
   });
 
   it('loads every feature lazily', () => {
     const features = all.filter(r => r.path !== '**' && !(r.path === '' && r.children));
-    expect(features.length).toBe(6);
+    expect(features.length).toBe(7);
     for (const route of features) {
       expect(route.loadComponent, `route "${route.path}"`).toBeTypeOf('function');
       expect(route.component).toBeUndefined();
