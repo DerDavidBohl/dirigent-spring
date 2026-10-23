@@ -147,3 +147,21 @@ The manual test environment provides named, self-contained scenarios (for exampl
 **Dependencies:** QUA-007, QUA-001, SEC-012, COD-007
 
 **Verification expectation:** After reset the dashboard shows no deployments, secrets, or tokens and the test account is recreated on next start; after loading a scenario its documented deployments appear.
+
+### Operational logs surface only relevant events
+
+**ID: QUA-011**
+
+**Status:** Proposed.
+
+**Basis:** Maintainer request to make logs easier to scan; QUA-001; SEC-006.
+
+At the default level the application log shows only what an operator needs to act on: state changes and their outcomes (deployment started, stopped, changed, failed; update found or applied; certificate rotated; federation instance unreachable), warnings, and errors. Routine periodic work that changes nothing (scheduled sync checks, skipped unchanged deployments, repository pulls, command start and finish) is not logged above debug level; a scheduled cycle may produce a single summary line. Framework and library output (Spring, Hibernate, Tomcat) is limited to warnings and errors by default. Raw output of external commands appears only when a command fails or when trace logging is explicitly enabled. Operators can raise verbosity per package through standard Spring logging properties.
+
+**Rationale:** When every cycle emits many lines, failures and real changes are hard to find.
+
+**Constraints:** Failures must never be demoted below warning. Log content follows SEC-006.
+
+**Dependencies:** QUA-001, SEC-006, COD-007
+
+**Verification expectation:** A scheduled cycle with no changes produces no more than one INFO line; a changed or failed deployment produces INFO or WARN lines naming the deployment; the start of every deployment run that executes Compose logs one INFO line naming the deployment and whether it was forced or triggered by an update; command output is absent at default and debug levels unless the command failed.

@@ -33,7 +33,7 @@ public class DeploymentScheduler {
     @Scheduled(cron = "${dirigent.deployments.schedule.cron}")
     void runScheduledDeployments() {
         if(enabled) {
-            logger.info("Starting all deployments scheduled");
+            logger.debug("Starting all deployments scheduled");
             this.applicationEventPublisher.publishEvent(new RecreateAllDeploymentStatesEvent(this));
         }
     }

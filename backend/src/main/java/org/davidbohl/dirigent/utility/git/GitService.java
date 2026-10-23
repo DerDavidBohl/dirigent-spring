@@ -30,7 +30,7 @@ public class GitService {
     // REQ-001: Deployment repositories are the source for managed deployment revisions.
     public boolean updateRepo(String repoUrl, String targetDir, String rev) throws IOException, InterruptedException {
 
-        logger.info("Cloning or pulling git repository '{}' to dir '{}' @ rev '{}'", repoUrl, targetDir, rev);
+        logger.debug("Cloning or pulling git repository '{}' to dir '{}' @ rev '{}'", repoUrl, targetDir, rev);
 
         File destinationDir = new File(targetDir);
 

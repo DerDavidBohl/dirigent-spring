@@ -78,7 +78,7 @@ The current diagnostics do not guarantee redaction of secrets and credentials. P
 
 **Rationale:** Diagnostics are often retained and shared more broadly than the secret stores they describe; they must not become an alternate credential disclosure channel.
 
-**Constraints:** These paths can disclose credentials when debug/error logging is enabled or exceptions are retained. Operators should treat logs and diagnostic output as sensitive. No systematic redaction layer is currently specified or guaranteed.
+**Constraints:** Credentials embedded in URLs of logged commands are masked before logging. Other paths (process output, exception text, secret-key validation) can still disclose credentials when debug/trace/error logging is enabled or exceptions are retained. Operators should treat logs and diagnostic output as sensitive. No complete redaction layer is guaranteed.
 
 **Dependencies:** SEC-001, SEC-002, SEC-005, QUA-002
 

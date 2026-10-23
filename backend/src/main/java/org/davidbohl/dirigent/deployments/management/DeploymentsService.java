@@ -184,7 +184,7 @@ public class DeploymentsService {
      */
     public ProcessResult runCommandForDeployment(String deploymentName, List<String> commandArgs) {
 
-        logger.info("Running command '{}' for deployment '{}'", String.join(" ", commandArgs), deploymentName);
+        logger.debug("Running command '{}' for deployment '{}'", String.join(" ", commandArgs), deploymentName);
 
         Map<String, String> environmentVariables = secretService
                 .getAllSecretsAsEnvironmentVariableMapByDeployment(deploymentName);
@@ -202,7 +202,7 @@ public class DeploymentsService {
 
         try {
 
-            logger.info("Deploying {}", deployment.name());
+            logger.debug("Deploying {}", deployment.name());
 
             File deploymentDir = new File(deploymentsDirName, deployment.name());
 
@@ -220,7 +220,7 @@ public class DeploymentsService {
                 applicationEventPublisher.publishEvent(
                         new DeploymentStateEvent(this, deployment.name(), DeploymentStateEntity.State.RUNNING,
                                 "Deployment '%s' successfully started".formatted(deployment.name())));
-                logger.info("No update, forced recreation or changed states in deployment. Skipping {}",
+                logger.debug("No update, forced recreation or changed states in deployment. Skipping {}",
                         deployment.name());
                 return;
             }
@@ -243,7 +243,8 @@ public class DeploymentsService {
 
             dockerRegistryAuthService.loginToConfiguredRegistries();
 
-            logger.info("Upping Compose for {}", deployment.name());
+            logger.info("Starting deployment '{}' (repository updated: {}, forced recreation: {})", deployment.name(),
+                    updated, forceRecreate);
 
             ProcessResult composeUp = runCommandForDeployment(deployment.name(), commandArgs);
 
@@ -289,7 +290,7 @@ public class DeploymentsService {
     }
 
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
-        logger.info("Stopping not configured deployments");
+        logger.debug("Stopping not configured deployments");
         File deploymentsDir = new File(deploymentsDirName);
         File[] files = deploymentsDir.listFiles();
 
@@ -309,7 +310,7 @@ public class DeploymentsService {
                 }
             }
         }
-        logger.info("Not configured deployments stopped");
+        logger.debug("Not configured deployments stopped");
     }
 
     private void stopDeployment(String deploymentName) throws InterruptedException, IOException {
@@ -362,7 +363,7 @@ public class DeploymentsService {
         // Executors.newVirtualThreadPerTaskExecutor()) {
         for (Integer orderGroupKey : sortedDeployments.keySet()) {
 
-            logger.info("Starting deployments with order {}", orderGroupKey);
+            logger.debug("Starting deployments with order {}", orderGroupKey);
 
             List<Deployment> deploymentsOrderUnit = sortedDeployments.get(orderGroupKey);
 
@@ -380,7 +381,7 @@ public class DeploymentsService {
             // throw new RuntimeException(ex);
             // }
 
-            logger.info("Deployments with order {} finished", orderGroupKey);
+            logger.debug("Deployments with order {} finished", orderGroupKey);
         }
         // }
     }

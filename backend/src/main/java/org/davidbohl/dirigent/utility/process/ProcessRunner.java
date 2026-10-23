@@ -54,7 +54,8 @@ public class ProcessRunner {
     processBuilder.directory(workingDirectory);
     processBuilder.environment().putAll(finalEnv);
 
-    log.debug("Running command <{}> in directory {}", String.join(" ", commandParts), workingDirectory);
+    String displayCommand = redact(String.join(" ", commandParts));
+    log.debug("Running command <{}> in directory {}", displayCommand, workingDirectory);
 
     Process process = null;
     int exitCode = 1;
@@ -81,7 +82,7 @@ public class ProcessRunner {
             : process.waitFor() >= 0;
         
         if (!finished) {
-            log.warn("Process timed out: {}", String.join(" ", commandParts));
+            log.warn("Process timed out: {}", displayCommand);
             process.destroyForcibly();
             process.waitFor(5, TimeUnit.SECONDS);
         }
@@ -93,7 +94,7 @@ public class ProcessRunner {
         exitCode = process.exitValue();
 
     } catch (Throwable e) {
-        log.warn("Process failed: {}", String.join(" ", commandParts), e);
+        log.warn("Process failed: {}", displayCommand, e);
         if (process != null && process.isAlive()) {
             process.destroyForcibly();
             try {
@@ -104,10 +105,20 @@ public class ProcessRunner {
         }
     }
 
-    log.debug("Finished command <{}> with exit code {}", String.join(" ", commandParts), exitCode);
+    log.debug("Finished command <{}> with exit code {}", displayCommand, exitCode);
+
+    if (exitCode != 0) {
+        log.warn("Command <{}> failed with exit code {}. Output:\n{}\n{}", displayCommand, exitCode,
+                redact(stdout.toString().trim()), redact(stderr.toString().trim()));
+    }
 
     return new ProcessResult(exitCode, stdout.toString().trim(), stderr.toString().trim());
 }
+
+    // SEC-006: Mask credentials embedded in URLs before they reach logs.
+    public static String redact(String text) {
+        return text.replaceAll("(?i)([a-z][a-z0-9+.-]*://)[^/@\\s]+@", "$1***@");
+    }
 
     private Thread readStream(java.io.InputStream inputStream, StringBuilder output) {
         Thread reader = new Thread(() -> {
@@ -115,7 +126,7 @@ public class ProcessRunner {
                 String line;
                 while ((line = br.readLine()) != null) {
                     output.append(line).append("\n");
-                    log.debug(line);
+                    log.trace(redact(line));
                 }
             } catch (IOException e) {
                 log.warn("Error reading stream", e);

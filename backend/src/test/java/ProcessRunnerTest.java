@@ -21,4 +21,12 @@ public class ProcessRunnerTest {
 
     }
 
+    @Test
+    void redactMasksCredentialsInUrls() {
+        Assertions.assertEquals("git clone https://***@github.com/o/r.git",
+                ProcessRunner.redact("git clone https://user:token@github.com/o/r.git"));
+        Assertions.assertEquals("git clone https://github.com/o/r.git",
+                ProcessRunner.redact("git clone https://github.com/o/r.git"));
+    }
+
 }

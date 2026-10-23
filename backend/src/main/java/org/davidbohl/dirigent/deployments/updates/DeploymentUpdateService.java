@@ -103,7 +103,7 @@ public class DeploymentUpdateService {
         if (updatesDisabled)
             return;
 
-        log.info("Checking For Updates");
+        log.debug("Checking For Updates");
 
         List<Deployment> deployments = configurationProvider.getConfiguration().deployments();
 
@@ -153,8 +153,6 @@ public class DeploymentUpdateService {
 
                 String service = container.getLabels().getOrDefault("com.docker.compose.service", "unknown");
 
-                log.info("Update Available for {}", container.getImage());
-
                 applicationEventPublisher
                         .publishEvent(
                                 new ImageUpdateAvailableEvent(this, deployment.name(), container.getImage(), service));
@@ -164,6 +162,8 @@ public class DeploymentUpdateService {
 
                 if (deploymentUpdates.size() > 0)
                     return;
+
+                log.info("[Deployment: {}] Update available for {}", deployment.name(), container.getImage());
 
                 deploymentUpdateRepository
                         .save(new DeploymentUpdateEntity(null, deployment.name(), service, container.getImage(), false));
@@ -193,7 +193,7 @@ public class DeploymentUpdateService {
     @EventListener
     @Transactional
     public void deleteAllUpdatesFromDatabseOnStrtUp(ContextRefreshedEvent event) {
-        log.info("Cleaned update repository");
+        log.debug("Cleaned update repository");
         deploymentUpdateRepository.deleteAllByIsRunning(true);
     }
 
