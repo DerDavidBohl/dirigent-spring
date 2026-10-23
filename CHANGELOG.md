@@ -2,6 +2,21 @@
 
 Notable changes to Dirigent are recorded here. See the [2.x to 3.0 upgrade guide](docs/upgrading-to-3.0.md) when upgrading from 2.x, or the [1.x to 2.0 upgrade guide](docs/upgrading-to-2.0.md) first when upgrading from 1.x.
 
+## [3.1.0]
+
+### Added
+
+- Generated TLS certificates are renewed automatically before expiry and can be rotated immediately with a server-side CLI command.
+- Gotify notifications identify the affected Dirigent instance.
+
+### Changed
+
+- Routine deployment logging is quieter, while deployment starts are logged with their trigger.
+
+### Fixed
+
+- Reconciliation skips stale stopped states for deployments that have been removed.
+
 ## [3.0.0]
 
 ### Breaking changes
