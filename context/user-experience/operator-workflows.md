@@ -46,7 +46,7 @@ Operators can create, update, associate, and remove deployment secrets. The inte
 
 **ID: UX-004**
 
-When a Gotify base URL and token are configured, notices are sent for deployment state changes, discovered image updates, successful image updates, and failed image updates. Without both values, sending is a no-op. Additionally, every hour one notice lists all machine tokens that are expired and not revoked; nothing is sent when there are none.
+When a Gotify base URL and token are configured, notices are sent for deployment state changes, discovered image updates, successful image updates, and failed image updates. Without both values, sending is a no-op. Additionally, every hour one notice lists all machine tokens that are expired and not revoked; nothing is sent when there are none. Every notice title identifies the originating instance by its configured instance name, so operators running several instances can tell where a notice came from.
 
 **Rationale:** Notifications let operators learn about operational changes without continuously watching the dashboard.
 

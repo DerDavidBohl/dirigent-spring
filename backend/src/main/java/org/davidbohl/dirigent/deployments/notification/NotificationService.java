@@ -23,6 +23,9 @@ public class NotificationService {
     @Value("${dirigent.gotify.token:}")
     private String gotifyToken;
 
+    @Value("${dirigent.instanceName:Unknown Instance}")
+    private String instanceName;
+
     @EventListener(DeploymentStateChangedEvent.class)
     @Async
     // UX-004: Send state-change notices only through the optional configured channel.
@@ -65,12 +68,16 @@ public class NotificationService {
         sendGotifyMessage(title, message);
     }
 
+    String withInstanceName(String title) {
+        return "[%s] %s".formatted(instanceName, title);
+    }
+
     @Retryable
     private void sendGotifyMessage(String title, String message) {
         try {
             if (gotifyToken != null && gotifyBaseUrl != null && !gotifyToken.isBlank() && !gotifyBaseUrl.isBlank()) {
                 RestTemplate restTemplate = new RestTemplate();
-                restTemplate.postForObject("%s/message?token=%s".formatted(gotifyBaseUrl, gotifyToken), new GotifyMessage(title, message, 5), Object.class);
+                restTemplate.postForObject("%s/message?token=%s".formatted(gotifyBaseUrl, gotifyToken), new GotifyMessage(withInstanceName(title), message, 5), Object.class);
             }
         } catch(Throwable e) {
             log.warn("Failed to send Message to gotify", e);

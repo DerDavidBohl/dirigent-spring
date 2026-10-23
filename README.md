@@ -178,7 +178,7 @@ docker run -d \
 | DIRIGENT_DEPLOYMENTS_SCHEDULE_CRON    | Cron expression (second minute hour day(month) month day(week))                          | `0 */5 * * * *`  |
 | DIRIGENT_GOTIFY_BASEURL               | Gotify Base URL for Notification, when deployments fail                                               |                  |
 | DIRIGENT_GOTIFY_TOKEN                 | Gotify Token for Notification, when deployments fail                                                  |                  |
-| DIRIGENT_INSTANCENAME                 | Name of your Instance (will be shown in Web UI)                                                       |                  |
+| DIRIGENT_INSTANCENAME                 | Name of your Instance (shown in Web UI and notification titles)                                                       |                  |
 | DIRIGENT_UPDATES_DISABLED             | Disable Update Feature                                                                                |`false`           |
 | DIRIGENT_AUTH_COOKIE_SECURE           | Set Secure on session and CSRF cookies; use HTTPS in production                                       | `true`           |
 | DIRIGENT_OIDC_ENABLED                 | Enable OIDC login                                                                                    | `false`          |
@@ -490,7 +490,7 @@ The roadmap separates planned work from delivered capabilities.
 - [ ] Improve certificate rotation experience
 - [ ] Improve notifications
 - [ ] Show more information about instances, including their version
-- [ ] Identify the affected instance clearly in notifications
+- [x] Identify the affected instance clearly in notifications
 - [ ] Support additional notification destinations
 - [ ] Allow unused features to be disabled to reduce resource use
 
