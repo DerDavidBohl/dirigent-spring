@@ -122,11 +122,11 @@ When a deployment is removed from the configuration, reconciliation invokes Comp
 
 **Rationale:** Reconciliation removes checkouts for deployments no longer present in configuration.
 
-**Constraints:** The Compose process exit code is not checked before deleting the checkout. A thrown I/O/interruption error aborts the removal path; a non-zero exit result does not.
+**Constraints:** The Compose process exit code is not checked before deleting the checkout. A thrown I/O/interruption error aborts the removal path; a non-zero exit result does not. Reconciliation (startup, scheduled, webhook) must not attempt to start or stop deployments that are no longer configured and whose checkout directory no longer exists, and such stale persisted states must not make reconciliation fail.
 
 **Dependencies:** REQ-001, REQ-002, ADR-003, QUA-001
 
-**Verification expectation:** Current behavior can be checked by verifying that command invocation precedes deletion and by comparing thrown process errors with non-zero process results; there is no dedicated removal-flow test coverage.
+**Verification expectation:** Tests cover, against a temporary deployments directory: Compose `down` precedes checkout deletion and `REMOVED` is published; a non-zero `down` exit still deletes and publishes; a thrown process error keeps the checkout and publishes no `REMOVED`; both the scheduled/startup and all-deployments start paths remove unconfigured checkouts; configured checkouts are kept; and a persisted `STOPPED` state for an unconfigured deployment without a checkout directory causes no Compose invocation or failure.
 
 ### Breaking releases must explain changes and upgrades
 

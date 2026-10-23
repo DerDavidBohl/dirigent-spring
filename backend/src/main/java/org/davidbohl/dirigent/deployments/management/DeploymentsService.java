@@ -54,7 +54,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor()
 public class DeploymentsService {
 
-    public static final String DEPLOYMENTS_DIR_NAME = "deployments";
     private final GitService gitService;
     private final DeploymentsConfigurationProvider deploymentsConfigurationProvider;
     private final Logger logger = LoggerFactory.getLogger(DeploymentsService.class);
@@ -70,6 +69,9 @@ public class DeploymentsService {
     @Value("${dirigent.compose.command}")
     private String composeCommand;
 
+    @Value("${dirigent.deployments.dir:deployments}")
+    private String deploymentsDirName = "deployments";
+
     @EventListener(AllDeploymentsStartRequestedEvent.class)
     @Async
     public void onAllDeploymentsStartRequested(AllDeploymentsStartRequestedEvent event) {
@@ -82,8 +84,8 @@ public class DeploymentsService {
 
     }
 
-    private static void makeDeploymentsDir() {
-        if (!new File(DEPLOYMENTS_DIR_NAME).mkdirs() && !new File(DEPLOYMENTS_DIR_NAME).exists())
+    private void makeDeploymentsDir() {
+        if (!new File(deploymentsDirName).mkdirs() && !new File(deploymentsDirName).exists())
             throw new DeploymentsDirCouldNotBeCreatedException();
     }
 
@@ -157,6 +159,8 @@ public class DeploymentsService {
         List<String> stoppedDeployments = deploymentStatePersistingService.getDeploymentStates().stream()
                 .filter(d -> d.getState() == DeploymentStateEntity.State.STOPPED)
                 .map(DeploymentStateEntity::getName)
+                .filter(name -> deploynentConfiguration.deployments().stream().anyMatch(d -> d.name().equals(name)))
+                .filter(name -> new File(deploymentsDirName, name).isDirectory())
                 .toList();
         stoppedDeployments.forEach(d -> {
             try {
@@ -186,7 +190,7 @@ public class DeploymentsService {
                 .getAllSecretsAsEnvironmentVariableMapByDeployment(deploymentName);
         environmentVariables.put("DIRIGENT_DEPLOYMENT_DIR", getDirigentDeploymentDirOnHost(deploymentName));
 
-        File deploymentDir = new File("deployments/" + deploymentName);
+        File deploymentDir = new File(deploymentsDirName, deploymentName);
 
         return processRunner.executeCommand(commandArgs,
                 deploymentDir,
@@ -200,7 +204,7 @@ public class DeploymentsService {
 
             logger.info("Deploying {}", deployment.name());
 
-            File deploymentDir = new File("deployments/" + deployment.name());
+            File deploymentDir = new File(deploymentsDirName, deployment.name());
 
             String rev = deployment.ref() != null ? deployment.ref() : "HEAD";
             boolean updated = gitService.updateRepo(deployment.source(), deploymentDir.getAbsolutePath(), rev);
@@ -286,7 +290,7 @@ public class DeploymentsService {
 
     private void stopNotConfiguredDeployments(List<Deployment> deployments) {
         logger.info("Stopping not configured deployments");
-        File deploymentsDir = new File("deployments");
+        File deploymentsDir = new File(deploymentsDirName);
         File[] files = deploymentsDir.listFiles();
 
         if (files == null)
@@ -326,7 +330,7 @@ public class DeploymentsService {
         List<String> commandArgs = new ArrayList<>(Arrays.stream(composeCommand.split(" ")).toList());
         commandArgs.add("down");
 
-        processRunner.executeCommand(commandArgs, new File(DEPLOYMENTS_DIR_NAME + "/" + deploymentName));
+        processRunner.executeCommand(commandArgs, new File(deploymentsDirName, deploymentName));
         applicationEventPublisher.publishEvent(new DeploymentStateEvent(this, deploymentName,
                 DeploymentStateEntity.State.STOPPED, "Deployment '%s' stopped".formatted(deploymentName)));
     }
