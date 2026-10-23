@@ -73,6 +73,15 @@ public class TlsBootstrapEnvironmentPostProcessor implements EnvironmentPostProc
             tlsProperties.put("server.ssl.key-store", generated.path().toUri().toString());
             tlsProperties.put("server.ssl.key-store-type", "PKCS12");
             tlsProperties.put("server.ssl.key-store-password", generated.password());
+            if (isRotationEnabled(environment)) {
+                // A bundle lets the running server reload the keystore after rotation.
+                tlsProperties.put("spring.ssl.bundle.jks.dirigent.keystore.location", generated.path().toUri().toString());
+                tlsProperties.put("spring.ssl.bundle.jks.dirigent.keystore.type", "PKCS12");
+                tlsProperties.put("spring.ssl.bundle.jks.dirigent.keystore.password", generated.password());
+                tlsProperties.put("spring.ssl.bundle.jks.dirigent.reload-on-update", true);
+                tlsProperties.put("server.ssl.bundle", "dirigent");
+                tlsProperties.put("dirigent.tls.generated", true);
+            }
         }
         environment.getPropertySources().addFirst(new MapPropertySource("dirigentTlsBootstrap", tlsProperties));
     }
@@ -86,7 +95,104 @@ public class TlsBootstrapEnvironmentPostProcessor implements EnvironmentPostProc
         return serverTls == null || Boolean.parseBoolean(serverTls);
     }
 
+    private boolean isRotationEnabled(ConfigurableEnvironment environment) {
+        return Boolean.parseBoolean(environment.getProperty("dirigent.tls.rotation.enabled", "true"));
+    }
+
+    /** Renews the generated certificate when due; returns the new fingerprint or null when unchanged. */
+    String rotateIfDue(ConfigurableEnvironment environment) {
+        return rotate(environment, false);
+    }
+
+    /** Replaces the generated certificate regardless of remaining validity; returns the new fingerprint. */
+    public String rotateNow(ConfigurableEnvironment environment) {
+        String configuredKeyStore = environment.getProperty("server.ssl.key-store");
+        if (configuredKeyStore != null && !configuredKeyStore.isBlank()) {
+            throw new IllegalStateException("A bring-your-own keystore is configured; Dirigent does not rotate it");
+        }
+        return rotate(environment, true);
+    }
+
+    private String rotate(ConfigurableEnvironment environment, boolean force) {
+        Path keyStore = Path.of(environment.getProperty("dirigent.tls.storage-directory", "data/tls"))
+                .toAbsolutePath().normalize().resolve("dirigent.p12");
+        String before = fingerprintOrNull(keyStore);
+        loadOrCreateKeyStore(environment, force);
+        String after = fingerprintOrNull(keyStore);
+        return after != null && !after.equals(before) ? after : null;
+    }
+
+    private String fingerprintOrNull(Path keyStore) {
+        Path passwordFile = keyStore.resolveSibling("keystore.password");
+        if (!Files.exists(keyStore) || !Files.exists(passwordFile)) {
+            return null;
+        }
+        try {
+            return fingerprint(loadCertificate(keyStore, Files.readString(passwordFile).trim()));
+        } catch (IOException | java.security.GeneralSecurityException exception) {
+            return null;
+        }
+    }
+
+    private X509Certificate loadCertificate(Path keyStorePath, String password)
+            throws IOException, java.security.GeneralSecurityException {
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        try (var input = Files.newInputStream(keyStorePath)) {
+            keyStore.load(input, password.toCharArray());
+        }
+        return (X509Certificate) keyStore.getCertificate("dirigent");
+    }
+
+    static String fingerprint(X509Certificate certificate) throws java.security.GeneralSecurityException {
+        byte[] digest = java.security.MessageDigest.getInstance("SHA-256").digest(certificate.getEncoded());
+        StringBuilder result = new StringBuilder();
+        for (byte value : digest) {
+            result.append(String.format("%02X", value));
+        }
+        return result.toString();
+    }
+
+    private boolean isRenewalDue(ConfigurableEnvironment environment, Path keyStore, String password,
+            boolean force) {
+        if (force) {
+            return true;
+        }
+        if (!isRotationEnabled(environment)) {
+            return false;
+        }
+        try {
+            X509Certificate certificate = loadCertificate(keyStore, password);
+            long days = environment.getProperty("dirigent.tls.rotation.renew-before-days", Long.class, 30L);
+            return certificate.getNotAfter().toInstant()
+                    .isBefore(java.time.Instant.now().plus(java.time.Duration.ofDays(days)));
+        } catch (IOException | java.security.GeneralSecurityException | RuntimeException exception) {
+            return true;
+        }
+    }
+
+    private void replaceKeyStore(Path directory, Path keyStore, String password, List<String> hostNames)
+            throws IOException, InterruptedException {
+        Path temporaryKeyStore = directory.resolve("dirigent-" + java.util.UUID.randomUUID() + ".p12");
+        try {
+            generateKeyStore(temporaryKeyStore, password, hostNames);
+            validateKeyStore(temporaryKeyStore, password);
+            setPrivateFilePermissions(temporaryKeyStore);
+            try {
+                Files.move(temporaryKeyStore, keyStore, StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException exception) {
+                Files.move(temporaryKeyStore, keyStore, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temporaryKeyStore);
+        }
+        setPrivateFilePermissions(keyStore);
+    }
+
     private GeneratedKeyStore loadOrCreateKeyStore(ConfigurableEnvironment environment) {
+        return loadOrCreateKeyStore(environment, false);
+    }
+
+    private GeneratedKeyStore loadOrCreateKeyStore(ConfigurableEnvironment environment, boolean force) {
         Path directory = Path.of(environment.getProperty("dirigent.tls.storage-directory", "data/tls"))
                 .toAbsolutePath().normalize();
         Path keyStore = directory.resolve("dirigent.p12");
@@ -106,23 +212,14 @@ public class TlsBootstrapEnvironmentPostProcessor implements EnvironmentPostProc
                         }
                         setPrivateFilePermissions(keyStore);
                         setPrivateFilePermissions(passwordFile);
-                        return new GeneratedKeyStore(keyStore, Files.readString(passwordFile).trim());
+                        String existingPassword = Files.readString(passwordFile).trim();
+                        if (isRenewalDue(environment, keyStore, existingPassword, force)) {
+                            replaceKeyStore(directory, keyStore, existingPassword, hostNames(environment));
+                        }
+                        return new GeneratedKeyStore(keyStore, existingPassword);
                     }
                     String password = loadOrCreatePassword(passwordFile);
-                    Path temporaryKeyStore = directory.resolve("dirigent-" + java.util.UUID.randomUUID() + ".p12");
-                    try {
-                        generateKeyStore(temporaryKeyStore, password, hostNames(environment));
-                        validateKeyStore(temporaryKeyStore, password);
-                        setPrivateFilePermissions(temporaryKeyStore);
-                        try {
-                            Files.move(temporaryKeyStore, keyStore, StandardCopyOption.ATOMIC_MOVE);
-                        } catch (java.nio.file.AtomicMoveNotSupportedException exception) {
-                            Files.move(temporaryKeyStore, keyStore);
-                        }
-                    } finally {
-                        Files.deleteIfExists(temporaryKeyStore);
-                    }
-                    setPrivateFilePermissions(keyStore);
+                    replaceKeyStore(directory, keyStore, password, hostNames(environment));
                     return new GeneratedKeyStore(keyStore, password);
                 }
             }

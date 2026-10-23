@@ -74,6 +74,46 @@ class TlsBootstrapEnvironmentPostProcessorTest {
     }
 
     @Test
+    void rotatesGeneratedCertificateInsideRenewalWindowOnly() throws Exception {
+        Path tlsDirectory = temporaryDirectory.resolve("tls");
+        processor.prepare(environment(tlsDirectory), true);
+
+        assertEquals(null, processor.rotateIfDue(environment(tlsDirectory)));
+
+        MockEnvironment window = (MockEnvironment) environment(tlsDirectory);
+        window.setProperty("dirigent.tls.rotation.renew-before-days", "400");
+        String fingerprint = processor.rotateIfDue(window);
+
+        assertTrue(fingerprint != null && fingerprint.length() == 64);
+        assertEquals("rw-------", PosixFilePermissions.toString(
+                Files.getPosixFilePermissions(tlsDirectory.resolve("dirigent.p12"))));
+    }
+
+    @Test
+    void rotateNowReplacesCertificateRegardlessOfValidityAndRefusesByoc() {
+        Path tlsDirectory = temporaryDirectory.resolve("tls");
+        processor.prepare(environment(tlsDirectory), true);
+
+        String fingerprint = processor.rotateNow(environment(tlsDirectory));
+
+        assertEquals(64, fingerprint.length());
+        MockEnvironment byoc = (MockEnvironment) environment(tlsDirectory);
+        byoc.setProperty("server.ssl.key-store", "file:/operator.p12");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> processor.rotateNow(byoc));
+    }
+
+    @Test
+    void doesNotRotateWhenDisabled() {
+        Path tlsDirectory = temporaryDirectory.resolve("tls");
+        processor.prepare(environment(tlsDirectory), true);
+        MockEnvironment disabled = (MockEnvironment) environment(tlsDirectory);
+        disabled.setProperty("dirigent.tls.rotation.renew-before-days", "400");
+        disabled.setProperty("dirigent.tls.rotation.enabled", "false");
+
+        assertEquals(null, processor.rotateIfDue(disabled));
+    }
+
+    @Test
     void honorsBringYourOwnKeystoreWithoutGeneratingMaterial() {
         Path supplied = temporaryDirectory.resolve("operator.p12");
         MockEnvironment environment = new MockEnvironment()

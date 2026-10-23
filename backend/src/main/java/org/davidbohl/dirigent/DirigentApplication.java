@@ -4,6 +4,7 @@ import org.davidbohl.dirigent.auth.OperatorAccountService;
 import org.davidbohl.dirigent.auth.MachineTokenService;
 import org.davidbohl.dirigent.auth.dto.MachineTokenCreateRequest;
 import org.davidbohl.dirigent.auth.dto.MachineTokenCreatedResponse;
+import org.davidbohl.dirigent.config.TlsBootstrapEnvironmentPostProcessor;
 import org.davidbohl.dirigent.federation.FederationProperties;
 import org.davidbohl.dirigent.deployments.updates.RegistryAuthProperties;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.io.Console;
 import java.io.PrintStream;
@@ -38,6 +40,16 @@ public class DirigentApplication {
 					.properties("spring.main.banner-mode=off")
 					.run(withBootstrapDefaults(springArguments))) {
 				createMachineToken(request, context.getBean(MachineTokenService.class), System.out);
+			}
+			return;
+		}
+		int rotateTlsIndex = indexOf(args, "--rotate-tls-certificate");
+		if (rotateTlsIndex >= 0) {
+			try (ConfigurableApplicationContext context = new SpringApplicationBuilder(DirigentApplication.class)
+					.web(WebApplicationType.NONE)
+					.properties("spring.main.banner-mode=off")
+					.run(withBootstrapDefaults(withoutCliArguments(args, rotateTlsIndex, 1)))) {
+				rotateTlsCertificate(context.getEnvironment(), System.out);
 			}
 			return;
 		}
@@ -102,6 +114,11 @@ public class DirigentApplication {
 		output.printf("Permissions: %s%n", created.permissions().stream().sorted().collect(Collectors.joining(", ")));
 		output.printf("Expires at: %s%n", created.expiresAt());
 		output.printf("Token: %s%n", created.token());
+	}
+
+	static void rotateTlsCertificate(ConfigurableEnvironment environment, PrintStream output) {
+		String fingerprint = new TlsBootstrapEnvironmentPostProcessor().rotateNow(environment);
+		output.printf("TLS certificate rotated. SHA-256 fingerprint: %s%n", fingerprint);
 	}
 
 	private static void createAdmin(String username, String[] springArguments) {

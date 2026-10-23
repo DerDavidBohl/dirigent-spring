@@ -88,7 +88,7 @@ An optional federation hub connects to operator-configured Dirigent instances ov
 
 **ID: ADR-010**
 
-The embedded Spring server serves HTTPS by default. On first startup it creates a self-signed certificate and private key, persists them with the application data, and reuses them on later startups. Operators may supply their own certificate and private key instead. Existing reverse-proxy deployments can explicitly select HTTP mode.
+The embedded Spring server serves HTTPS by default. On first startup it creates a self-signed certificate and private key, persists them with the application data, and reuses them on later startups. Operators may supply their own certificate and private key instead. Existing reverse-proxy deployments can explicitly select HTTP mode. A generated certificate is renewed automatically before expiry (checked at startup and periodically while running) and the running server reloads it without restart.
 
 **Rationale:** Small self-hosted installations need secure transport without a reverse proxy or a manual certificate-generation prerequisite.
 

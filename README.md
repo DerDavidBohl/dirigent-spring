@@ -194,6 +194,8 @@ docker run -d \
 | DIRIGENT_FEDERATION_INSTANCES_0_CERTIFICATE_SHA256 | Optional SHA-256 fingerprint pin for a self-signed remote certificate                     |                  |
 | DIRIGENT_TLS_HOSTNAMES                | Comma-separated DNS names/IPs included in the generated server certificate                         | `localhost,127.0.0.1` |
 | DIRIGENT_TLS_ENABLED                  | Enable native HTTPS; disable only behind a trusted TLS-terminating proxy                           | `true`           |
+| DIRIGENT_TLS_ROTATION_ENABLED         | Automatically rotate the generated certificate before expiry                                       | `true`           |
+| DIRIGENT_TLS_ROTATION_RENEW_BEFORE_DAYS | Renewal window before expiry, in days                                                            | `30`             |
 | SERVER_SSL_KEY_STORE                  | Optional PKCS#12 keystore path for a bring-your-own certificate                                    | Generated       |
 | SERVER_SSL_KEY_STORE_PASSWORD         | Password for the configured BYOC keystore                                                          |                  |
 | SERVER_SSL_KEY_STORE_TYPE             | Keystore type for BYOC                                                                             | `PKCS12`         |
@@ -387,7 +389,7 @@ docker exec dirigent-app sh -c 'keytool -exportcert -alias dirigent -keystore /a
 
 Set the resulting 64-character hex value as `DIRIGENT_FEDERATION_INSTANCES_<n>_CERTIFICATE_SHA256` on the hub. This trusts only that leaf certificate; the URL hostname must still match its SAN, and the certificate must be valid. When the certificate is regenerated or replaced, securely update the pin. Do not use a trust-all setting.
 
-To rotate a generated certificate, stop Dirigent, back up `/app/data`, remove `/app/data/tls/dirigent.p12` and `/app/data/tls/keystore.password`, then start Dirigent to create a new certificate. Recompute and securely update every hub pin before relying on federation again. For multiple installations, a CA-issued BYOC certificate avoids individual leaf-pin updates.
+Generated certificates rotate automatically: Dirigent checks at startup and every 12 hours (`DIRIGENT_TLS_ROTATION_CHECK_INTERVAL`, ISO-8601 duration) and replaces the certificate when fewer than `DIRIGENT_TLS_ROTATION_RENEW_BEFORE_DAYS` (default 30) remain, without a restart. The new SHA-256 fingerprint is logged at WARN level; securely update every hub pin, since pinned peers fail closed after rotation. Set `DIRIGENT_TLS_ROTATION_ENABLED=false` to disable. Bring-your-own keystores are never rotated automatically. To force rotation, run `docker exec -it dirigent-app java -jar /app/app.jar --spring.profiles.active=production --rotate-tls-certificate`. It replaces the generated certificate immediately, prints the new SHA-256 fingerprint, and refuses when a bring-your-own keystore is configured; a running server loads the new certificate without a restart (with automatic rotation enabled). For multiple installations, a CA-issued BYOC certificate avoids individual leaf-pin updates.
 
 ### Federation
 
